@@ -11,7 +11,8 @@ namespace EnergyMeteringSystem.Data.Database
 {
     using System;
     using System.Collections.Generic;
-    
+
+
     public partial class UserRole
     {
         public UserRole()
@@ -25,5 +26,6 @@ namespace EnergyMeteringSystem.Data.Database
         public string PermissionsJson { get; set; }
     
         public virtual ICollection<User> User { get; set; }
+        
     }
 }

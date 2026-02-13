@@ -1,0 +1,67 @@
+﻿<Window x:Class="EnergyMeteringSystem.App.Views.Auth.LoginView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Вход в систему" 
+        Height="350" Width="400"
+        WindowStartupLocation="CenterScreen"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent">
+
+    <Border CornerRadius="10" Background="White" Margin="10">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="20" ShadowDepth="0" Opacity="0.3"/>
+        </Border.Effect>
+
+        <Grid Margin="30">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Заголовок -->
+            <TextBlock Grid.Row="0" 
+                       Text="Учет электроэнергии" 
+                       FontSize="22" 
+                       FontWeight="Bold" 
+                       HorizontalAlignment="Center"
+                       Foreground="#1976D2"
+                       Margin="0,0,0,30"/>
+
+            <!-- Логин -->
+            <StackPanel Grid.Row="1" Margin="0,0,0,15">
+                <TextBlock Text="Имя пользователя" Margin="0,0,0,5"/>
+                <TextBox Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}" 
+                         Padding="8" FontSize="14"/>
+            </StackPanel>
+
+            <!-- Пароль -->
+            <StackPanel Grid.Row="2" Margin="0,0,0,15">
+                <TextBlock Text="Пароль" Margin="0,0,0,5"/>
+                <PasswordBox x:Name="PasswordBox" 
+                            Padding="8" FontSize="14"/>
+            </StackPanel>
+
+            <!-- Ошибка -->
+            <TextBlock Grid.Row="3" 
+                       Text="{Binding ErrorMessage}"
+                       Foreground="Red"
+                       HorizontalAlignment="Center"
+                       Margin="0,0,0,15"/>
+
+            <!-- Кнопка входа -->
+            <Button Grid.Row="4" 
+                    Command="{Binding LoginCommand}"
+                    Content="Войти"
+                    Height="40"
+                    Background="#1976D2"
+                    Foreground="White"
+                    FontSize="14"
+                    FontWeight="Bold"
+                    BorderThickness="0"/>
+        </Grid>
+    </Border>
+</Window>

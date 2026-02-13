@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace EnergyMeteringSystem.Core
+namespace EnergyMeteringSystem.Core.Interfaces.Repositories
 {
-    public class Class1
+    class IConsumptionObjectRepository
     {
     }
 }
