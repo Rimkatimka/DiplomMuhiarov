@@ -1,0 +1,1095 @@
+USE [master]
+GO
+/****** Object:  Database [EnergyMeteringSystem]    Script Date: 30.01.2026 10:15:46 ******/
+CREATE DATABASE [EnergyMeteringSystem]
+ CONTAINMENT = NONE
+ ON  PRIMARY 
+( NAME = N'EnergyMeteringSystem', FILENAME = N'C:\Program Files\Microsoft SQL Server\MSSQL16.SQLEXPRESS\MSSQL\DATA\EnergyMeteringSystem.mdf' , SIZE = 73728KB , MAXSIZE = UNLIMITED, FILEGROWTH = 65536KB )
+ LOG ON 
+( NAME = N'EnergyMeteringSystem_log', FILENAME = N'C:\Program Files\Microsoft SQL Server\MSSQL16.SQLEXPRESS\MSSQL\DATA\EnergyMeteringSystem_log.ldf' , SIZE = 8192KB , MAXSIZE = 2048GB , FILEGROWTH = 65536KB )
+ WITH CATALOG_COLLATION = DATABASE_DEFAULT, LEDGER = OFF
+GO
+ALTER DATABASE [EnergyMeteringSystem] SET COMPATIBILITY_LEVEL = 160
+GO
+IF (1 = FULLTEXTSERVICEPROPERTY('IsFullTextInstalled'))
+begin
+EXEC [EnergyMeteringSystem].[dbo].[sp_fulltext_database] @action = 'enable'
+end
+GO
+ALTER DATABASE [EnergyMeteringSystem] SET ANSI_NULL_DEFAULT OFF 
+GO
+ALTER DATABASE [EnergyMeteringSystem] SET ANSI_NULLS OFF 
+GO
+ALTER DATABASE [EnergyMeteringSystem] SET ANSI_PADDING OFF 
+GO
+ALTER DATABASE [EnergyMeteringSystem] SET ANSI_WARNINGS OFF 
+GO
+ALTER DATABASE [EnergyMeteringSystem] SET ARITHABORT OFF 
+GO
+ALTER DATABASE [EnergyMeteringSystem] SET AUTO_CLOSE ON 
+GO
+ALTER DATABASE [EnergyMeteringSystem] SET AUTO_SHRINK OFF 
+GO
+ALTER DATABASE [EnergyMeteringSystem] SET AUTO_UPDATE_STATISTICS ON 
+GO
+ALTER DATABASE [EnergyMeteringSystem] SET CURSOR_CLOSE_ON_COMMIT OFF 
+GO
+ALTER DATABASE [EnergyMeteringSystem] SET CURSOR_DEFAULT  GLOBAL 
+GO
+ALTER DATABASE [EnergyMeteringSystem] SET CONCAT_NULL_YIELDS_NULL OFF 
+GO
+ALTER DATABASE [EnergyMeteringSystem] SET NUMERIC_ROUNDABORT OFF 
+GO
+ALTER DATABASE [EnergyMeteringSystem] SET QUOTED_IDENTIFIER OFF 
+GO
+ALTER DATABASE [EnergyMeteringSystem] SET RECURSIVE_TRIGGERS OFF 
+GO
+ALTER DATABASE [EnergyMeteringSystem] SET  ENABLE_BROKER 
+GO
+ALTER DATABASE [EnergyMeteringSystem] SET AUTO_UPDATE_STATISTICS_ASYNC OFF 
+GO
+ALTER DATABASE [EnergyMeteringSystem] SET DATE_CORRELATION_OPTIMIZATION OFF 
+GO
+ALTER DATABASE [EnergyMeteringSystem] SET TRUSTWORTHY OFF 
+GO
+ALTER DATABASE [EnergyMeteringSystem] SET ALLOW_SNAPSHOT_ISOLATION OFF 
+GO
+ALTER DATABASE [EnergyMeteringSystem] SET PARAMETERIZATION SIMPLE 
+GO
+ALTER DATABASE [EnergyMeteringSystem] SET READ_COMMITTED_SNAPSHOT OFF 
+GO
+ALTER DATABASE [EnergyMeteringSystem] SET HONOR_BROKER_PRIORITY OFF 
+GO
+ALTER DATABASE [EnergyMeteringSystem] SET RECOVERY SIMPLE 
+GO
+ALTER DATABASE [EnergyMeteringSystem] SET  MULTI_USER 
+GO
+ALTER DATABASE [EnergyMeteringSystem] SET PAGE_VERIFY CHECKSUM  
+GO
+ALTER DATABASE [EnergyMeteringSystem] SET DB_CHAINING OFF 
+GO
+ALTER DATABASE [EnergyMeteringSystem] SET FILESTREAM( NON_TRANSACTED_ACCESS = OFF ) 
+GO
+ALTER DATABASE [EnergyMeteringSystem] SET TARGET_RECOVERY_TIME = 60 SECONDS 
+GO
+ALTER DATABASE [EnergyMeteringSystem] SET DELAYED_DURABILITY = DISABLED 
+GO
+ALTER DATABASE [EnergyMeteringSystem] SET ACCELERATED_DATABASE_RECOVERY = OFF  
+GO
+ALTER DATABASE [EnergyMeteringSystem] SET QUERY_STORE = ON
+GO
+ALTER DATABASE [EnergyMeteringSystem] SET QUERY_STORE (OPERATION_MODE = READ_WRITE, CLEANUP_POLICY = (STALE_QUERY_THRESHOLD_DAYS = 30), DATA_FLUSH_INTERVAL_SECONDS = 900, INTERVAL_LENGTH_MINUTES = 60, MAX_STORAGE_SIZE_MB = 1000, QUERY_CAPTURE_MODE = AUTO, SIZE_BASED_CLEANUP_MODE = AUTO, MAX_PLANS_PER_QUERY = 200, WAIT_STATS_CAPTURE_MODE = ON)
+GO
+USE [EnergyMeteringSystem]
+GO
+/****** Object:  Table [dbo].[ConsumptionObject]    Script Date: 30.01.2026 10:15:47 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[ConsumptionObject](
+	[Id] [int] NOT NULL,
+	[Name] [nvarchar](200) NOT NULL,
+	[ObjectTypeId] [int] NOT NULL,
+	[StreetId] [int] NOT NULL,
+	[HouseNumber] [nvarchar](10) NOT NULL,
+	[ApartmentNumber] [nvarchar](10) NULL,
+	[TotalArea] [decimal](8, 2) NULL,
+	[ResidentCount] [int] NULL,
+ CONSTRAINT [PK_ConsumptionObject] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Meter]    Script Date: 30.01.2026 10:15:47 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Meter](
+	[Id] [int] NOT NULL,
+	[SerialNumber] [nvarchar](50) NOT NULL,
+	[MeterTypeId] [int] NOT NULL,
+	[ConsumptionObjectId] [int] NOT NULL,
+	[InstallationDate] [date] NOT NULL,
+	[InitialReading] [decimal](15, 4) NOT NULL,
+	[MeterStatusId] [int] NOT NULL,
+	[VerificationDate] [date] NULL,
+	[NextVerificationDate] [date] NULL,
+ CONSTRAINT [PK_Meter] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+ CONSTRAINT [UQ_Meter_SerialNumber] UNIQUE NONCLUSTERED 
+(
+	[SerialNumber] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[MeterReading]    Script Date: 30.01.2026 10:15:47 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[MeterReading](
+	[Id] [int] NOT NULL,
+	[MeterId] [int] NOT NULL,
+	[ReadingDate] [date] NOT NULL,
+	[Value] [decimal](15, 4) NOT NULL,
+	[EnteredAt] [datetime] NOT NULL,
+	[EnteredByUserId] [int] NOT NULL,
+	[ReadingStatusId] [int] NOT NULL,
+	[RejectionReasonId] [int] NULL,
+	[Comment] [nvarchar](500) NULL,
+	[TariffZone] [int] NOT NULL,
+ CONSTRAINT [PK_MeterReading] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+ CONSTRAINT [UQ_MeterReading_Meter_Date] UNIQUE NONCLUSTERED 
+(
+	[MeterId] ASC,
+	[ReadingDate] ASC,
+	[TariffZone] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[ReadingStatus]    Script Date: 30.01.2026 10:15:47 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[ReadingStatus](
+	[Id] [int] NOT NULL,
+	[Code] [nvarchar](20) NOT NULL,
+	[Name] [nvarchar](50) NOT NULL,
+	[Description] [nvarchar](255) NULL,
+	[ColorHex] [nvarchar](7) NULL,
+ CONSTRAINT [PK_ReadingStatus] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+ CONSTRAINT [UQ_ReadingStatus_Code] UNIQUE NONCLUSTERED 
+(
+	[Code] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+ CONSTRAINT [UQ_ReadingStatus_Name] UNIQUE NONCLUSTERED 
+(
+	[Name] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[User]    Script Date: 30.01.2026 10:15:47 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[User](
+	[Id] [int] NOT NULL,
+	[Username] [nvarchar](50) NOT NULL,
+	[PasswordHash] [nvarchar](256) NOT NULL,
+	[FullName] [nvarchar](100) NOT NULL,
+	[Email] [nvarchar](100) NULL,
+	[RoleId] [int] NOT NULL,
+	[IsActive] [bit] NOT NULL,
+	[CreatedAt] [datetime] NOT NULL,
+ CONSTRAINT [PK_User] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+ CONSTRAINT [UQ_User_Email] UNIQUE NONCLUSTERED 
+(
+	[Email] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+ CONSTRAINT [UQ_User_Username] UNIQUE NONCLUSTERED 
+(
+	[Username] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  View [dbo].[ViewCurrentMeterReadings]    Script Date: 30.01.2026 10:15:47 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+-- =============================================
+-- 6. ВИДЫ (VIEWS) для отчетности
+-- =============================================
+
+CREATE VIEW [dbo].[ViewCurrentMeterReadings] AS
+SELECT 
+    mr.Id,
+    m.SerialNumber,
+    co.Name AS ObjectName,
+    co.HouseNumber,
+    co.ApartmentNumber,
+    mr.ReadingDate,
+    mr.Value,
+    rs.Name AS StatusName,
+    rs.ColorHex,
+    u.FullName AS EnteredBy,
+    mr.EnteredAt
+FROM MeterReading mr
+INNER JOIN Meter m ON mr.MeterId = m.Id
+INNER JOIN ConsumptionObject co ON m.ConsumptionObjectId = co.Id
+INNER JOIN ReadingStatus rs ON mr.ReadingStatusId = rs.Id
+INNER JOIN [User] u ON mr.EnteredByUserId = u.Id
+WHERE mr.ReadingDate >= DATEADD(MONTH, -1, GETDATE());
+GO
+/****** Object:  Table [dbo].[Payment]    Script Date: 30.01.2026 10:15:47 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Payment](
+	[Id] [int] NOT NULL,
+	[ConsumptionObjectId] [int] NOT NULL,
+	[PaymentDate] [datetime] NOT NULL,
+	[Amount] [decimal](15, 2) NOT NULL,
+	[PaymentMethodId] [int] NOT NULL,
+	[ReceivedByUserId] [int] NOT NULL,
+	[ReceiptNumber] [nvarchar](50) NULL,
+	[PeriodMonth] [int] NOT NULL,
+	[PeriodYear] [int] NOT NULL,
+ CONSTRAINT [PK_Payment] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+ CONSTRAINT [UQ_Payment_ReceiptNumber] UNIQUE NONCLUSTERED 
+(
+	[ReceiptNumber] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Accrual]    Script Date: 30.01.2026 10:15:47 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Accrual](
+	[Id] [int] NOT NULL,
+	[ConsumptionObjectId] [int] NOT NULL,
+	[PeriodMonth] [int] NOT NULL,
+	[PeriodYear] [int] NOT NULL,
+	[ConsumptionValue] [decimal](15, 4) NOT NULL,
+	[TariffId] [int] NOT NULL,
+	[Amount] [decimal](15, 2) NOT NULL,
+	[IsPaid] [bit] NOT NULL,
+ CONSTRAINT [PK_Accrual] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+ CONSTRAINT [UQ_Accrual_Object_Period] UNIQUE NONCLUSTERED 
+(
+	[ConsumptionObjectId] ASC,
+	[PeriodMonth] ASC,
+	[PeriodYear] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Street]    Script Date: 30.01.2026 10:15:47 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Street](
+	[Id] [int] NOT NULL,
+	[Name] [nvarchar](200) NOT NULL,
+	[CityId] [int] NOT NULL,
+	[PostalCode] [nvarchar](20) NULL,
+ CONSTRAINT [PK_Street] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+ CONSTRAINT [UQ_Street_City_Name] UNIQUE NONCLUSTERED 
+(
+	[Name] ASC,
+	[CityId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  View [dbo].[ViewUnpaidAccruals]    Script Date: 30.01.2026 10:15:47 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE VIEW [dbo].[ViewUnpaidAccruals] AS
+SELECT 
+    co.Name AS ObjectName,
+    s.Name AS StreetName,
+    co.HouseNumber,
+    co.ApartmentNumber,
+    a.PeriodYear,
+    a.PeriodMonth,
+    a.ConsumptionValue,
+    a.Amount,
+    a.IsPaid,
+    (SELECT SUM(p.Amount) 
+     FROM Payment p 
+     WHERE p.ConsumptionObjectId = a.ConsumptionObjectId
+       AND p.PeriodYear = a.PeriodYear
+       AND p.PeriodMonth = a.PeriodMonth) AS PaidAmount
+FROM Accrual a
+INNER JOIN ConsumptionObject co ON a.ConsumptionObjectId = co.Id
+INNER JOIN Street s ON co.StreetId = s.Id
+WHERE a.IsPaid = 0;
+GO
+/****** Object:  Table [dbo].[AuditLog]    Script Date: 30.01.2026 10:15:47 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[AuditLog](
+	[Id] [int] NOT NULL,
+	[UserId] [int] NULL,
+	[ActionTime] [datetime] NOT NULL,
+	[ActionType] [nvarchar](50) NOT NULL,
+	[TableName] [nvarchar](100) NOT NULL,
+	[RecordId] [int] NOT NULL,
+	[OldValuesJson] [nvarchar](max) NULL,
+	[NewValuesJson] [nvarchar](max) NULL,
+	[IpAddress] [nvarchar](45) NULL,
+ CONSTRAINT [PK_AuditLog] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[City]    Script Date: 30.01.2026 10:15:47 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[City](
+	[Id] [int] NOT NULL,
+	[Name] [nvarchar](100) NOT NULL,
+	[RegionId] [int] NOT NULL,
+ CONSTRAINT [PK_City] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+ CONSTRAINT [UQ_City_Region_Name] UNIQUE NONCLUSTERED 
+(
+	[Name] ASC,
+	[RegionId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Contract]    Script Date: 30.01.2026 10:15:47 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Contract](
+	[Id] [int] NOT NULL,
+	[ContractNumber] [nvarchar](50) NOT NULL,
+	[ConsumptionObjectId] [int] NOT NULL,
+	[ContractDate] [date] NOT NULL,
+	[StartDate] [date] NOT NULL,
+	[EndDate] [date] NULL,
+	[ContractStatusId] [int] NOT NULL,
+	[TariffId] [int] NOT NULL,
+ CONSTRAINT [PK_Contract] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+ CONSTRAINT [UQ_Contract_Number] UNIQUE NONCLUSTERED 
+(
+	[ContractNumber] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[ContractStatus]    Script Date: 30.01.2026 10:15:47 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[ContractStatus](
+	[Id] [int] NOT NULL,
+	[Name] [nvarchar](50) NOT NULL,
+	[AllowsBilling] [bit] NOT NULL,
+ CONSTRAINT [PK_ContractStatus] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+ CONSTRAINT [UQ_ContractStatus_Name] UNIQUE NONCLUSTERED 
+(
+	[Name] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[EnergySource]    Script Date: 30.01.2026 10:15:47 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[EnergySource](
+	[Id] [int] NOT NULL,
+	[Name] [nvarchar](100) NOT NULL,
+	[Code] [nvarchar](20) NOT NULL,
+	[CapacityMW] [decimal](10, 2) NULL,
+ CONSTRAINT [PK_EnergySource] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+ CONSTRAINT [UQ_EnergySource_Code] UNIQUE NONCLUSTERED 
+(
+	[Code] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+ CONSTRAINT [UQ_EnergySource_Name] UNIQUE NONCLUSTERED 
+(
+	[Name] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[MeterReplacementHistory]    Script Date: 30.01.2026 10:15:47 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[MeterReplacementHistory](
+	[Id] [int] NOT NULL,
+	[OldMeterId] [int] NOT NULL,
+	[NewMeterId] [int] NOT NULL,
+	[ConsumptionObjectId] [int] NOT NULL,
+	[ReplacementDate] [date] NOT NULL,
+	[Reason] [nvarchar](200) NULL,
+	[LastReadingOld] [decimal](15, 4) NULL,
+	[FirstReadingNew] [decimal](15, 4) NULL,
+ CONSTRAINT [PK_MeterReplacementHistory] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[MeterStatus]    Script Date: 30.01.2026 10:15:47 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[MeterStatus](
+	[Id] [int] NOT NULL,
+	[Name] [nvarchar](50) NOT NULL,
+	[CanAcceptReadings] [bit] NOT NULL,
+ CONSTRAINT [PK_MeterStatus] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+ CONSTRAINT [UQ_MeterStatus_Name] UNIQUE NONCLUSTERED 
+(
+	[Name] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[MeterType]    Script Date: 30.01.2026 10:15:47 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[MeterType](
+	[Id] [int] NOT NULL,
+	[Name] [nvarchar](100) NOT NULL,
+	[Voltage] [int] NOT NULL,
+	[MaxCurrent] [int] NOT NULL,
+	[AccuracyClass] [nvarchar](10) NOT NULL,
+	[DigitCount] [int] NOT NULL,
+	[DecimalPlaces] [int] NOT NULL,
+ CONSTRAINT [PK_MeterType] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+ CONSTRAINT [UQ_MeterType_Name] UNIQUE NONCLUSTERED 
+(
+	[Name] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[ObjectType]    Script Date: 30.01.2026 10:15:47 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[ObjectType](
+	[Id] [int] NOT NULL,
+	[Name] [nvarchar](50) NOT NULL,
+	[NormConsumption] [decimal](10, 2) NULL,
+ CONSTRAINT [PK_ObjectType] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+ CONSTRAINT [UQ_ObjectType_Name] UNIQUE NONCLUSTERED 
+(
+	[Name] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[PaymentMethod]    Script Date: 30.01.2026 10:15:47 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[PaymentMethod](
+	[Id] [int] NOT NULL,
+	[Name] [nvarchar](50) NOT NULL,
+	[RequiresCashier] [bit] NOT NULL,
+ CONSTRAINT [PK_PaymentMethod] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+ CONSTRAINT [UQ_PaymentMethod_Name] UNIQUE NONCLUSTERED 
+(
+	[Name] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Region]    Script Date: 30.01.2026 10:15:47 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Region](
+	[Id] [int] NOT NULL,
+	[Name] [nvarchar](100) NOT NULL,
+	[Code] [nvarchar](10) NULL,
+ CONSTRAINT [PK_Region] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+ CONSTRAINT [UQ_Region_Name] UNIQUE NONCLUSTERED 
+(
+	[Name] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[RejectionReason]    Script Date: 30.01.2026 10:15:47 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[RejectionReason](
+	[Id] [int] NOT NULL,
+	[Name] [nvarchar](100) NOT NULL,
+	[RequiresComment] [bit] NOT NULL,
+ CONSTRAINT [PK_RejectionReason] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+ CONSTRAINT [UQ_RejectionReason_Name] UNIQUE NONCLUSTERED 
+(
+	[Name] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[SupplyPoint]    Script Date: 30.01.2026 10:15:47 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[SupplyPoint](
+	[Id] [int] NOT NULL,
+	[Name] [nvarchar](100) NOT NULL,
+	[EnergySourceId] [int] NOT NULL,
+	[VoltageLevel] [int] NOT NULL,
+	[MaxPower] [decimal](10, 2) NULL,
+ CONSTRAINT [PK_SupplyPoint] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[SupplyPointConsumptionObject]    Script Date: 30.01.2026 10:15:47 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[SupplyPointConsumptionObject](
+	[SupplyPointId] [int] NOT NULL,
+	[ConsumptionObjectId] [int] NOT NULL,
+	[ConnectionDate] [date] NOT NULL,
+	[DisconnectionDate] [date] NULL,
+ CONSTRAINT [PK_SupplyPointConsumptionObject] PRIMARY KEY CLUSTERED 
+(
+	[SupplyPointId] ASC,
+	[ConsumptionObjectId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Tariff]    Script Date: 30.01.2026 10:15:47 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Tariff](
+	[Id] [int] NOT NULL,
+	[TariffTypeId] [int] NOT NULL,
+	[UnitId] [int] NOT NULL,
+	[PricePerUnit] [decimal](10, 4) NOT NULL,
+	[ZoneNumber] [int] NOT NULL,
+	[StartDate] [date] NOT NULL,
+	[EndDate] [date] NULL,
+ CONSTRAINT [PK_Tariff] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[TariffType]    Script Date: 30.01.2026 10:15:47 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TariffType](
+	[Id] [int] NOT NULL,
+	[Name] [nvarchar](50) NOT NULL,
+	[ZoneCount] [int] NOT NULL,
+	[Description] [nvarchar](255) NULL,
+ CONSTRAINT [PK_TariffType] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+ CONSTRAINT [UQ_TariffType_Name] UNIQUE NONCLUSTERED 
+(
+	[Name] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[UnitOfMeasure]    Script Date: 30.01.2026 10:15:47 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[UnitOfMeasure](
+	[Id] [int] NOT NULL,
+	[Name] [nvarchar](20) NOT NULL,
+	[Symbol] [nvarchar](10) NOT NULL,
+	[IsDefault] [bit] NOT NULL,
+ CONSTRAINT [PK_UnitOfMeasure] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+ CONSTRAINT [UQ_UnitOfMeasure_Name] UNIQUE NONCLUSTERED 
+(
+	[Name] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+ CONSTRAINT [UQ_UnitOfMeasure_Symbol] UNIQUE NONCLUSTERED 
+(
+	[Symbol] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[UserRole]    Script Date: 30.01.2026 10:15:47 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[UserRole](
+	[Id] [int] NOT NULL,
+	[Name] [nvarchar](50) NOT NULL,
+	[Description] [nvarchar](255) NULL,
+	[PermissionsJson] [nvarchar](max) NULL,
+ CONSTRAINT [PK_UserRole] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+ CONSTRAINT [UQ_UserRole_Name] UNIQUE NONCLUSTERED 
+(
+	[Name] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[VerificationInterval]    Script Date: 30.01.2026 10:15:47 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[VerificationInterval](
+	[Id] [int] NOT NULL,
+	[MeterTypeId] [int] NOT NULL,
+	[Years] [int] NOT NULL,
+ CONSTRAINT [PK_VerificationInterval] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Index [IX_Accrual_ConsumptionObjectId]    Script Date: 30.01.2026 10:15:47 ******/
+CREATE NONCLUSTERED INDEX [IX_Accrual_ConsumptionObjectId] ON [dbo].[Accrual]
+(
+	[ConsumptionObjectId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+/****** Object:  Index [IX_Accrual_IsPaid]    Script Date: 30.01.2026 10:15:47 ******/
+CREATE NONCLUSTERED INDEX [IX_Accrual_IsPaid] ON [dbo].[Accrual]
+(
+	[IsPaid] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+/****** Object:  Index [IX_Accrual_PeriodYear_PeriodMonth]    Script Date: 30.01.2026 10:15:47 ******/
+CREATE NONCLUSTERED INDEX [IX_Accrual_PeriodYear_PeriodMonth] ON [dbo].[Accrual]
+(
+	[PeriodYear] ASC,
+	[PeriodMonth] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+/****** Object:  Index [IX_AuditLog_ActionTime]    Script Date: 30.01.2026 10:15:47 ******/
+CREATE NONCLUSTERED INDEX [IX_AuditLog_ActionTime] ON [dbo].[AuditLog]
+(
+	[ActionTime] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+SET ANSI_PADDING ON
+GO
+/****** Object:  Index [IX_AuditLog_TableName_RecordId]    Script Date: 30.01.2026 10:15:47 ******/
+CREATE NONCLUSTERED INDEX [IX_AuditLog_TableName_RecordId] ON [dbo].[AuditLog]
+(
+	[TableName] ASC,
+	[RecordId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+/****** Object:  Index [IX_AuditLog_UserId]    Script Date: 30.01.2026 10:15:47 ******/
+CREATE NONCLUSTERED INDEX [IX_AuditLog_UserId] ON [dbo].[AuditLog]
+(
+	[UserId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+/****** Object:  Index [IX_Contract_ConsumptionObjectId]    Script Date: 30.01.2026 10:15:47 ******/
+CREATE NONCLUSTERED INDEX [IX_Contract_ConsumptionObjectId] ON [dbo].[Contract]
+(
+	[ConsumptionObjectId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+/****** Object:  Index [IX_Contract_ContractStatusId]    Script Date: 30.01.2026 10:15:47 ******/
+CREATE NONCLUSTERED INDEX [IX_Contract_ContractStatusId] ON [dbo].[Contract]
+(
+	[ContractStatusId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+/****** Object:  Index [IX_MeterReading_EnteredByUserId]    Script Date: 30.01.2026 10:15:47 ******/
+CREATE NONCLUSTERED INDEX [IX_MeterReading_EnteredByUserId] ON [dbo].[MeterReading]
+(
+	[EnteredByUserId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+/****** Object:  Index [IX_MeterReading_MeterId]    Script Date: 30.01.2026 10:15:47 ******/
+CREATE NONCLUSTERED INDEX [IX_MeterReading_MeterId] ON [dbo].[MeterReading]
+(
+	[MeterId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+/****** Object:  Index [IX_MeterReading_ReadingDate]    Script Date: 30.01.2026 10:15:47 ******/
+CREATE NONCLUSTERED INDEX [IX_MeterReading_ReadingDate] ON [dbo].[MeterReading]
+(
+	[ReadingDate] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+/****** Object:  Index [IX_MeterReading_ReadingStatusId]    Script Date: 30.01.2026 10:15:47 ******/
+CREATE NONCLUSTERED INDEX [IX_MeterReading_ReadingStatusId] ON [dbo].[MeterReading]
+(
+	[ReadingStatusId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+/****** Object:  Index [IX_Payment_ConsumptionObjectId]    Script Date: 30.01.2026 10:15:47 ******/
+CREATE NONCLUSTERED INDEX [IX_Payment_ConsumptionObjectId] ON [dbo].[Payment]
+(
+	[ConsumptionObjectId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+/****** Object:  Index [IX_Payment_PaymentDate]    Script Date: 30.01.2026 10:15:47 ******/
+CREATE NONCLUSTERED INDEX [IX_Payment_PaymentDate] ON [dbo].[Payment]
+(
+	[PaymentDate] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+/****** Object:  Index [IX_Payment_PeriodYear_PeriodMonth]    Script Date: 30.01.2026 10:15:47 ******/
+CREATE NONCLUSTERED INDEX [IX_Payment_PeriodYear_PeriodMonth] ON [dbo].[Payment]
+(
+	[PeriodYear] ASC,
+	[PeriodMonth] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+/****** Object:  Index [IX_User_RoleId]    Script Date: 30.01.2026 10:15:47 ******/
+CREATE NONCLUSTERED INDEX [IX_User_RoleId] ON [dbo].[User]
+(
+	[RoleId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+ALTER TABLE [dbo].[Accrual] ADD  DEFAULT ((0)) FOR [IsPaid]
+GO
+ALTER TABLE [dbo].[AuditLog] ADD  DEFAULT (getdate()) FOR [ActionTime]
+GO
+ALTER TABLE [dbo].[ContractStatus] ADD  DEFAULT ((1)) FOR [AllowsBilling]
+GO
+ALTER TABLE [dbo].[Meter] ADD  DEFAULT ((0)) FOR [InitialReading]
+GO
+ALTER TABLE [dbo].[MeterReading] ADD  DEFAULT (getdate()) FOR [EnteredAt]
+GO
+ALTER TABLE [dbo].[MeterReading] ADD  DEFAULT ((1)) FOR [TariffZone]
+GO
+ALTER TABLE [dbo].[MeterStatus] ADD  DEFAULT ((1)) FOR [CanAcceptReadings]
+GO
+ALTER TABLE [dbo].[MeterType] ADD  DEFAULT ((0)) FOR [DecimalPlaces]
+GO
+ALTER TABLE [dbo].[Payment] ADD  DEFAULT (getdate()) FOR [PaymentDate]
+GO
+ALTER TABLE [dbo].[PaymentMethod] ADD  DEFAULT ((1)) FOR [RequiresCashier]
+GO
+ALTER TABLE [dbo].[RejectionReason] ADD  DEFAULT ((0)) FOR [RequiresComment]
+GO
+ALTER TABLE [dbo].[SupplyPointConsumptionObject] ADD  DEFAULT (getdate()) FOR [ConnectionDate]
+GO
+ALTER TABLE [dbo].[Tariff] ADD  DEFAULT ((1)) FOR [ZoneNumber]
+GO
+ALTER TABLE [dbo].[TariffType] ADD  DEFAULT ((1)) FOR [ZoneCount]
+GO
+ALTER TABLE [dbo].[UnitOfMeasure] ADD  DEFAULT ((0)) FOR [IsDefault]
+GO
+ALTER TABLE [dbo].[User] ADD  DEFAULT ((1)) FOR [IsActive]
+GO
+ALTER TABLE [dbo].[User] ADD  DEFAULT (getdate()) FOR [CreatedAt]
+GO
+ALTER TABLE [dbo].[Accrual]  WITH CHECK ADD  CONSTRAINT [FK_Accrual_ConsumptionObject] FOREIGN KEY([ConsumptionObjectId])
+REFERENCES [dbo].[ConsumptionObject] ([Id])
+GO
+ALTER TABLE [dbo].[Accrual] CHECK CONSTRAINT [FK_Accrual_ConsumptionObject]
+GO
+ALTER TABLE [dbo].[Accrual]  WITH CHECK ADD  CONSTRAINT [FK_Accrual_Tariff] FOREIGN KEY([TariffId])
+REFERENCES [dbo].[Tariff] ([Id])
+GO
+ALTER TABLE [dbo].[Accrual] CHECK CONSTRAINT [FK_Accrual_Tariff]
+GO
+ALTER TABLE [dbo].[AuditLog]  WITH CHECK ADD  CONSTRAINT [FK_AuditLog_User] FOREIGN KEY([UserId])
+REFERENCES [dbo].[User] ([Id])
+GO
+ALTER TABLE [dbo].[AuditLog] CHECK CONSTRAINT [FK_AuditLog_User]
+GO
+ALTER TABLE [dbo].[City]  WITH CHECK ADD  CONSTRAINT [FK_City_Region] FOREIGN KEY([RegionId])
+REFERENCES [dbo].[Region] ([Id])
+GO
+ALTER TABLE [dbo].[City] CHECK CONSTRAINT [FK_City_Region]
+GO
+ALTER TABLE [dbo].[ConsumptionObject]  WITH CHECK ADD  CONSTRAINT [FK_ConsumptionObject_ObjectType] FOREIGN KEY([ObjectTypeId])
+REFERENCES [dbo].[ObjectType] ([Id])
+GO
+ALTER TABLE [dbo].[ConsumptionObject] CHECK CONSTRAINT [FK_ConsumptionObject_ObjectType]
+GO
+ALTER TABLE [dbo].[ConsumptionObject]  WITH CHECK ADD  CONSTRAINT [FK_ConsumptionObject_Street] FOREIGN KEY([StreetId])
+REFERENCES [dbo].[Street] ([Id])
+GO
+ALTER TABLE [dbo].[ConsumptionObject] CHECK CONSTRAINT [FK_ConsumptionObject_Street]
+GO
+ALTER TABLE [dbo].[Contract]  WITH CHECK ADD  CONSTRAINT [FK_Contract_ConsumptionObject] FOREIGN KEY([ConsumptionObjectId])
+REFERENCES [dbo].[ConsumptionObject] ([Id])
+GO
+ALTER TABLE [dbo].[Contract] CHECK CONSTRAINT [FK_Contract_ConsumptionObject]
+GO
+ALTER TABLE [dbo].[Contract]  WITH CHECK ADD  CONSTRAINT [FK_Contract_ContractStatus] FOREIGN KEY([ContractStatusId])
+REFERENCES [dbo].[ContractStatus] ([Id])
+GO
+ALTER TABLE [dbo].[Contract] CHECK CONSTRAINT [FK_Contract_ContractStatus]
+GO
+ALTER TABLE [dbo].[Contract]  WITH CHECK ADD  CONSTRAINT [FK_Contract_Tariff] FOREIGN KEY([TariffId])
+REFERENCES [dbo].[Tariff] ([Id])
+GO
+ALTER TABLE [dbo].[Contract] CHECK CONSTRAINT [FK_Contract_Tariff]
+GO
+ALTER TABLE [dbo].[Meter]  WITH CHECK ADD  CONSTRAINT [FK_Meter_ConsumptionObject] FOREIGN KEY([ConsumptionObjectId])
+REFERENCES [dbo].[ConsumptionObject] ([Id])
+GO
+ALTER TABLE [dbo].[Meter] CHECK CONSTRAINT [FK_Meter_ConsumptionObject]
+GO
+ALTER TABLE [dbo].[Meter]  WITH CHECK ADD  CONSTRAINT [FK_Meter_MeterStatus] FOREIGN KEY([MeterStatusId])
+REFERENCES [dbo].[MeterStatus] ([Id])
+GO
+ALTER TABLE [dbo].[Meter] CHECK CONSTRAINT [FK_Meter_MeterStatus]
+GO
+ALTER TABLE [dbo].[Meter]  WITH CHECK ADD  CONSTRAINT [FK_Meter_MeterType] FOREIGN KEY([MeterTypeId])
+REFERENCES [dbo].[MeterType] ([Id])
+GO
+ALTER TABLE [dbo].[Meter] CHECK CONSTRAINT [FK_Meter_MeterType]
+GO
+ALTER TABLE [dbo].[MeterReading]  WITH CHECK ADD  CONSTRAINT [FK_MeterReading_Meter] FOREIGN KEY([MeterId])
+REFERENCES [dbo].[Meter] ([Id])
+GO
+ALTER TABLE [dbo].[MeterReading] CHECK CONSTRAINT [FK_MeterReading_Meter]
+GO
+ALTER TABLE [dbo].[MeterReading]  WITH CHECK ADD  CONSTRAINT [FK_MeterReading_ReadingStatus] FOREIGN KEY([ReadingStatusId])
+REFERENCES [dbo].[ReadingStatus] ([Id])
+GO
+ALTER TABLE [dbo].[MeterReading] CHECK CONSTRAINT [FK_MeterReading_ReadingStatus]
+GO
+ALTER TABLE [dbo].[MeterReading]  WITH CHECK ADD  CONSTRAINT [FK_MeterReading_RejectionReason] FOREIGN KEY([RejectionReasonId])
+REFERENCES [dbo].[RejectionReason] ([Id])
+GO
+ALTER TABLE [dbo].[MeterReading] CHECK CONSTRAINT [FK_MeterReading_RejectionReason]
+GO
+ALTER TABLE [dbo].[MeterReading]  WITH CHECK ADD  CONSTRAINT [FK_MeterReading_User] FOREIGN KEY([EnteredByUserId])
+REFERENCES [dbo].[User] ([Id])
+GO
+ALTER TABLE [dbo].[MeterReading] CHECK CONSTRAINT [FK_MeterReading_User]
+GO
+ALTER TABLE [dbo].[MeterReplacementHistory]  WITH CHECK ADD  CONSTRAINT [FK_MeterReplacementHistory_ConsumptionObject] FOREIGN KEY([ConsumptionObjectId])
+REFERENCES [dbo].[ConsumptionObject] ([Id])
+GO
+ALTER TABLE [dbo].[MeterReplacementHistory] CHECK CONSTRAINT [FK_MeterReplacementHistory_ConsumptionObject]
+GO
+ALTER TABLE [dbo].[MeterReplacementHistory]  WITH CHECK ADD  CONSTRAINT [FK_MeterReplacementHistory_NewMeter] FOREIGN KEY([NewMeterId])
+REFERENCES [dbo].[Meter] ([Id])
+GO
+ALTER TABLE [dbo].[MeterReplacementHistory] CHECK CONSTRAINT [FK_MeterReplacementHistory_NewMeter]
+GO
+ALTER TABLE [dbo].[MeterReplacementHistory]  WITH CHECK ADD  CONSTRAINT [FK_MeterReplacementHistory_OldMeter] FOREIGN KEY([OldMeterId])
+REFERENCES [dbo].[Meter] ([Id])
+GO
+ALTER TABLE [dbo].[MeterReplacementHistory] CHECK CONSTRAINT [FK_MeterReplacementHistory_OldMeter]
+GO
+ALTER TABLE [dbo].[Payment]  WITH CHECK ADD  CONSTRAINT [FK_Payment_ConsumptionObject] FOREIGN KEY([ConsumptionObjectId])
+REFERENCES [dbo].[ConsumptionObject] ([Id])
+GO
+ALTER TABLE [dbo].[Payment] CHECK CONSTRAINT [FK_Payment_ConsumptionObject]
+GO
+ALTER TABLE [dbo].[Payment]  WITH CHECK ADD  CONSTRAINT [FK_Payment_PaymentMethod] FOREIGN KEY([PaymentMethodId])
+REFERENCES [dbo].[PaymentMethod] ([Id])
+GO
+ALTER TABLE [dbo].[Payment] CHECK CONSTRAINT [FK_Payment_PaymentMethod]
+GO
+ALTER TABLE [dbo].[Payment]  WITH CHECK ADD  CONSTRAINT [FK_Payment_User] FOREIGN KEY([ReceivedByUserId])
+REFERENCES [dbo].[User] ([Id])
+GO
+ALTER TABLE [dbo].[Payment] CHECK CONSTRAINT [FK_Payment_User]
+GO
+ALTER TABLE [dbo].[Street]  WITH CHECK ADD  CONSTRAINT [FK_Street_City] FOREIGN KEY([CityId])
+REFERENCES [dbo].[City] ([Id])
+GO
+ALTER TABLE [dbo].[Street] CHECK CONSTRAINT [FK_Street_City]
+GO
+ALTER TABLE [dbo].[SupplyPoint]  WITH CHECK ADD  CONSTRAINT [FK_SupplyPoint_EnergySource] FOREIGN KEY([EnergySourceId])
+REFERENCES [dbo].[EnergySource] ([Id])
+GO
+ALTER TABLE [dbo].[SupplyPoint] CHECK CONSTRAINT [FK_SupplyPoint_EnergySource]
+GO
+ALTER TABLE [dbo].[SupplyPointConsumptionObject]  WITH CHECK ADD  CONSTRAINT [FK_SupplyPointConsumptionObject_ConsumptionObject] FOREIGN KEY([ConsumptionObjectId])
+REFERENCES [dbo].[ConsumptionObject] ([Id])
+GO
+ALTER TABLE [dbo].[SupplyPointConsumptionObject] CHECK CONSTRAINT [FK_SupplyPointConsumptionObject_ConsumptionObject]
+GO
+ALTER TABLE [dbo].[SupplyPointConsumptionObject]  WITH CHECK ADD  CONSTRAINT [FK_SupplyPointConsumptionObject_SupplyPoint] FOREIGN KEY([SupplyPointId])
+REFERENCES [dbo].[SupplyPoint] ([Id])
+GO
+ALTER TABLE [dbo].[SupplyPointConsumptionObject] CHECK CONSTRAINT [FK_SupplyPointConsumptionObject_SupplyPoint]
+GO
+ALTER TABLE [dbo].[Tariff]  WITH CHECK ADD  CONSTRAINT [FK_Tariff_TariffType] FOREIGN KEY([TariffTypeId])
+REFERENCES [dbo].[TariffType] ([Id])
+GO
+ALTER TABLE [dbo].[Tariff] CHECK CONSTRAINT [FK_Tariff_TariffType]
+GO
+ALTER TABLE [dbo].[Tariff]  WITH CHECK ADD  CONSTRAINT [FK_Tariff_UnitOfMeasure] FOREIGN KEY([UnitId])
+REFERENCES [dbo].[UnitOfMeasure] ([Id])
+GO
+ALTER TABLE [dbo].[Tariff] CHECK CONSTRAINT [FK_Tariff_UnitOfMeasure]
+GO
+ALTER TABLE [dbo].[User]  WITH CHECK ADD  CONSTRAINT [FK_User_UserRole] FOREIGN KEY([RoleId])
+REFERENCES [dbo].[UserRole] ([Id])
+GO
+ALTER TABLE [dbo].[User] CHECK CONSTRAINT [FK_User_UserRole]
+GO
+ALTER TABLE [dbo].[VerificationInterval]  WITH CHECK ADD  CONSTRAINT [FK_VerificationInterval_MeterType] FOREIGN KEY([MeterTypeId])
+REFERENCES [dbo].[MeterType] ([Id])
+GO
+ALTER TABLE [dbo].[VerificationInterval] CHECK CONSTRAINT [FK_VerificationInterval_MeterType]
+GO
+ALTER TABLE [dbo].[Accrual]  WITH CHECK ADD  CONSTRAINT [CHK_Accrual_Amount] CHECK  (([Amount]>=(0)))
+GO
+ALTER TABLE [dbo].[Accrual] CHECK CONSTRAINT [CHK_Accrual_Amount]
+GO
+ALTER TABLE [dbo].[Accrual]  WITH CHECK ADD  CONSTRAINT [CHK_Accrual_Consumption] CHECK  (([ConsumptionValue]>=(0)))
+GO
+ALTER TABLE [dbo].[Accrual] CHECK CONSTRAINT [CHK_Accrual_Consumption]
+GO
+ALTER TABLE [dbo].[Accrual]  WITH CHECK ADD  CONSTRAINT [CHK_Accrual_PeriodMonth] CHECK  (([PeriodMonth]>=(1) AND [PeriodMonth]<=(12)))
+GO
+ALTER TABLE [dbo].[Accrual] CHECK CONSTRAINT [CHK_Accrual_PeriodMonth]
+GO
+ALTER TABLE [dbo].[Accrual]  WITH CHECK ADD  CONSTRAINT [CHK_Accrual_PeriodYear] CHECK  (([PeriodYear]>=(2000) AND [PeriodYear]<=(2100)))
+GO
+ALTER TABLE [dbo].[Accrual] CHECK CONSTRAINT [CHK_Accrual_PeriodYear]
+GO
+ALTER TABLE [dbo].[Contract]  WITH CHECK ADD  CONSTRAINT [CHK_Contract_Dates] CHECK  (([StartDate]>=[ContractDate] AND ([EndDate] IS NULL OR [EndDate]>[StartDate])))
+GO
+ALTER TABLE [dbo].[Contract] CHECK CONSTRAINT [CHK_Contract_Dates]
+GO
+ALTER TABLE [dbo].[Meter]  WITH CHECK ADD  CONSTRAINT [CHK_Meter_Dates] CHECK  (([VerificationDate]<=[NextVerificationDate]))
+GO
+ALTER TABLE [dbo].[Meter] CHECK CONSTRAINT [CHK_Meter_Dates]
+GO
+ALTER TABLE [dbo].[MeterReading]  WITH CHECK ADD  CONSTRAINT [CHK_MeterReading_TariffZone] CHECK  (([TariffZone]>=(1) AND [TariffZone]<=(3)))
+GO
+ALTER TABLE [dbo].[MeterReading] CHECK CONSTRAINT [CHK_MeterReading_TariffZone]
+GO
+ALTER TABLE [dbo].[MeterReading]  WITH CHECK ADD  CONSTRAINT [CHK_MeterReading_Value] CHECK  (([Value]>=(0)))
+GO
+ALTER TABLE [dbo].[MeterReading] CHECK CONSTRAINT [CHK_MeterReading_Value]
+GO
+ALTER TABLE [dbo].[MeterReplacementHistory]  WITH CHECK ADD  CONSTRAINT [CHK_MeterReplacementHistory_Meters] CHECK  (([OldMeterId]<>[NewMeterId]))
+GO
+ALTER TABLE [dbo].[MeterReplacementHistory] CHECK CONSTRAINT [CHK_MeterReplacementHistory_Meters]
+GO
+ALTER TABLE [dbo].[MeterType]  WITH CHECK ADD  CONSTRAINT [CHK_MeterType_DecimalPlaces] CHECK  (([DecimalPlaces]>=(0) AND [DecimalPlaces]<=(4)))
+GO
+ALTER TABLE [dbo].[MeterType] CHECK CONSTRAINT [CHK_MeterType_DecimalPlaces]
+GO
+ALTER TABLE [dbo].[MeterType]  WITH CHECK ADD  CONSTRAINT [CHK_MeterType_DigitCount] CHECK  (([DigitCount]>=(1) AND [DigitCount]<=(10)))
+GO
+ALTER TABLE [dbo].[MeterType] CHECK CONSTRAINT [CHK_MeterType_DigitCount]
+GO
+ALTER TABLE [dbo].[MeterType]  WITH CHECK ADD  CONSTRAINT [CHK_MeterType_Voltage] CHECK  (([Voltage]=(380) OR [Voltage]=(220)))
+GO
+ALTER TABLE [dbo].[MeterType] CHECK CONSTRAINT [CHK_MeterType_Voltage]
+GO
+ALTER TABLE [dbo].[Payment]  WITH CHECK ADD  CONSTRAINT [CHK_Payment_Amount] CHECK  (([Amount]>(0)))
+GO
+ALTER TABLE [dbo].[Payment] CHECK CONSTRAINT [CHK_Payment_Amount]
+GO
+ALTER TABLE [dbo].[Payment]  WITH CHECK ADD  CONSTRAINT [CHK_Payment_PeriodMonth] CHECK  (([PeriodMonth]>=(1) AND [PeriodMonth]<=(12)))
+GO
+ALTER TABLE [dbo].[Payment] CHECK CONSTRAINT [CHK_Payment_PeriodMonth]
+GO
+ALTER TABLE [dbo].[Payment]  WITH CHECK ADD  CONSTRAINT [CHK_Payment_PeriodYear] CHECK  (([PeriodYear]>=(2000) AND [PeriodYear]<=(2100)))
+GO
+ALTER TABLE [dbo].[Payment] CHECK CONSTRAINT [CHK_Payment_PeriodYear]
+GO
+ALTER TABLE [dbo].[SupplyPointConsumptionObject]  WITH CHECK ADD  CONSTRAINT [CHK_SupplyPointConsumptionObject_Dates] CHECK  (([DisconnectionDate] IS NULL OR [DisconnectionDate]>[ConnectionDate]))
+GO
+ALTER TABLE [dbo].[SupplyPointConsumptionObject] CHECK CONSTRAINT [CHK_SupplyPointConsumptionObject_Dates]
+GO
+ALTER TABLE [dbo].[Tariff]  WITH CHECK ADD  CONSTRAINT [CHK_Tariff_Dates] CHECK  (([EndDate] IS NULL OR [EndDate]>[StartDate]))
+GO
+ALTER TABLE [dbo].[Tariff] CHECK CONSTRAINT [CHK_Tariff_Dates]
+GO
+ALTER TABLE [dbo].[Tariff]  WITH CHECK ADD  CONSTRAINT [CHK_Tariff_Price] CHECK  (([PricePerUnit]>(0)))
+GO
+ALTER TABLE [dbo].[Tariff] CHECK CONSTRAINT [CHK_Tariff_Price]
+GO
+ALTER TABLE [dbo].[Tariff]  WITH CHECK ADD  CONSTRAINT [CHK_Tariff_ZoneNumber] CHECK  (([ZoneNumber]>=(1) AND [ZoneNumber]<=(3)))
+GO
+ALTER TABLE [dbo].[Tariff] CHECK CONSTRAINT [CHK_Tariff_ZoneNumber]
+GO
+ALTER TABLE [dbo].[TariffType]  WITH CHECK ADD  CONSTRAINT [CHK_TariffType_ZoneCount] CHECK  (([ZoneCount]=(3) OR [ZoneCount]=(2) OR [ZoneCount]=(1)))
+GO
+ALTER TABLE [dbo].[TariffType] CHECK CONSTRAINT [CHK_TariffType_ZoneCount]
+GO
+ALTER TABLE [dbo].[VerificationInterval]  WITH CHECK ADD  CONSTRAINT [CHK_VerificationInterval_Years] CHECK  (([Years]>(0)))
+GO
+ALTER TABLE [dbo].[VerificationInterval] CHECK CONSTRAINT [CHK_VerificationInterval_Years]
+GO
+/****** Object:  StoredProcedure [dbo].[CalculateAccrualForPeriod]    Script Date: 30.01.2026 10:15:47 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+-- =============================================
+-- 7. ПРОЦЕДУРЫ для часто выполняемых операций
+-- =============================================

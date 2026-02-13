@@ -1,0 +1,2034 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="3.0" xmlns:edmx="http://schemas.microsoft.com/ado/2009/11/edmx">
+  <!-- EF Runtime content -->
+  <edmx:Runtime>
+    <!-- SSDL content -->
+    <edmx:StorageModels>
+      <Schema Namespace="Хранилище EnergyMeteringSystemModel" Provider="System.Data.SqlClient" ProviderManifestToken="2008" Alias="Self" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm/ssdl">
+        <EntityType Name="Accrual">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="int" Nullable="false" />
+          <Property Name="ConsumptionObjectId" Type="int" Nullable="false" />
+          <Property Name="PeriodMonth" Type="int" Nullable="false" />
+          <Property Name="PeriodYear" Type="int" Nullable="false" />
+          <Property Name="ConsumptionValue" Type="decimal" Precision="15" Scale="4" Nullable="false" />
+          <Property Name="TariffId" Type="int" Nullable="false" />
+          <Property Name="Amount" Type="decimal" Precision="15" Scale="2" Nullable="false" />
+          <Property Name="IsPaid" Type="bit" Nullable="false" />
+        </EntityType>
+        <EntityType Name="AuditLog">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="int" Nullable="false" />
+          <Property Name="UserId" Type="int" />
+          <Property Name="ActionTime" Type="datetime" Nullable="false" />
+          <Property Name="ActionType" Type="nvarchar" MaxLength="50" Nullable="false" />
+          <Property Name="TableName" Type="nvarchar" MaxLength="100" Nullable="false" />
+          <Property Name="RecordId" Type="int" Nullable="false" />
+          <Property Name="OldValuesJson" Type="nvarchar(max)" />
+          <Property Name="NewValuesJson" Type="nvarchar(max)" />
+          <Property Name="IpAddress" Type="nvarchar" MaxLength="45" />
+        </EntityType>
+        <EntityType Name="City">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="int" Nullable="false" />
+          <Property Name="Name" Type="nvarchar" MaxLength="100" Nullable="false" />
+          <Property Name="RegionId" Type="int" Nullable="false" />
+        </EntityType>
+        <EntityType Name="ConsumptionObject">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="int" Nullable="false" />
+          <Property Name="Name" Type="nvarchar" MaxLength="200" Nullable="false" />
+          <Property Name="ObjectTypeId" Type="int" Nullable="false" />
+          <Property Name="StreetId" Type="int" Nullable="false" />
+          <Property Name="HouseNumber" Type="nvarchar" MaxLength="10" Nullable="false" />
+          <Property Name="ApartmentNumber" Type="nvarchar" MaxLength="10" />
+          <Property Name="TotalArea" Type="decimal" Precision="8" Scale="2" />
+          <Property Name="ResidentCount" Type="int" />
+        </EntityType>
+        <EntityType Name="Contract">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="int" Nullable="false" />
+          <Property Name="ContractNumber" Type="nvarchar" MaxLength="50" Nullable="false" />
+          <Property Name="ConsumptionObjectId" Type="int" Nullable="false" />
+          <Property Name="ContractDate" Type="date" Nullable="false" />
+          <Property Name="StartDate" Type="date" Nullable="false" />
+          <Property Name="EndDate" Type="date" />
+          <Property Name="ContractStatusId" Type="int" Nullable="false" />
+          <Property Name="TariffId" Type="int" Nullable="false" />
+        </EntityType>
+        <EntityType Name="ContractStatus">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="int" Nullable="false" />
+          <Property Name="Name" Type="nvarchar" MaxLength="50" Nullable="false" />
+          <Property Name="AllowsBilling" Type="bit" Nullable="false" />
+        </EntityType>
+        <EntityType Name="EnergySource">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="int" Nullable="false" />
+          <Property Name="Name" Type="nvarchar" MaxLength="100" Nullable="false" />
+          <Property Name="Code" Type="nvarchar" MaxLength="20" Nullable="false" />
+          <Property Name="CapacityMW" Type="decimal" Precision="10" Scale="2" />
+        </EntityType>
+        <EntityType Name="Meter">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="int" Nullable="false" />
+          <Property Name="SerialNumber" Type="nvarchar" MaxLength="50" Nullable="false" />
+          <Property Name="MeterTypeId" Type="int" Nullable="false" />
+          <Property Name="ConsumptionObjectId" Type="int" Nullable="false" />
+          <Property Name="InstallationDate" Type="date" Nullable="false" />
+          <Property Name="InitialReading" Type="decimal" Precision="15" Scale="4" Nullable="false" />
+          <Property Name="MeterStatusId" Type="int" Nullable="false" />
+          <Property Name="VerificationDate" Type="date" />
+          <Property Name="NextVerificationDate" Type="date" />
+        </EntityType>
+        <EntityType Name="MeterReading">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="int" Nullable="false" />
+          <Property Name="MeterId" Type="int" Nullable="false" />
+          <Property Name="ReadingDate" Type="date" Nullable="false" />
+          <Property Name="Value" Type="decimal" Precision="15" Scale="4" Nullable="false" />
+          <Property Name="EnteredAt" Type="datetime" Nullable="false" />
+          <Property Name="EnteredByUserId" Type="int" Nullable="false" />
+          <Property Name="ReadingStatusId" Type="int" Nullable="false" />
+          <Property Name="RejectionReasonId" Type="int" />
+          <Property Name="Comment" Type="nvarchar" MaxLength="500" />
+          <Property Name="TariffZone" Type="int" Nullable="false" />
+        </EntityType>
+        <EntityType Name="MeterReplacementHistory">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="int" Nullable="false" />
+          <Property Name="OldMeterId" Type="int" Nullable="false" />
+          <Property Name="NewMeterId" Type="int" Nullable="false" />
+          <Property Name="ConsumptionObjectId" Type="int" Nullable="false" />
+          <Property Name="ReplacementDate" Type="date" Nullable="false" />
+          <Property Name="Reason" Type="nvarchar" MaxLength="200" />
+          <Property Name="LastReadingOld" Type="decimal" Precision="15" Scale="4" />
+          <Property Name="FirstReadingNew" Type="decimal" Precision="15" Scale="4" />
+        </EntityType>
+        <EntityType Name="MeterStatus">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="int" Nullable="false" />
+          <Property Name="Name" Type="nvarchar" MaxLength="50" Nullable="false" />
+          <Property Name="CanAcceptReadings" Type="bit" Nullable="false" />
+        </EntityType>
+        <EntityType Name="MeterType">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="int" Nullable="false" />
+          <Property Name="Name" Type="nvarchar" MaxLength="100" Nullable="false" />
+          <Property Name="Voltage" Type="int" Nullable="false" />
+          <Property Name="MaxCurrent" Type="int" Nullable="false" />
+          <Property Name="AccuracyClass" Type="nvarchar" MaxLength="10" Nullable="false" />
+          <Property Name="DigitCount" Type="int" Nullable="false" />
+          <Property Name="DecimalPlaces" Type="int" Nullable="false" />
+        </EntityType>
+        <EntityType Name="ObjectType">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="int" Nullable="false" />
+          <Property Name="Name" Type="nvarchar" MaxLength="50" Nullable="false" />
+          <Property Name="NormConsumption" Type="decimal" Precision="10" Scale="2" />
+        </EntityType>
+        <EntityType Name="Payment">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="int" Nullable="false" />
+          <Property Name="ConsumptionObjectId" Type="int" Nullable="false" />
+          <Property Name="PaymentDate" Type="datetime" Nullable="false" />
+          <Property Name="Amount" Type="decimal" Precision="15" Scale="2" Nullable="false" />
+          <Property Name="PaymentMethodId" Type="int" Nullable="false" />
+          <Property Name="ReceivedByUserId" Type="int" Nullable="false" />
+          <Property Name="ReceiptNumber" Type="nvarchar" MaxLength="50" />
+          <Property Name="PeriodMonth" Type="int" Nullable="false" />
+          <Property Name="PeriodYear" Type="int" Nullable="false" />
+        </EntityType>
+        <EntityType Name="PaymentMethod">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="int" Nullable="false" />
+          <Property Name="Name" Type="nvarchar" MaxLength="50" Nullable="false" />
+          <Property Name="RequiresCashier" Type="bit" Nullable="false" />
+        </EntityType>
+        <EntityType Name="ReadingStatus">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="int" Nullable="false" />
+          <Property Name="Code" Type="nvarchar" MaxLength="20" Nullable="false" />
+          <Property Name="Name" Type="nvarchar" MaxLength="50" Nullable="false" />
+          <Property Name="Description" Type="nvarchar" MaxLength="255" />
+          <Property Name="ColorHex" Type="nvarchar" MaxLength="7" />
+        </EntityType>
+        <EntityType Name="Region">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="int" Nullable="false" />
+          <Property Name="Name" Type="nvarchar" MaxLength="100" Nullable="false" />
+          <Property Name="Code" Type="nvarchar" MaxLength="10" />
+        </EntityType>
+        <EntityType Name="RejectionReason">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="int" Nullable="false" />
+          <Property Name="Name" Type="nvarchar" MaxLength="100" Nullable="false" />
+          <Property Name="RequiresComment" Type="bit" Nullable="false" />
+        </EntityType>
+        <EntityType Name="Street">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="int" Nullable="false" />
+          <Property Name="Name" Type="nvarchar" MaxLength="200" Nullable="false" />
+          <Property Name="CityId" Type="int" Nullable="false" />
+          <Property Name="PostalCode" Type="nvarchar" MaxLength="20" />
+        </EntityType>
+        <EntityType Name="SupplyPoint">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="int" Nullable="false" />
+          <Property Name="Name" Type="nvarchar" MaxLength="100" Nullable="false" />
+          <Property Name="EnergySourceId" Type="int" Nullable="false" />
+          <Property Name="VoltageLevel" Type="int" Nullable="false" />
+          <Property Name="MaxPower" Type="decimal" Precision="10" Scale="2" />
+        </EntityType>
+        <EntityType Name="SupplyPointConsumptionObject">
+          <Key>
+            <PropertyRef Name="SupplyPointId" />
+            <PropertyRef Name="ConsumptionObjectId" />
+          </Key>
+          <Property Name="SupplyPointId" Type="int" Nullable="false" />
+          <Property Name="ConsumptionObjectId" Type="int" Nullable="false" />
+          <Property Name="ConnectionDate" Type="date" Nullable="false" />
+          <Property Name="DisconnectionDate" Type="date" />
+        </EntityType>
+        <EntityType Name="sysdiagrams">
+          <Key>
+            <PropertyRef Name="diagram_id" />
+          </Key>
+          <Property Name="name" Type="nvarchar" MaxLength="128" Nullable="false" />
+          <Property Name="principal_id" Type="int" Nullable="false" />
+          <Property Name="diagram_id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="version" Type="int" />
+          <Property Name="definition" Type="varbinary(max)" />
+        </EntityType>
+        <EntityType Name="Tariff">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="int" Nullable="false" />
+          <Property Name="TariffTypeId" Type="int" Nullable="false" />
+          <Property Name="UnitId" Type="int" Nullable="false" />
+          <Property Name="PricePerUnit" Type="decimal" Precision="10" Scale="4" Nullable="false" />
+          <Property Name="ZoneNumber" Type="int" Nullable="false" />
+          <Property Name="StartDate" Type="date" Nullable="false" />
+          <Property Name="EndDate" Type="date" />
+        </EntityType>
+        <EntityType Name="TariffType">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="int" Nullable="false" />
+          <Property Name="Name" Type="nvarchar" MaxLength="50" Nullable="false" />
+          <Property Name="ZoneCount" Type="int" Nullable="false" />
+          <Property Name="Description" Type="nvarchar" MaxLength="255" />
+        </EntityType>
+        <EntityType Name="UnitOfMeasure">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="int" Nullable="false" />
+          <Property Name="Name" Type="nvarchar" MaxLength="20" Nullable="false" />
+          <Property Name="Symbol" Type="nvarchar" MaxLength="10" Nullable="false" />
+          <Property Name="IsDefault" Type="bit" Nullable="false" />
+        </EntityType>
+        <EntityType Name="User">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="int" Nullable="false" />
+          <Property Name="Username" Type="nvarchar" MaxLength="50" Nullable="false" />
+          <Property Name="PasswordHash" Type="nvarchar" MaxLength="256" Nullable="false" />
+          <Property Name="FullName" Type="nvarchar" MaxLength="100" Nullable="false" />
+          <Property Name="Email" Type="nvarchar" MaxLength="100" />
+          <Property Name="RoleId" Type="int" Nullable="false" />
+          <Property Name="IsActive" Type="bit" Nullable="false" />
+          <Property Name="CreatedAt" Type="datetime" Nullable="false" />
+        </EntityType>
+        <EntityType Name="UserRole">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="int" Nullable="false" />
+          <Property Name="Name" Type="nvarchar" MaxLength="50" Nullable="false" />
+          <Property Name="Description" Type="nvarchar" MaxLength="255" />
+          <Property Name="PermissionsJson" Type="nvarchar(max)" />
+        </EntityType>
+        <EntityType Name="VerificationInterval">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="int" Nullable="false" />
+          <Property Name="MeterTypeId" Type="int" Nullable="false" />
+          <Property Name="Years" Type="int" Nullable="false" />
+        </EntityType>
+        <Association Name="FK_Accrual_ConsumptionObject">
+          <End Role="ConsumptionObject" Type="Self.ConsumptionObject" Multiplicity="1" />
+          <End Role="Accrual" Type="Self.Accrual" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="ConsumptionObject">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="Accrual">
+              <PropertyRef Name="ConsumptionObjectId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Accrual_Tariff">
+          <End Role="Tariff" Type="Self.Tariff" Multiplicity="1" />
+          <End Role="Accrual" Type="Self.Accrual" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Tariff">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="Accrual">
+              <PropertyRef Name="TariffId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_AuditLog_User">
+          <End Role="User" Type="Self.User" Multiplicity="0..1" />
+          <End Role="AuditLog" Type="Self.AuditLog" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="User">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="AuditLog">
+              <PropertyRef Name="UserId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_City_Region">
+          <End Role="Region" Type="Self.Region" Multiplicity="1" />
+          <End Role="City" Type="Self.City" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Region">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="City">
+              <PropertyRef Name="RegionId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_ConsumptionObject_ObjectType">
+          <End Role="ObjectType" Type="Self.ObjectType" Multiplicity="1" />
+          <End Role="ConsumptionObject" Type="Self.ConsumptionObject" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="ObjectType">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="ConsumptionObject">
+              <PropertyRef Name="ObjectTypeId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_ConsumptionObject_Street">
+          <End Role="Street" Type="Self.Street" Multiplicity="1" />
+          <End Role="ConsumptionObject" Type="Self.ConsumptionObject" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Street">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="ConsumptionObject">
+              <PropertyRef Name="StreetId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Contract_ConsumptionObject">
+          <End Role="ConsumptionObject" Type="Self.ConsumptionObject" Multiplicity="1" />
+          <End Role="Contract" Type="Self.Contract" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="ConsumptionObject">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="Contract">
+              <PropertyRef Name="ConsumptionObjectId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Contract_ContractStatus">
+          <End Role="ContractStatus" Type="Self.ContractStatus" Multiplicity="1" />
+          <End Role="Contract" Type="Self.Contract" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="ContractStatus">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="Contract">
+              <PropertyRef Name="ContractStatusId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Contract_Tariff">
+          <End Role="Tariff" Type="Self.Tariff" Multiplicity="1" />
+          <End Role="Contract" Type="Self.Contract" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Tariff">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="Contract">
+              <PropertyRef Name="TariffId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Meter_ConsumptionObject">
+          <End Role="ConsumptionObject" Type="Self.ConsumptionObject" Multiplicity="1" />
+          <End Role="Meter" Type="Self.Meter" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="ConsumptionObject">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="Meter">
+              <PropertyRef Name="ConsumptionObjectId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Meter_MeterStatus">
+          <End Role="MeterStatus" Type="Self.MeterStatus" Multiplicity="1" />
+          <End Role="Meter" Type="Self.Meter" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="MeterStatus">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="Meter">
+              <PropertyRef Name="MeterStatusId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Meter_MeterType">
+          <End Role="MeterType" Type="Self.MeterType" Multiplicity="1" />
+          <End Role="Meter" Type="Self.Meter" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="MeterType">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="Meter">
+              <PropertyRef Name="MeterTypeId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_MeterReading_Meter">
+          <End Role="Meter" Type="Self.Meter" Multiplicity="1" />
+          <End Role="MeterReading" Type="Self.MeterReading" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Meter">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="MeterReading">
+              <PropertyRef Name="MeterId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_MeterReading_ReadingStatus">
+          <End Role="ReadingStatus" Type="Self.ReadingStatus" Multiplicity="1" />
+          <End Role="MeterReading" Type="Self.MeterReading" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="ReadingStatus">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="MeterReading">
+              <PropertyRef Name="ReadingStatusId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_MeterReading_RejectionReason">
+          <End Role="RejectionReason" Type="Self.RejectionReason" Multiplicity="0..1" />
+          <End Role="MeterReading" Type="Self.MeterReading" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="RejectionReason">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="MeterReading">
+              <PropertyRef Name="RejectionReasonId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_MeterReading_User">
+          <End Role="User" Type="Self.User" Multiplicity="1" />
+          <End Role="MeterReading" Type="Self.MeterReading" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="User">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="MeterReading">
+              <PropertyRef Name="EnteredByUserId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_MeterReplacementHistory_ConsumptionObject">
+          <End Role="ConsumptionObject" Type="Self.ConsumptionObject" Multiplicity="1" />
+          <End Role="MeterReplacementHistory" Type="Self.MeterReplacementHistory" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="ConsumptionObject">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="MeterReplacementHistory">
+              <PropertyRef Name="ConsumptionObjectId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_MeterReplacementHistory_NewMeter">
+          <End Role="Meter" Type="Self.Meter" Multiplicity="1" />
+          <End Role="MeterReplacementHistory" Type="Self.MeterReplacementHistory" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Meter">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="MeterReplacementHistory">
+              <PropertyRef Name="NewMeterId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_MeterReplacementHistory_OldMeter">
+          <End Role="Meter" Type="Self.Meter" Multiplicity="1" />
+          <End Role="MeterReplacementHistory" Type="Self.MeterReplacementHistory" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Meter">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="MeterReplacementHistory">
+              <PropertyRef Name="OldMeterId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Payment_ConsumptionObject">
+          <End Role="ConsumptionObject" Type="Self.ConsumptionObject" Multiplicity="1" />
+          <End Role="Payment" Type="Self.Payment" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="ConsumptionObject">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="Payment">
+              <PropertyRef Name="ConsumptionObjectId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Payment_PaymentMethod">
+          <End Role="PaymentMethod" Type="Self.PaymentMethod" Multiplicity="1" />
+          <End Role="Payment" Type="Self.Payment" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="PaymentMethod">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="Payment">
+              <PropertyRef Name="PaymentMethodId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Payment_User">
+          <End Role="User" Type="Self.User" Multiplicity="1" />
+          <End Role="Payment" Type="Self.Payment" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="User">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="Payment">
+              <PropertyRef Name="ReceivedByUserId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Street_City">
+          <End Role="City" Type="Self.City" Multiplicity="1" />
+          <End Role="Street" Type="Self.Street" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="City">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="Street">
+              <PropertyRef Name="CityId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_SupplyPoint_EnergySource">
+          <End Role="EnergySource" Type="Self.EnergySource" Multiplicity="1" />
+          <End Role="SupplyPoint" Type="Self.SupplyPoint" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="EnergySource">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="SupplyPoint">
+              <PropertyRef Name="EnergySourceId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_SupplyPointConsumptionObject_ConsumptionObject">
+          <End Role="ConsumptionObject" Type="Self.ConsumptionObject" Multiplicity="1" />
+          <End Role="SupplyPointConsumptionObject" Type="Self.SupplyPointConsumptionObject" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="ConsumptionObject">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="SupplyPointConsumptionObject">
+              <PropertyRef Name="ConsumptionObjectId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_SupplyPointConsumptionObject_SupplyPoint">
+          <End Role="SupplyPoint" Type="Self.SupplyPoint" Multiplicity="1" />
+          <End Role="SupplyPointConsumptionObject" Type="Self.SupplyPointConsumptionObject" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="SupplyPoint">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="SupplyPointConsumptionObject">
+              <PropertyRef Name="SupplyPointId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Tariff_TariffType">
+          <End Role="TariffType" Type="Self.TariffType" Multiplicity="1" />
+          <End Role="Tariff" Type="Self.Tariff" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="TariffType">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="Tariff">
+              <PropertyRef Name="TariffTypeId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Tariff_UnitOfMeasure">
+          <End Role="UnitOfMeasure" Type="Self.UnitOfMeasure" Multiplicity="1" />
+          <End Role="Tariff" Type="Self.Tariff" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="UnitOfMeasure">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="Tariff">
+              <PropertyRef Name="UnitId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_User_UserRole">
+          <End Role="UserRole" Type="Self.UserRole" Multiplicity="1" />
+          <End Role="User" Type="Self.User" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="UserRole">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="User">
+              <PropertyRef Name="RoleId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_VerificationInterval_MeterType">
+          <End Role="MeterType" Type="Self.MeterType" Multiplicity="1" />
+          <End Role="VerificationInterval" Type="Self.VerificationInterval" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="MeterType">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="VerificationInterval">
+              <PropertyRef Name="MeterTypeId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <EntityContainer Name="Хранилище EnergyMeteringSystemModelContainer">
+          <EntitySet Name="Accrual" EntityType="Self.Accrual" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="AuditLog" EntityType="Self.AuditLog" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="City" EntityType="Self.City" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="ConsumptionObject" EntityType="Self.ConsumptionObject" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="Contract" EntityType="Self.Contract" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="ContractStatus" EntityType="Self.ContractStatus" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="EnergySource" EntityType="Self.EnergySource" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="Meter" EntityType="Self.Meter" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="MeterReading" EntityType="Self.MeterReading" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="MeterReplacementHistory" EntityType="Self.MeterReplacementHistory" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="MeterStatus" EntityType="Self.MeterStatus" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="MeterType" EntityType="Self.MeterType" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="ObjectType" EntityType="Self.ObjectType" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="Payment" EntityType="Self.Payment" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="PaymentMethod" EntityType="Self.PaymentMethod" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="ReadingStatus" EntityType="Self.ReadingStatus" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="Region" EntityType="Self.Region" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="RejectionReason" EntityType="Self.RejectionReason" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="Street" EntityType="Self.Street" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="SupplyPoint" EntityType="Self.SupplyPoint" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="SupplyPointConsumptionObject" EntityType="Self.SupplyPointConsumptionObject" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="sysdiagrams" EntityType="Self.sysdiagrams" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="Tariff" EntityType="Self.Tariff" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="TariffType" EntityType="Self.TariffType" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="UnitOfMeasure" EntityType="Self.UnitOfMeasure" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="User" EntityType="Self.User" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="UserRole" EntityType="Self.UserRole" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="VerificationInterval" EntityType="Self.VerificationInterval" Schema="dbo" store:Type="Tables" />
+          <AssociationSet Name="FK_Accrual_ConsumptionObject" Association="Self.FK_Accrual_ConsumptionObject">
+            <End Role="ConsumptionObject" EntitySet="ConsumptionObject" />
+            <End Role="Accrual" EntitySet="Accrual" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Accrual_Tariff" Association="Self.FK_Accrual_Tariff">
+            <End Role="Tariff" EntitySet="Tariff" />
+            <End Role="Accrual" EntitySet="Accrual" />
+          </AssociationSet>
+          <AssociationSet Name="FK_AuditLog_User" Association="Self.FK_AuditLog_User">
+            <End Role="User" EntitySet="User" />
+            <End Role="AuditLog" EntitySet="AuditLog" />
+          </AssociationSet>
+          <AssociationSet Name="FK_City_Region" Association="Self.FK_City_Region">
+            <End Role="Region" EntitySet="Region" />
+            <End Role="City" EntitySet="City" />
+          </AssociationSet>
+          <AssociationSet Name="FK_ConsumptionObject_ObjectType" Association="Self.FK_ConsumptionObject_ObjectType">
+            <End Role="ObjectType" EntitySet="ObjectType" />
+            <End Role="ConsumptionObject" EntitySet="ConsumptionObject" />
+          </AssociationSet>
+          <AssociationSet Name="FK_ConsumptionObject_Street" Association="Self.FK_ConsumptionObject_Street">
+            <End Role="Street" EntitySet="Street" />
+            <End Role="ConsumptionObject" EntitySet="ConsumptionObject" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Contract_ConsumptionObject" Association="Self.FK_Contract_ConsumptionObject">
+            <End Role="ConsumptionObject" EntitySet="ConsumptionObject" />
+            <End Role="Contract" EntitySet="Contract" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Contract_ContractStatus" Association="Self.FK_Contract_ContractStatus">
+            <End Role="ContractStatus" EntitySet="ContractStatus" />
+            <End Role="Contract" EntitySet="Contract" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Contract_Tariff" Association="Self.FK_Contract_Tariff">
+            <End Role="Tariff" EntitySet="Tariff" />
+            <End Role="Contract" EntitySet="Contract" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Meter_ConsumptionObject" Association="Self.FK_Meter_ConsumptionObject">
+            <End Role="ConsumptionObject" EntitySet="ConsumptionObject" />
+            <End Role="Meter" EntitySet="Meter" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Meter_MeterStatus" Association="Self.FK_Meter_MeterStatus">
+            <End Role="MeterStatus" EntitySet="MeterStatus" />
+            <End Role="Meter" EntitySet="Meter" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Meter_MeterType" Association="Self.FK_Meter_MeterType">
+            <End Role="MeterType" EntitySet="MeterType" />
+            <End Role="Meter" EntitySet="Meter" />
+          </AssociationSet>
+          <AssociationSet Name="FK_MeterReading_Meter" Association="Self.FK_MeterReading_Meter">
+            <End Role="Meter" EntitySet="Meter" />
+            <End Role="MeterReading" EntitySet="MeterReading" />
+          </AssociationSet>
+          <AssociationSet Name="FK_MeterReading_ReadingStatus" Association="Self.FK_MeterReading_ReadingStatus">
+            <End Role="ReadingStatus" EntitySet="ReadingStatus" />
+            <End Role="MeterReading" EntitySet="MeterReading" />
+          </AssociationSet>
+          <AssociationSet Name="FK_MeterReading_RejectionReason" Association="Self.FK_MeterReading_RejectionReason">
+            <End Role="RejectionReason" EntitySet="RejectionReason" />
+            <End Role="MeterReading" EntitySet="MeterReading" />
+          </AssociationSet>
+          <AssociationSet Name="FK_MeterReading_User" Association="Self.FK_MeterReading_User">
+            <End Role="User" EntitySet="User" />
+            <End Role="MeterReading" EntitySet="MeterReading" />
+          </AssociationSet>
+          <AssociationSet Name="FK_MeterReplacementHistory_ConsumptionObject" Association="Self.FK_MeterReplacementHistory_ConsumptionObject">
+            <End Role="ConsumptionObject" EntitySet="ConsumptionObject" />
+            <End Role="MeterReplacementHistory" EntitySet="MeterReplacementHistory" />
+          </AssociationSet>
+          <AssociationSet Name="FK_MeterReplacementHistory_NewMeter" Association="Self.FK_MeterReplacementHistory_NewMeter">
+            <End Role="Meter" EntitySet="Meter" />
+            <End Role="MeterReplacementHistory" EntitySet="MeterReplacementHistory" />
+          </AssociationSet>
+          <AssociationSet Name="FK_MeterReplacementHistory_OldMeter" Association="Self.FK_MeterReplacementHistory_OldMeter">
+            <End Role="Meter" EntitySet="Meter" />
+            <End Role="MeterReplacementHistory" EntitySet="MeterReplacementHistory" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Payment_ConsumptionObject" Association="Self.FK_Payment_ConsumptionObject">
+            <End Role="ConsumptionObject" EntitySet="ConsumptionObject" />
+            <End Role="Payment" EntitySet="Payment" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Payment_PaymentMethod" Association="Self.FK_Payment_PaymentMethod">
+            <End Role="PaymentMethod" EntitySet="PaymentMethod" />
+            <End Role="Payment" EntitySet="Payment" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Payment_User" Association="Self.FK_Payment_User">
+            <End Role="User" EntitySet="User" />
+            <End Role="Payment" EntitySet="Payment" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Street_City" Association="Self.FK_Street_City">
+            <End Role="City" EntitySet="City" />
+            <End Role="Street" EntitySet="Street" />
+          </AssociationSet>
+          <AssociationSet Name="FK_SupplyPoint_EnergySource" Association="Self.FK_SupplyPoint_EnergySource">
+            <End Role="EnergySource" EntitySet="EnergySource" />
+            <End Role="SupplyPoint" EntitySet="SupplyPoint" />
+          </AssociationSet>
+          <AssociationSet Name="FK_SupplyPointConsumptionObject_ConsumptionObject" Association="Self.FK_SupplyPointConsumptionObject_ConsumptionObject">
+            <End Role="ConsumptionObject" EntitySet="ConsumptionObject" />
+            <End Role="SupplyPointConsumptionObject" EntitySet="SupplyPointConsumptionObject" />
+          </AssociationSet>
+          <AssociationSet Name="FK_SupplyPointConsumptionObject_SupplyPoint" Association="Self.FK_SupplyPointConsumptionObject_SupplyPoint">
+            <End Role="SupplyPoint" EntitySet="SupplyPoint" />
+            <End Role="SupplyPointConsumptionObject" EntitySet="SupplyPointConsumptionObject" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Tariff_TariffType" Association="Self.FK_Tariff_TariffType">
+            <End Role="TariffType" EntitySet="TariffType" />
+            <End Role="Tariff" EntitySet="Tariff" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Tariff_UnitOfMeasure" Association="Self.FK_Tariff_UnitOfMeasure">
+            <End Role="UnitOfMeasure" EntitySet="UnitOfMeasure" />
+            <End Role="Tariff" EntitySet="Tariff" />
+          </AssociationSet>
+          <AssociationSet Name="FK_User_UserRole" Association="Self.FK_User_UserRole">
+            <End Role="UserRole" EntitySet="UserRole" />
+            <End Role="User" EntitySet="User" />
+          </AssociationSet>
+          <AssociationSet Name="FK_VerificationInterval_MeterType" Association="Self.FK_VerificationInterval_MeterType">
+            <End Role="MeterType" EntitySet="MeterType" />
+            <End Role="VerificationInterval" EntitySet="VerificationInterval" />
+          </AssociationSet>
+        </EntityContainer>
+      </Schema>
+    </edmx:StorageModels>
+    <!-- CSDL content -->
+    <edmx:ConceptualModels>
+      <Schema Namespace="EnergyMeteringSystemModel" Alias="Self" annotation:UseStrongSpatialTypes="false" xmlns:annotation="http://schemas.microsoft.com/ado/2009/02/edm/annotation" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm">
+        <EntityType Name="Accrual">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int32" Nullable="false" />
+          <Property Name="ConsumptionObjectId" Type="Int32" Nullable="false" />
+          <Property Name="PeriodMonth" Type="Int32" Nullable="false" />
+          <Property Name="PeriodYear" Type="Int32" Nullable="false" />
+          <Property Name="ConsumptionValue" Type="Decimal" Precision="15" Scale="4" Nullable="false" />
+          <Property Name="TariffId" Type="Int32" Nullable="false" />
+          <Property Name="Amount" Type="Decimal" Precision="15" Scale="2" Nullable="false" />
+          <Property Name="IsPaid" Type="Boolean" Nullable="false" />
+          <NavigationProperty Name="ConsumptionObject" Relationship="Self.FK_Accrual_ConsumptionObject" FromRole="Accrual" ToRole="ConsumptionObject" />
+          <NavigationProperty Name="Tariff" Relationship="Self.FK_Accrual_Tariff" FromRole="Accrual" ToRole="Tariff" />
+        </EntityType>
+        <EntityType Name="AuditLog">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int32" Nullable="false" />
+          <Property Name="UserId" Type="Int32" />
+          <Property Name="ActionTime" Type="DateTime" Nullable="false" Precision="3" />
+          <Property Name="ActionType" Type="String" MaxLength="50" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="TableName" Type="String" MaxLength="100" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="RecordId" Type="Int32" Nullable="false" />
+          <Property Name="OldValuesJson" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="NewValuesJson" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="IpAddress" Type="String" MaxLength="45" FixedLength="false" Unicode="true" />
+          <NavigationProperty Name="User" Relationship="Self.FK_AuditLog_User" FromRole="AuditLog" ToRole="User" />
+        </EntityType>
+        <EntityType Name="City">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int32" Nullable="false" />
+          <Property Name="Name" Type="String" MaxLength="100" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="RegionId" Type="Int32" Nullable="false" />
+          <NavigationProperty Name="Region" Relationship="Self.FK_City_Region" FromRole="City" ToRole="Region" />
+          <NavigationProperty Name="Street" Relationship="Self.FK_Street_City" FromRole="City" ToRole="Street" />
+        </EntityType>
+        <EntityType Name="ConsumptionObject">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int32" Nullable="false" />
+          <Property Name="Name" Type="String" MaxLength="200" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="ObjectTypeId" Type="Int32" Nullable="false" />
+          <Property Name="StreetId" Type="Int32" Nullable="false" />
+          <Property Name="HouseNumber" Type="String" MaxLength="10" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="ApartmentNumber" Type="String" MaxLength="10" FixedLength="false" Unicode="true" />
+          <Property Name="TotalArea" Type="Decimal" Precision="8" Scale="2" />
+          <Property Name="ResidentCount" Type="Int32" />
+          <NavigationProperty Name="Accrual" Relationship="Self.FK_Accrual_ConsumptionObject" FromRole="ConsumptionObject" ToRole="Accrual" />
+          <NavigationProperty Name="ObjectType" Relationship="Self.FK_ConsumptionObject_ObjectType" FromRole="ConsumptionObject" ToRole="ObjectType" />
+          <NavigationProperty Name="Street" Relationship="Self.FK_ConsumptionObject_Street" FromRole="ConsumptionObject" ToRole="Street" />
+          <NavigationProperty Name="Contract" Relationship="Self.FK_Contract_ConsumptionObject" FromRole="ConsumptionObject" ToRole="Contract" />
+          <NavigationProperty Name="Meter" Relationship="Self.FK_Meter_ConsumptionObject" FromRole="ConsumptionObject" ToRole="Meter" />
+          <NavigationProperty Name="MeterReplacementHistory" Relationship="Self.FK_MeterReplacementHistory_ConsumptionObject" FromRole="ConsumptionObject" ToRole="MeterReplacementHistory" />
+          <NavigationProperty Name="Payment" Relationship="Self.FK_Payment_ConsumptionObject" FromRole="ConsumptionObject" ToRole="Payment" />
+          <NavigationProperty Name="SupplyPointConsumptionObject" Relationship="Self.FK_SupplyPointConsumptionObject_ConsumptionObject" FromRole="ConsumptionObject" ToRole="SupplyPointConsumptionObject" />
+        </EntityType>
+        <EntityType Name="Contract">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int32" Nullable="false" />
+          <Property Name="ContractNumber" Type="String" MaxLength="50" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="ConsumptionObjectId" Type="Int32" Nullable="false" />
+          <Property Name="ContractDate" Type="DateTime" Nullable="false" Precision="0" />
+          <Property Name="StartDate" Type="DateTime" Nullable="false" Precision="0" />
+          <Property Name="EndDate" Type="DateTime" Precision="0" />
+          <Property Name="ContractStatusId" Type="Int32" Nullable="false" />
+          <Property Name="TariffId" Type="Int32" Nullable="false" />
+          <NavigationProperty Name="ConsumptionObject" Relationship="Self.FK_Contract_ConsumptionObject" FromRole="Contract" ToRole="ConsumptionObject" />
+          <NavigationProperty Name="ContractStatus" Relationship="Self.FK_Contract_ContractStatus" FromRole="Contract" ToRole="ContractStatus" />
+          <NavigationProperty Name="Tariff" Relationship="Self.FK_Contract_Tariff" FromRole="Contract" ToRole="Tariff" />
+        </EntityType>
+        <EntityType Name="ContractStatus">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int32" Nullable="false" />
+          <Property Name="Name" Type="String" MaxLength="50" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="AllowsBilling" Type="Boolean" Nullable="false" />
+          <NavigationProperty Name="Contract" Relationship="Self.FK_Contract_ContractStatus" FromRole="ContractStatus" ToRole="Contract" />
+        </EntityType>
+        <EntityType Name="EnergySource">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int32" Nullable="false" />
+          <Property Name="Name" Type="String" MaxLength="100" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="Code" Type="String" MaxLength="20" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="CapacityMW" Type="Decimal" Precision="10" Scale="2" />
+          <NavigationProperty Name="SupplyPoint" Relationship="Self.FK_SupplyPoint_EnergySource" FromRole="EnergySource" ToRole="SupplyPoint" />
+        </EntityType>
+        <EntityType Name="Meter">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int32" Nullable="false" />
+          <Property Name="SerialNumber" Type="String" MaxLength="50" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="MeterTypeId" Type="Int32" Nullable="false" />
+          <Property Name="ConsumptionObjectId" Type="Int32" Nullable="false" />
+          <Property Name="InstallationDate" Type="DateTime" Nullable="false" Precision="0" />
+          <Property Name="InitialReading" Type="Decimal" Precision="15" Scale="4" Nullable="false" />
+          <Property Name="MeterStatusId" Type="Int32" Nullable="false" />
+          <Property Name="VerificationDate" Type="DateTime" Precision="0" />
+          <Property Name="NextVerificationDate" Type="DateTime" Precision="0" />
+          <NavigationProperty Name="ConsumptionObject" Relationship="Self.FK_Meter_ConsumptionObject" FromRole="Meter" ToRole="ConsumptionObject" />
+          <NavigationProperty Name="MeterStatus" Relationship="Self.FK_Meter_MeterStatus" FromRole="Meter" ToRole="MeterStatus" />
+          <NavigationProperty Name="MeterType" Relationship="Self.FK_Meter_MeterType" FromRole="Meter" ToRole="MeterType" />
+          <NavigationProperty Name="MeterReading" Relationship="Self.FK_MeterReading_Meter" FromRole="Meter" ToRole="MeterReading" />
+          <NavigationProperty Name="MeterReplacementHistory" Relationship="Self.FK_MeterReplacementHistory_NewMeter" FromRole="Meter" ToRole="MeterReplacementHistory" />
+          <NavigationProperty Name="MeterReplacementHistory1" Relationship="Self.FK_MeterReplacementHistory_OldMeter" FromRole="Meter" ToRole="MeterReplacementHistory" />
+        </EntityType>
+        <EntityType Name="MeterReading">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int32" Nullable="false" />
+          <Property Name="MeterId" Type="Int32" Nullable="false" />
+          <Property Name="ReadingDate" Type="DateTime" Nullable="false" Precision="0" />
+          <Property Name="Value" Type="Decimal" Precision="15" Scale="4" Nullable="false" />
+          <Property Name="EnteredAt" Type="DateTime" Nullable="false" Precision="3" />
+          <Property Name="EnteredByUserId" Type="Int32" Nullable="false" />
+          <Property Name="ReadingStatusId" Type="Int32" Nullable="false" />
+          <Property Name="RejectionReasonId" Type="Int32" />
+          <Property Name="Comment" Type="String" MaxLength="500" FixedLength="false" Unicode="true" />
+          <Property Name="TariffZone" Type="Int32" Nullable="false" />
+          <NavigationProperty Name="Meter" Relationship="Self.FK_MeterReading_Meter" FromRole="MeterReading" ToRole="Meter" />
+          <NavigationProperty Name="ReadingStatus" Relationship="Self.FK_MeterReading_ReadingStatus" FromRole="MeterReading" ToRole="ReadingStatus" />
+          <NavigationProperty Name="RejectionReason" Relationship="Self.FK_MeterReading_RejectionReason" FromRole="MeterReading" ToRole="RejectionReason" />
+          <NavigationProperty Name="User" Relationship="Self.FK_MeterReading_User" FromRole="MeterReading" ToRole="User" />
+        </EntityType>
+        <EntityType Name="MeterReplacementHistory">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int32" Nullable="false" />
+          <Property Name="OldMeterId" Type="Int32" Nullable="false" />
+          <Property Name="NewMeterId" Type="Int32" Nullable="false" />
+          <Property Name="ConsumptionObjectId" Type="Int32" Nullable="false" />
+          <Property Name="ReplacementDate" Type="DateTime" Nullable="false" Precision="0" />
+          <Property Name="Reason" Type="String" MaxLength="200" FixedLength="false" Unicode="true" />
+          <Property Name="LastReadingOld" Type="Decimal" Precision="15" Scale="4" />
+          <Property Name="FirstReadingNew" Type="Decimal" Precision="15" Scale="4" />
+          <NavigationProperty Name="ConsumptionObject" Relationship="Self.FK_MeterReplacementHistory_ConsumptionObject" FromRole="MeterReplacementHistory" ToRole="ConsumptionObject" />
+          <NavigationProperty Name="Meter" Relationship="Self.FK_MeterReplacementHistory_NewMeter" FromRole="MeterReplacementHistory" ToRole="Meter" />
+          <NavigationProperty Name="Meter1" Relationship="Self.FK_MeterReplacementHistory_OldMeter" FromRole="MeterReplacementHistory" ToRole="Meter" />
+        </EntityType>
+        <EntityType Name="MeterStatus">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int32" Nullable="false" />
+          <Property Name="Name" Type="String" MaxLength="50" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="CanAcceptReadings" Type="Boolean" Nullable="false" />
+          <NavigationProperty Name="Meter" Relationship="Self.FK_Meter_MeterStatus" FromRole="MeterStatus" ToRole="Meter" />
+        </EntityType>
+        <EntityType Name="MeterType">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int32" Nullable="false" />
+          <Property Name="Name" Type="String" MaxLength="100" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="Voltage" Type="Int32" Nullable="false" />
+          <Property Name="MaxCurrent" Type="Int32" Nullable="false" />
+          <Property Name="AccuracyClass" Type="String" MaxLength="10" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="DigitCount" Type="Int32" Nullable="false" />
+          <Property Name="DecimalPlaces" Type="Int32" Nullable="false" />
+          <NavigationProperty Name="Meter" Relationship="Self.FK_Meter_MeterType" FromRole="MeterType" ToRole="Meter" />
+          <NavigationProperty Name="VerificationInterval" Relationship="Self.FK_VerificationInterval_MeterType" FromRole="MeterType" ToRole="VerificationInterval" />
+        </EntityType>
+        <EntityType Name="ObjectType">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int32" Nullable="false" />
+          <Property Name="Name" Type="String" MaxLength="50" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="NormConsumption" Type="Decimal" Precision="10" Scale="2" />
+          <NavigationProperty Name="ConsumptionObject" Relationship="Self.FK_ConsumptionObject_ObjectType" FromRole="ObjectType" ToRole="ConsumptionObject" />
+        </EntityType>
+        <EntityType Name="Payment">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int32" Nullable="false" />
+          <Property Name="ConsumptionObjectId" Type="Int32" Nullable="false" />
+          <Property Name="PaymentDate" Type="DateTime" Nullable="false" Precision="3" />
+          <Property Name="Amount" Type="Decimal" Precision="15" Scale="2" Nullable="false" />
+          <Property Name="PaymentMethodId" Type="Int32" Nullable="false" />
+          <Property Name="ReceivedByUserId" Type="Int32" Nullable="false" />
+          <Property Name="ReceiptNumber" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="PeriodMonth" Type="Int32" Nullable="false" />
+          <Property Name="PeriodYear" Type="Int32" Nullable="false" />
+          <NavigationProperty Name="ConsumptionObject" Relationship="Self.FK_Payment_ConsumptionObject" FromRole="Payment" ToRole="ConsumptionObject" />
+          <NavigationProperty Name="PaymentMethod" Relationship="Self.FK_Payment_PaymentMethod" FromRole="Payment" ToRole="PaymentMethod" />
+          <NavigationProperty Name="User" Relationship="Self.FK_Payment_User" FromRole="Payment" ToRole="User" />
+        </EntityType>
+        <EntityType Name="PaymentMethod">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int32" Nullable="false" />
+          <Property Name="Name" Type="String" MaxLength="50" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="RequiresCashier" Type="Boolean" Nullable="false" />
+          <NavigationProperty Name="Payment" Relationship="Self.FK_Payment_PaymentMethod" FromRole="PaymentMethod" ToRole="Payment" />
+        </EntityType>
+        <EntityType Name="ReadingStatus">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int32" Nullable="false" />
+          <Property Name="Code" Type="String" MaxLength="20" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="Name" Type="String" MaxLength="50" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="Description" Type="String" MaxLength="255" FixedLength="false" Unicode="true" />
+          <Property Name="ColorHex" Type="String" MaxLength="7" FixedLength="false" Unicode="true" />
+          <NavigationProperty Name="MeterReading" Relationship="Self.FK_MeterReading_ReadingStatus" FromRole="ReadingStatus" ToRole="MeterReading" />
+        </EntityType>
+        <EntityType Name="Region">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int32" Nullable="false" />
+          <Property Name="Name" Type="String" MaxLength="100" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="Code" Type="String" MaxLength="10" FixedLength="false" Unicode="true" />
+          <NavigationProperty Name="City" Relationship="Self.FK_City_Region" FromRole="Region" ToRole="City" />
+        </EntityType>
+        <EntityType Name="RejectionReason">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int32" Nullable="false" />
+          <Property Name="Name" Type="String" MaxLength="100" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="RequiresComment" Type="Boolean" Nullable="false" />
+          <NavigationProperty Name="MeterReading" Relationship="Self.FK_MeterReading_RejectionReason" FromRole="RejectionReason" ToRole="MeterReading" />
+        </EntityType>
+        <EntityType Name="Street">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int32" Nullable="false" />
+          <Property Name="Name" Type="String" MaxLength="200" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="CityId" Type="Int32" Nullable="false" />
+          <Property Name="PostalCode" Type="String" MaxLength="20" FixedLength="false" Unicode="true" />
+          <NavigationProperty Name="City" Relationship="Self.FK_Street_City" FromRole="Street" ToRole="City" />
+          <NavigationProperty Name="ConsumptionObject" Relationship="Self.FK_ConsumptionObject_Street" FromRole="Street" ToRole="ConsumptionObject" />
+        </EntityType>
+        <EntityType Name="SupplyPoint">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int32" Nullable="false" />
+          <Property Name="Name" Type="String" MaxLength="100" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="EnergySourceId" Type="Int32" Nullable="false" />
+          <Property Name="VoltageLevel" Type="Int32" Nullable="false" />
+          <Property Name="MaxPower" Type="Decimal" Precision="10" Scale="2" />
+          <NavigationProperty Name="EnergySource" Relationship="Self.FK_SupplyPoint_EnergySource" FromRole="SupplyPoint" ToRole="EnergySource" />
+          <NavigationProperty Name="SupplyPointConsumptionObject" Relationship="Self.FK_SupplyPointConsumptionObject_SupplyPoint" FromRole="SupplyPoint" ToRole="SupplyPointConsumptionObject" />
+        </EntityType>
+        <EntityType Name="SupplyPointConsumptionObject">
+          <Key>
+            <PropertyRef Name="SupplyPointId" />
+            <PropertyRef Name="ConsumptionObjectId" />
+          </Key>
+          <Property Name="SupplyPointId" Type="Int32" Nullable="false" />
+          <Property Name="ConsumptionObjectId" Type="Int32" Nullable="false" />
+          <Property Name="ConnectionDate" Type="DateTime" Nullable="false" Precision="0" />
+          <Property Name="DisconnectionDate" Type="DateTime" Precision="0" />
+          <NavigationProperty Name="ConsumptionObject" Relationship="Self.FK_SupplyPointConsumptionObject_ConsumptionObject" FromRole="SupplyPointConsumptionObject" ToRole="ConsumptionObject" />
+          <NavigationProperty Name="SupplyPoint" Relationship="Self.FK_SupplyPointConsumptionObject_SupplyPoint" FromRole="SupplyPointConsumptionObject" ToRole="SupplyPoint" />
+        </EntityType>
+        <EntityType Name="sysdiagrams">
+          <Key>
+            <PropertyRef Name="diagram_id" />
+          </Key>
+          <Property Name="name" Type="String" MaxLength="128" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="principal_id" Type="Int32" Nullable="false" />
+          <Property Name="diagram_id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="version" Type="Int32" />
+          <Property Name="definition" Type="Binary" MaxLength="Max" FixedLength="false" />
+        </EntityType>
+        <EntityType Name="Tariff">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int32" Nullable="false" />
+          <Property Name="TariffTypeId" Type="Int32" Nullable="false" />
+          <Property Name="UnitId" Type="Int32" Nullable="false" />
+          <Property Name="PricePerUnit" Type="Decimal" Precision="10" Scale="4" Nullable="false" />
+          <Property Name="ZoneNumber" Type="Int32" Nullable="false" />
+          <Property Name="StartDate" Type="DateTime" Nullable="false" Precision="0" />
+          <Property Name="EndDate" Type="DateTime" Precision="0" />
+          <NavigationProperty Name="Accrual" Relationship="Self.FK_Accrual_Tariff" FromRole="Tariff" ToRole="Accrual" />
+          <NavigationProperty Name="Contract" Relationship="Self.FK_Contract_Tariff" FromRole="Tariff" ToRole="Contract" />
+          <NavigationProperty Name="TariffType" Relationship="Self.FK_Tariff_TariffType" FromRole="Tariff" ToRole="TariffType" />
+          <NavigationProperty Name="UnitOfMeasure" Relationship="Self.FK_Tariff_UnitOfMeasure" FromRole="Tariff" ToRole="UnitOfMeasure" />
+        </EntityType>
+        <EntityType Name="TariffType">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int32" Nullable="false" />
+          <Property Name="Name" Type="String" MaxLength="50" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="ZoneCount" Type="Int32" Nullable="false" />
+          <Property Name="Description" Type="String" MaxLength="255" FixedLength="false" Unicode="true" />
+          <NavigationProperty Name="Tariff" Relationship="Self.FK_Tariff_TariffType" FromRole="TariffType" ToRole="Tariff" />
+        </EntityType>
+        <EntityType Name="UnitOfMeasure">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int32" Nullable="false" />
+          <Property Name="Name" Type="String" MaxLength="20" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="Symbol" Type="String" MaxLength="10" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="IsDefault" Type="Boolean" Nullable="false" />
+          <NavigationProperty Name="Tariff" Relationship="Self.FK_Tariff_UnitOfMeasure" FromRole="UnitOfMeasure" ToRole="Tariff" />
+        </EntityType>
+        <EntityType Name="User">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int32" Nullable="false" />
+          <Property Name="Username" Type="String" MaxLength="50" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="PasswordHash" Type="String" MaxLength="256" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="FullName" Type="String" MaxLength="100" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="Email" Type="String" MaxLength="100" FixedLength="false" Unicode="true" />
+          <Property Name="RoleId" Type="Int32" Nullable="false" />
+          <Property Name="IsActive" Type="Boolean" Nullable="false" />
+          <Property Name="CreatedAt" Type="DateTime" Nullable="false" Precision="3" />
+          <NavigationProperty Name="AuditLog" Relationship="Self.FK_AuditLog_User" FromRole="User" ToRole="AuditLog" />
+          <NavigationProperty Name="MeterReading" Relationship="Self.FK_MeterReading_User" FromRole="User" ToRole="MeterReading" />
+          <NavigationProperty Name="Payment" Relationship="Self.FK_Payment_User" FromRole="User" ToRole="Payment" />
+          <NavigationProperty Name="UserRole" Relationship="Self.FK_User_UserRole" FromRole="User" ToRole="UserRole" />
+        </EntityType>
+        <EntityType Name="UserRole">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int32" Nullable="false" />
+          <Property Name="Name" Type="String" MaxLength="50" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="Description" Type="String" MaxLength="255" FixedLength="false" Unicode="true" />
+          <Property Name="PermissionsJson" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <NavigationProperty Name="User" Relationship="Self.FK_User_UserRole" FromRole="UserRole" ToRole="User" />
+        </EntityType>
+        <EntityType Name="VerificationInterval">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int32" Nullable="false" />
+          <Property Name="MeterTypeId" Type="Int32" Nullable="false" />
+          <Property Name="Years" Type="Int32" Nullable="false" />
+          <NavigationProperty Name="MeterType" Relationship="Self.FK_VerificationInterval_MeterType" FromRole="VerificationInterval" ToRole="MeterType" />
+        </EntityType>
+        <Association Name="FK_Accrual_ConsumptionObject">
+          <End Role="ConsumptionObject" Type="Self.ConsumptionObject" Multiplicity="1" />
+          <End Role="Accrual" Type="Self.Accrual" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="ConsumptionObject">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="Accrual">
+              <PropertyRef Name="ConsumptionObjectId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Accrual_Tariff">
+          <End Role="Tariff" Type="Self.Tariff" Multiplicity="1" />
+          <End Role="Accrual" Type="Self.Accrual" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Tariff">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="Accrual">
+              <PropertyRef Name="TariffId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_AuditLog_User">
+          <End Role="User" Type="Self.User" Multiplicity="0..1" />
+          <End Role="AuditLog" Type="Self.AuditLog" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="User">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="AuditLog">
+              <PropertyRef Name="UserId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_City_Region">
+          <End Role="Region" Type="Self.Region" Multiplicity="1" />
+          <End Role="City" Type="Self.City" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Region">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="City">
+              <PropertyRef Name="RegionId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Street_City">
+          <End Role="City" Type="Self.City" Multiplicity="1" />
+          <End Role="Street" Type="Self.Street" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="City">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="Street">
+              <PropertyRef Name="CityId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_ConsumptionObject_ObjectType">
+          <End Role="ObjectType" Type="Self.ObjectType" Multiplicity="1" />
+          <End Role="ConsumptionObject" Type="Self.ConsumptionObject" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="ObjectType">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="ConsumptionObject">
+              <PropertyRef Name="ObjectTypeId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_ConsumptionObject_Street">
+          <End Role="Street" Type="Self.Street" Multiplicity="1" />
+          <End Role="ConsumptionObject" Type="Self.ConsumptionObject" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Street">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="ConsumptionObject">
+              <PropertyRef Name="StreetId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Contract_ConsumptionObject">
+          <End Role="ConsumptionObject" Type="Self.ConsumptionObject" Multiplicity="1" />
+          <End Role="Contract" Type="Self.Contract" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="ConsumptionObject">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="Contract">
+              <PropertyRef Name="ConsumptionObjectId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Meter_ConsumptionObject">
+          <End Role="ConsumptionObject" Type="Self.ConsumptionObject" Multiplicity="1" />
+          <End Role="Meter" Type="Self.Meter" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="ConsumptionObject">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="Meter">
+              <PropertyRef Name="ConsumptionObjectId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_MeterReplacementHistory_ConsumptionObject">
+          <End Role="ConsumptionObject" Type="Self.ConsumptionObject" Multiplicity="1" />
+          <End Role="MeterReplacementHistory" Type="Self.MeterReplacementHistory" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="ConsumptionObject">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="MeterReplacementHistory">
+              <PropertyRef Name="ConsumptionObjectId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Payment_ConsumptionObject">
+          <End Role="ConsumptionObject" Type="Self.ConsumptionObject" Multiplicity="1" />
+          <End Role="Payment" Type="Self.Payment" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="ConsumptionObject">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="Payment">
+              <PropertyRef Name="ConsumptionObjectId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_SupplyPointConsumptionObject_ConsumptionObject">
+          <End Role="ConsumptionObject" Type="Self.ConsumptionObject" Multiplicity="1" />
+          <End Role="SupplyPointConsumptionObject" Type="Self.SupplyPointConsumptionObject" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="ConsumptionObject">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="SupplyPointConsumptionObject">
+              <PropertyRef Name="ConsumptionObjectId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Contract_ContractStatus">
+          <End Role="ContractStatus" Type="Self.ContractStatus" Multiplicity="1" />
+          <End Role="Contract" Type="Self.Contract" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="ContractStatus">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="Contract">
+              <PropertyRef Name="ContractStatusId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Contract_Tariff">
+          <End Role="Tariff" Type="Self.Tariff" Multiplicity="1" />
+          <End Role="Contract" Type="Self.Contract" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Tariff">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="Contract">
+              <PropertyRef Name="TariffId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_SupplyPoint_EnergySource">
+          <End Role="EnergySource" Type="Self.EnergySource" Multiplicity="1" />
+          <End Role="SupplyPoint" Type="Self.SupplyPoint" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="EnergySource">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="SupplyPoint">
+              <PropertyRef Name="EnergySourceId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Meter_MeterStatus">
+          <End Role="MeterStatus" Type="Self.MeterStatus" Multiplicity="1" />
+          <End Role="Meter" Type="Self.Meter" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="MeterStatus">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="Meter">
+              <PropertyRef Name="MeterStatusId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Meter_MeterType">
+          <End Role="MeterType" Type="Self.MeterType" Multiplicity="1" />
+          <End Role="Meter" Type="Self.Meter" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="MeterType">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="Meter">
+              <PropertyRef Name="MeterTypeId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_MeterReading_Meter">
+          <End Role="Meter" Type="Self.Meter" Multiplicity="1" />
+          <End Role="MeterReading" Type="Self.MeterReading" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Meter">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="MeterReading">
+              <PropertyRef Name="MeterId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_MeterReplacementHistory_NewMeter">
+          <End Role="Meter" Type="Self.Meter" Multiplicity="1" />
+          <End Role="MeterReplacementHistory" Type="Self.MeterReplacementHistory" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Meter">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="MeterReplacementHistory">
+              <PropertyRef Name="NewMeterId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_MeterReplacementHistory_OldMeter">
+          <End Role="Meter" Type="Self.Meter" Multiplicity="1" />
+          <End Role="MeterReplacementHistory" Type="Self.MeterReplacementHistory" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Meter">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="MeterReplacementHistory">
+              <PropertyRef Name="OldMeterId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_MeterReading_ReadingStatus">
+          <End Role="ReadingStatus" Type="Self.ReadingStatus" Multiplicity="1" />
+          <End Role="MeterReading" Type="Self.MeterReading" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="ReadingStatus">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="MeterReading">
+              <PropertyRef Name="ReadingStatusId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_MeterReading_RejectionReason">
+          <End Role="RejectionReason" Type="Self.RejectionReason" Multiplicity="0..1" />
+          <End Role="MeterReading" Type="Self.MeterReading" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="RejectionReason">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="MeterReading">
+              <PropertyRef Name="RejectionReasonId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_MeterReading_User">
+          <End Role="User" Type="Self.User" Multiplicity="1" />
+          <End Role="MeterReading" Type="Self.MeterReading" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="User">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="MeterReading">
+              <PropertyRef Name="EnteredByUserId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_VerificationInterval_MeterType">
+          <End Role="MeterType" Type="Self.MeterType" Multiplicity="1" />
+          <End Role="VerificationInterval" Type="Self.VerificationInterval" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="MeterType">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="VerificationInterval">
+              <PropertyRef Name="MeterTypeId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Payment_PaymentMethod">
+          <End Role="PaymentMethod" Type="Self.PaymentMethod" Multiplicity="1" />
+          <End Role="Payment" Type="Self.Payment" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="PaymentMethod">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="Payment">
+              <PropertyRef Name="PaymentMethodId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Payment_User">
+          <End Role="User" Type="Self.User" Multiplicity="1" />
+          <End Role="Payment" Type="Self.Payment" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="User">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="Payment">
+              <PropertyRef Name="ReceivedByUserId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_SupplyPointConsumptionObject_SupplyPoint">
+          <End Role="SupplyPoint" Type="Self.SupplyPoint" Multiplicity="1" />
+          <End Role="SupplyPointConsumptionObject" Type="Self.SupplyPointConsumptionObject" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="SupplyPoint">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="SupplyPointConsumptionObject">
+              <PropertyRef Name="SupplyPointId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Tariff_TariffType">
+          <End Role="TariffType" Type="Self.TariffType" Multiplicity="1" />
+          <End Role="Tariff" Type="Self.Tariff" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="TariffType">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="Tariff">
+              <PropertyRef Name="TariffTypeId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Tariff_UnitOfMeasure">
+          <End Role="UnitOfMeasure" Type="Self.UnitOfMeasure" Multiplicity="1" />
+          <End Role="Tariff" Type="Self.Tariff" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="UnitOfMeasure">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="Tariff">
+              <PropertyRef Name="UnitId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_User_UserRole">
+          <End Role="UserRole" Type="Self.UserRole" Multiplicity="1" />
+          <End Role="User" Type="Self.User" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="UserRole">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="User">
+              <PropertyRef Name="RoleId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <EntityContainer Name="EnergyMeteringSystemEntities" annotation:LazyLoadingEnabled="true">
+          <EntitySet Name="Accrual" EntityType="Self.Accrual" />
+          <EntitySet Name="AuditLog" EntityType="Self.AuditLog" />
+          <EntitySet Name="City" EntityType="Self.City" />
+          <EntitySet Name="ConsumptionObject" EntityType="Self.ConsumptionObject" />
+          <EntitySet Name="Contract" EntityType="Self.Contract" />
+          <EntitySet Name="ContractStatus" EntityType="Self.ContractStatus" />
+          <EntitySet Name="EnergySource" EntityType="Self.EnergySource" />
+          <EntitySet Name="Meter" EntityType="Self.Meter" />
+          <EntitySet Name="MeterReading" EntityType="Self.MeterReading" />
+          <EntitySet Name="MeterReplacementHistory" EntityType="Self.MeterReplacementHistory" />
+          <EntitySet Name="MeterStatus" EntityType="Self.MeterStatus" />
+          <EntitySet Name="MeterType" EntityType="Self.MeterType" />
+          <EntitySet Name="ObjectType" EntityType="Self.ObjectType" />
+          <EntitySet Name="Payment" EntityType="Self.Payment" />
+          <EntitySet Name="PaymentMethod" EntityType="Self.PaymentMethod" />
+          <EntitySet Name="ReadingStatus" EntityType="Self.ReadingStatus" />
+          <EntitySet Name="Region" EntityType="Self.Region" />
+          <EntitySet Name="RejectionReason" EntityType="Self.RejectionReason" />
+          <EntitySet Name="Street" EntityType="Self.Street" />
+          <EntitySet Name="SupplyPoint" EntityType="Self.SupplyPoint" />
+          <EntitySet Name="SupplyPointConsumptionObject" EntityType="Self.SupplyPointConsumptionObject" />
+          <EntitySet Name="sysdiagrams" EntityType="Self.sysdiagrams" />
+          <EntitySet Name="Tariff" EntityType="Self.Tariff" />
+          <EntitySet Name="TariffType" EntityType="Self.TariffType" />
+          <EntitySet Name="UnitOfMeasure" EntityType="Self.UnitOfMeasure" />
+          <EntitySet Name="User" EntityType="Self.User" />
+          <EntitySet Name="UserRole" EntityType="Self.UserRole" />
+          <EntitySet Name="VerificationInterval" EntityType="Self.VerificationInterval" />
+          <AssociationSet Name="FK_Accrual_ConsumptionObject" Association="Self.FK_Accrual_ConsumptionObject">
+            <End Role="ConsumptionObject" EntitySet="ConsumptionObject" />
+            <End Role="Accrual" EntitySet="Accrual" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Accrual_Tariff" Association="Self.FK_Accrual_Tariff">
+            <End Role="Tariff" EntitySet="Tariff" />
+            <End Role="Accrual" EntitySet="Accrual" />
+          </AssociationSet>
+          <AssociationSet Name="FK_AuditLog_User" Association="Self.FK_AuditLog_User">
+            <End Role="User" EntitySet="User" />
+            <End Role="AuditLog" EntitySet="AuditLog" />
+          </AssociationSet>
+          <AssociationSet Name="FK_City_Region" Association="Self.FK_City_Region">
+            <End Role="Region" EntitySet="Region" />
+            <End Role="City" EntitySet="City" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Street_City" Association="Self.FK_Street_City">
+            <End Role="City" EntitySet="City" />
+            <End Role="Street" EntitySet="Street" />
+          </AssociationSet>
+          <AssociationSet Name="FK_ConsumptionObject_ObjectType" Association="Self.FK_ConsumptionObject_ObjectType">
+            <End Role="ObjectType" EntitySet="ObjectType" />
+            <End Role="ConsumptionObject" EntitySet="ConsumptionObject" />
+          </AssociationSet>
+          <AssociationSet Name="FK_ConsumptionObject_Street" Association="Self.FK_ConsumptionObject_Street">
+            <End Role="Street" EntitySet="Street" />
+            <End Role="ConsumptionObject" EntitySet="ConsumptionObject" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Contract_ConsumptionObject" Association="Self.FK_Contract_ConsumptionObject">
+            <End Role="ConsumptionObject" EntitySet="ConsumptionObject" />
+            <End Role="Contract" EntitySet="Contract" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Meter_ConsumptionObject" Association="Self.FK_Meter_ConsumptionObject">
+            <End Role="ConsumptionObject" EntitySet="ConsumptionObject" />
+            <End Role="Meter" EntitySet="Meter" />
+          </AssociationSet>
+          <AssociationSet Name="FK_MeterReplacementHistory_ConsumptionObject" Association="Self.FK_MeterReplacementHistory_ConsumptionObject">
+            <End Role="ConsumptionObject" EntitySet="ConsumptionObject" />
+            <End Role="MeterReplacementHistory" EntitySet="MeterReplacementHistory" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Payment_ConsumptionObject" Association="Self.FK_Payment_ConsumptionObject">
+            <End Role="ConsumptionObject" EntitySet="ConsumptionObject" />
+            <End Role="Payment" EntitySet="Payment" />
+          </AssociationSet>
+          <AssociationSet Name="FK_SupplyPointConsumptionObject_ConsumptionObject" Association="Self.FK_SupplyPointConsumptionObject_ConsumptionObject">
+            <End Role="ConsumptionObject" EntitySet="ConsumptionObject" />
+            <End Role="SupplyPointConsumptionObject" EntitySet="SupplyPointConsumptionObject" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Contract_ContractStatus" Association="Self.FK_Contract_ContractStatus">
+            <End Role="ContractStatus" EntitySet="ContractStatus" />
+            <End Role="Contract" EntitySet="Contract" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Contract_Tariff" Association="Self.FK_Contract_Tariff">
+            <End Role="Tariff" EntitySet="Tariff" />
+            <End Role="Contract" EntitySet="Contract" />
+          </AssociationSet>
+          <AssociationSet Name="FK_SupplyPoint_EnergySource" Association="Self.FK_SupplyPoint_EnergySource">
+            <End Role="EnergySource" EntitySet="EnergySource" />
+            <End Role="SupplyPoint" EntitySet="SupplyPoint" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Meter_MeterStatus" Association="Self.FK_Meter_MeterStatus">
+            <End Role="MeterStatus" EntitySet="MeterStatus" />
+            <End Role="Meter" EntitySet="Meter" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Meter_MeterType" Association="Self.FK_Meter_MeterType">
+            <End Role="MeterType" EntitySet="MeterType" />
+            <End Role="Meter" EntitySet="Meter" />
+          </AssociationSet>
+          <AssociationSet Name="FK_MeterReading_Meter" Association="Self.FK_MeterReading_Meter">
+            <End Role="Meter" EntitySet="Meter" />
+            <End Role="MeterReading" EntitySet="MeterReading" />
+          </AssociationSet>
+          <AssociationSet Name="FK_MeterReplacementHistory_NewMeter" Association="Self.FK_MeterReplacementHistory_NewMeter">
+            <End Role="Meter" EntitySet="Meter" />
+            <End Role="MeterReplacementHistory" EntitySet="MeterReplacementHistory" />
+          </AssociationSet>
+          <AssociationSet Name="FK_MeterReplacementHistory_OldMeter" Association="Self.FK_MeterReplacementHistory_OldMeter">
+            <End Role="Meter" EntitySet="Meter" />
+            <End Role="MeterReplacementHistory" EntitySet="MeterReplacementHistory" />
+          </AssociationSet>
+          <AssociationSet Name="FK_MeterReading_ReadingStatus" Association="Self.FK_MeterReading_ReadingStatus">
+            <End Role="ReadingStatus" EntitySet="ReadingStatus" />
+            <End Role="MeterReading" EntitySet="MeterReading" />
+          </AssociationSet>
+          <AssociationSet Name="FK_MeterReading_RejectionReason" Association="Self.FK_MeterReading_RejectionReason">
+            <End Role="RejectionReason" EntitySet="RejectionReason" />
+            <End Role="MeterReading" EntitySet="MeterReading" />
+          </AssociationSet>
+          <AssociationSet Name="FK_MeterReading_User" Association="Self.FK_MeterReading_User">
+            <End Role="User" EntitySet="User" />
+            <End Role="MeterReading" EntitySet="MeterReading" />
+          </AssociationSet>
+          <AssociationSet Name="FK_VerificationInterval_MeterType" Association="Self.FK_VerificationInterval_MeterType">
+            <End Role="MeterType" EntitySet="MeterType" />
+            <End Role="VerificationInterval" EntitySet="VerificationInterval" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Payment_PaymentMethod" Association="Self.FK_Payment_PaymentMethod">
+            <End Role="PaymentMethod" EntitySet="PaymentMethod" />
+            <End Role="Payment" EntitySet="Payment" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Payment_User" Association="Self.FK_Payment_User">
+            <End Role="User" EntitySet="User" />
+            <End Role="Payment" EntitySet="Payment" />
+          </AssociationSet>
+          <AssociationSet Name="FK_SupplyPointConsumptionObject_SupplyPoint" Association="Self.FK_SupplyPointConsumptionObject_SupplyPoint">
+            <End Role="SupplyPoint" EntitySet="SupplyPoint" />
+            <End Role="SupplyPointConsumptionObject" EntitySet="SupplyPointConsumptionObject" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Tariff_TariffType" Association="Self.FK_Tariff_TariffType">
+            <End Role="TariffType" EntitySet="TariffType" />
+            <End Role="Tariff" EntitySet="Tariff" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Tariff_UnitOfMeasure" Association="Self.FK_Tariff_UnitOfMeasure">
+            <End Role="UnitOfMeasure" EntitySet="UnitOfMeasure" />
+            <End Role="Tariff" EntitySet="Tariff" />
+          </AssociationSet>
+          <AssociationSet Name="FK_User_UserRole" Association="Self.FK_User_UserRole">
+            <End Role="UserRole" EntitySet="UserRole" />
+            <End Role="User" EntitySet="User" />
+          </AssociationSet>
+        </EntityContainer>
+      </Schema>
+    </edmx:ConceptualModels>
+    <!-- C-S mapping content -->
+    <edmx:Mappings>
+      <Mapping Space="C-S" xmlns="http://schemas.microsoft.com/ado/2009/11/mapping/cs">
+        <EntityContainerMapping StorageEntityContainer="Хранилище EnergyMeteringSystemModelContainer" CdmEntityContainer="EnergyMeteringSystemEntities">
+          <EntitySetMapping Name="Accrual">
+            <EntityTypeMapping TypeName="EnergyMeteringSystemModel.Accrual">
+              <MappingFragment StoreEntitySet="Accrual">
+                <ScalarProperty Name="Id" ColumnName="Id" />
+                <ScalarProperty Name="ConsumptionObjectId" ColumnName="ConsumptionObjectId" />
+                <ScalarProperty Name="PeriodMonth" ColumnName="PeriodMonth" />
+                <ScalarProperty Name="PeriodYear" ColumnName="PeriodYear" />
+                <ScalarProperty Name="ConsumptionValue" ColumnName="ConsumptionValue" />
+                <ScalarProperty Name="TariffId" ColumnName="TariffId" />
+                <ScalarProperty Name="Amount" ColumnName="Amount" />
+                <ScalarProperty Name="IsPaid" ColumnName="IsPaid" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="AuditLog">
+            <EntityTypeMapping TypeName="EnergyMeteringSystemModel.AuditLog">
+              <MappingFragment StoreEntitySet="AuditLog">
+                <ScalarProperty Name="Id" ColumnName="Id" />
+                <ScalarProperty Name="UserId" ColumnName="UserId" />
+                <ScalarProperty Name="ActionTime" ColumnName="ActionTime" />
+                <ScalarProperty Name="ActionType" ColumnName="ActionType" />
+                <ScalarProperty Name="TableName" ColumnName="TableName" />
+                <ScalarProperty Name="RecordId" ColumnName="RecordId" />
+                <ScalarProperty Name="OldValuesJson" ColumnName="OldValuesJson" />
+                <ScalarProperty Name="NewValuesJson" ColumnName="NewValuesJson" />
+                <ScalarProperty Name="IpAddress" ColumnName="IpAddress" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="City">
+            <EntityTypeMapping TypeName="EnergyMeteringSystemModel.City">
+              <MappingFragment StoreEntitySet="City">
+                <ScalarProperty Name="Id" ColumnName="Id" />
+                <ScalarProperty Name="Name" ColumnName="Name" />
+                <ScalarProperty Name="RegionId" ColumnName="RegionId" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="ConsumptionObject">
+            <EntityTypeMapping TypeName="EnergyMeteringSystemModel.ConsumptionObject">
+              <MappingFragment StoreEntitySet="ConsumptionObject">
+                <ScalarProperty Name="Id" ColumnName="Id" />
+                <ScalarProperty Name="Name" ColumnName="Name" />
+                <ScalarProperty Name="ObjectTypeId" ColumnName="ObjectTypeId" />
+                <ScalarProperty Name="StreetId" ColumnName="StreetId" />
+                <ScalarProperty Name="HouseNumber" ColumnName="HouseNumber" />
+                <ScalarProperty Name="ApartmentNumber" ColumnName="ApartmentNumber" />
+                <ScalarProperty Name="TotalArea" ColumnName="TotalArea" />
+                <ScalarProperty Name="ResidentCount" ColumnName="ResidentCount" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="Contract">
+            <EntityTypeMapping TypeName="EnergyMeteringSystemModel.Contract">
+              <MappingFragment StoreEntitySet="Contract">
+                <ScalarProperty Name="Id" ColumnName="Id" />
+                <ScalarProperty Name="ContractNumber" ColumnName="ContractNumber" />
+                <ScalarProperty Name="ConsumptionObjectId" ColumnName="ConsumptionObjectId" />
+                <ScalarProperty Name="ContractDate" ColumnName="ContractDate" />
+                <ScalarProperty Name="StartDate" ColumnName="StartDate" />
+                <ScalarProperty Name="EndDate" ColumnName="EndDate" />
+                <ScalarProperty Name="ContractStatusId" ColumnName="ContractStatusId" />
+                <ScalarProperty Name="TariffId" ColumnName="TariffId" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="ContractStatus">
+            <EntityTypeMapping TypeName="EnergyMeteringSystemModel.ContractStatus">
+              <MappingFragment StoreEntitySet="ContractStatus">
+                <ScalarProperty Name="Id" ColumnName="Id" />
+                <ScalarProperty Name="Name" ColumnName="Name" />
+                <ScalarProperty Name="AllowsBilling" ColumnName="AllowsBilling" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="EnergySource">
+            <EntityTypeMapping TypeName="EnergyMeteringSystemModel.EnergySource">
+              <MappingFragment StoreEntitySet="EnergySource">
+                <ScalarProperty Name="Id" ColumnName="Id" />
+                <ScalarProperty Name="Name" ColumnName="Name" />
+                <ScalarProperty Name="Code" ColumnName="Code" />
+                <ScalarProperty Name="CapacityMW" ColumnName="CapacityMW" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="Meter">
+            <EntityTypeMapping TypeName="EnergyMeteringSystemModel.Meter">
+              <MappingFragment StoreEntitySet="Meter">
+                <ScalarProperty Name="Id" ColumnName="Id" />
+                <ScalarProperty Name="SerialNumber" ColumnName="SerialNumber" />
+                <ScalarProperty Name="MeterTypeId" ColumnName="MeterTypeId" />
+                <ScalarProperty Name="ConsumptionObjectId" ColumnName="ConsumptionObjectId" />
+                <ScalarProperty Name="InstallationDate" ColumnName="InstallationDate" />
+                <ScalarProperty Name="InitialReading" ColumnName="InitialReading" />
+                <ScalarProperty Name="MeterStatusId" ColumnName="MeterStatusId" />
+                <ScalarProperty Name="VerificationDate" ColumnName="VerificationDate" />
+                <ScalarProperty Name="NextVerificationDate" ColumnName="NextVerificationDate" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="MeterReading">
+            <EntityTypeMapping TypeName="EnergyMeteringSystemModel.MeterReading">
+              <MappingFragment StoreEntitySet="MeterReading">
+                <ScalarProperty Name="Id" ColumnName="Id" />
+                <ScalarProperty Name="MeterId" ColumnName="MeterId" />
+                <ScalarProperty Name="ReadingDate" ColumnName="ReadingDate" />
+                <ScalarProperty Name="Value" ColumnName="Value" />
+                <ScalarProperty Name="EnteredAt" ColumnName="EnteredAt" />
+                <ScalarProperty Name="EnteredByUserId" ColumnName="EnteredByUserId" />
+                <ScalarProperty Name="ReadingStatusId" ColumnName="ReadingStatusId" />
+                <ScalarProperty Name="RejectionReasonId" ColumnName="RejectionReasonId" />
+                <ScalarProperty Name="Comment" ColumnName="Comment" />
+                <ScalarProperty Name="TariffZone" ColumnName="TariffZone" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="MeterReplacementHistory">
+            <EntityTypeMapping TypeName="EnergyMeteringSystemModel.MeterReplacementHistory">
+              <MappingFragment StoreEntitySet="MeterReplacementHistory">
+                <ScalarProperty Name="Id" ColumnName="Id" />
+                <ScalarProperty Name="OldMeterId" ColumnName="OldMeterId" />
+                <ScalarProperty Name="NewMeterId" ColumnName="NewMeterId" />
+                <ScalarProperty Name="ConsumptionObjectId" ColumnName="ConsumptionObjectId" />
+                <ScalarProperty Name="ReplacementDate" ColumnName="ReplacementDate" />
+                <ScalarProperty Name="Reason" ColumnName="Reason" />
+                <ScalarProperty Name="LastReadingOld" ColumnName="LastReadingOld" />
+                <ScalarProperty Name="FirstReadingNew" ColumnName="FirstReadingNew" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="MeterStatus">
+            <EntityTypeMapping TypeName="EnergyMeteringSystemModel.MeterStatus">
+              <MappingFragment StoreEntitySet="MeterStatus">
+                <ScalarProperty Name="Id" ColumnName="Id" />
+                <ScalarProperty Name="Name" ColumnName="Name" />
+                <ScalarProperty Name="CanAcceptReadings" ColumnName="CanAcceptReadings" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="MeterType">
+            <EntityTypeMapping TypeName="EnergyMeteringSystemModel.MeterType">
+              <MappingFragment StoreEntitySet="MeterType">
+                <ScalarProperty Name="Id" ColumnName="Id" />
+                <ScalarProperty Name="Name" ColumnName="Name" />
+                <ScalarProperty Name="Voltage" ColumnName="Voltage" />
+                <ScalarProperty Name="MaxCurrent" ColumnName="MaxCurrent" />
+                <ScalarProperty Name="AccuracyClass" ColumnName="AccuracyClass" />
+                <ScalarProperty Name="DigitCount" ColumnName="DigitCount" />
+                <ScalarProperty Name="DecimalPlaces" ColumnName="DecimalPlaces" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="ObjectType">
+            <EntityTypeMapping TypeName="EnergyMeteringSystemModel.ObjectType">
+              <MappingFragment StoreEntitySet="ObjectType">
+                <ScalarProperty Name="Id" ColumnName="Id" />
+                <ScalarProperty Name="Name" ColumnName="Name" />
+                <ScalarProperty Name="NormConsumption" ColumnName="NormConsumption" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="Payment">
+            <EntityTypeMapping TypeName="EnergyMeteringSystemModel.Payment">
+              <MappingFragment StoreEntitySet="Payment">
+                <ScalarProperty Name="Id" ColumnName="Id" />
+                <ScalarProperty Name="ConsumptionObjectId" ColumnName="ConsumptionObjectId" />
+                <ScalarProperty Name="PaymentDate" ColumnName="PaymentDate" />
+                <ScalarProperty Name="Amount" ColumnName="Amount" />
+                <ScalarProperty Name="PaymentMethodId" ColumnName="PaymentMethodId" />
+                <ScalarProperty Name="ReceivedByUserId" ColumnName="ReceivedByUserId" />
+                <ScalarProperty Name="ReceiptNumber" ColumnName="ReceiptNumber" />
+                <ScalarProperty Name="PeriodMonth" ColumnName="PeriodMonth" />
+                <ScalarProperty Name="PeriodYear" ColumnName="PeriodYear" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="PaymentMethod">
+            <EntityTypeMapping TypeName="EnergyMeteringSystemModel.PaymentMethod">
+              <MappingFragment StoreEntitySet="PaymentMethod">
+                <ScalarProperty Name="Id" ColumnName="Id" />
+                <ScalarProperty Name="Name" ColumnName="Name" />
+                <ScalarProperty Name="RequiresCashier" ColumnName="RequiresCashier" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="ReadingStatus">
+            <EntityTypeMapping TypeName="EnergyMeteringSystemModel.ReadingStatus">
+              <MappingFragment StoreEntitySet="ReadingStatus">
+                <ScalarProperty Name="Id" ColumnName="Id" />
+                <ScalarProperty Name="Code" ColumnName="Code" />
+                <ScalarProperty Name="Name" ColumnName="Name" />
+                <ScalarProperty Name="Description" ColumnName="Description" />
+                <ScalarProperty Name="ColorHex" ColumnName="ColorHex" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="Region">
+            <EntityTypeMapping TypeName="EnergyMeteringSystemModel.Region">
+              <MappingFragment StoreEntitySet="Region">
+                <ScalarProperty Name="Id" ColumnName="Id" />
+                <ScalarProperty Name="Name" ColumnName="Name" />
+                <ScalarProperty Name="Code" ColumnName="Code" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="RejectionReason">
+            <EntityTypeMapping TypeName="EnergyMeteringSystemModel.RejectionReason">
+              <MappingFragment StoreEntitySet="RejectionReason">
+                <ScalarProperty Name="Id" ColumnName="Id" />
+                <ScalarProperty Name="Name" ColumnName="Name" />
+                <ScalarProperty Name="RequiresComment" ColumnName="RequiresComment" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="Street">
+            <EntityTypeMapping TypeName="EnergyMeteringSystemModel.Street">
+              <MappingFragment StoreEntitySet="Street">
+                <ScalarProperty Name="Id" ColumnName="Id" />
+                <ScalarProperty Name="Name" ColumnName="Name" />
+                <ScalarProperty Name="CityId" ColumnName="CityId" />
+                <ScalarProperty Name="PostalCode" ColumnName="PostalCode" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="SupplyPoint">
+            <EntityTypeMapping TypeName="EnergyMeteringSystemModel.SupplyPoint">
+              <MappingFragment StoreEntitySet="SupplyPoint">
+                <ScalarProperty Name="Id" ColumnName="Id" />
+                <ScalarProperty Name="Name" ColumnName="Name" />
+                <ScalarProperty Name="EnergySourceId" ColumnName="EnergySourceId" />
+                <ScalarProperty Name="VoltageLevel" ColumnName="VoltageLevel" />
+                <ScalarProperty Name="MaxPower" ColumnName="MaxPower" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="SupplyPointConsumptionObject">
+            <EntityTypeMapping TypeName="EnergyMeteringSystemModel.SupplyPointConsumptionObject">
+              <MappingFragment StoreEntitySet="SupplyPointConsumptionObject">
+                <ScalarProperty Name="SupplyPointId" ColumnName="SupplyPointId" />
+                <ScalarProperty Name="ConsumptionObjectId" ColumnName="ConsumptionObjectId" />
+                <ScalarProperty Name="ConnectionDate" ColumnName="ConnectionDate" />
+                <ScalarProperty Name="DisconnectionDate" ColumnName="DisconnectionDate" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="sysdiagrams">
+            <EntityTypeMapping TypeName="EnergyMeteringSystemModel.sysdiagrams">
+              <MappingFragment StoreEntitySet="sysdiagrams">
+                <ScalarProperty Name="name" ColumnName="name" />
+                <ScalarProperty Name="principal_id" ColumnName="principal_id" />
+                <ScalarProperty Name="diagram_id" ColumnName="diagram_id" />
+                <ScalarProperty Name="version" ColumnName="version" />
+                <ScalarProperty Name="definition" ColumnName="definition" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="Tariff">
+            <EntityTypeMapping TypeName="EnergyMeteringSystemModel.Tariff">
+              <MappingFragment StoreEntitySet="Tariff">
+                <ScalarProperty Name="Id" ColumnName="Id" />
+                <ScalarProperty Name="TariffTypeId" ColumnName="TariffTypeId" />
+                <ScalarProperty Name="UnitId" ColumnName="UnitId" />
+                <ScalarProperty Name="PricePerUnit" ColumnName="PricePerUnit" />
+                <ScalarProperty Name="ZoneNumber" ColumnName="ZoneNumber" />
+                <ScalarProperty Name="StartDate" ColumnName="StartDate" />
+                <ScalarProperty Name="EndDate" ColumnName="EndDate" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="TariffType">
+            <EntityTypeMapping TypeName="EnergyMeteringSystemModel.TariffType">
+              <MappingFragment StoreEntitySet="TariffType">
+                <ScalarProperty Name="Id" ColumnName="Id" />
+                <ScalarProperty Name="Name" ColumnName="Name" />
+                <ScalarProperty Name="ZoneCount" ColumnName="ZoneCount" />
+                <ScalarProperty Name="Description" ColumnName="Description" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="UnitOfMeasure">
+            <EntityTypeMapping TypeName="EnergyMeteringSystemModel.UnitOfMeasure">
+              <MappingFragment StoreEntitySet="UnitOfMeasure">
+                <ScalarProperty Name="Id" ColumnName="Id" />
+                <ScalarProperty Name="Name" ColumnName="Name" />
+                <ScalarProperty Name="Symbol" ColumnName="Symbol" />
+                <ScalarProperty Name="IsDefault" ColumnName="IsDefault" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="User">
+            <EntityTypeMapping TypeName="EnergyMeteringSystemModel.User">
+              <MappingFragment StoreEntitySet="User">
+                <ScalarProperty Name="Id" ColumnName="Id" />
+                <ScalarProperty Name="Username" ColumnName="Username" />
+                <ScalarProperty Name="PasswordHash" ColumnName="PasswordHash" />
+                <ScalarProperty Name="FullName" ColumnName="FullName" />
+                <ScalarProperty Name="Email" ColumnName="Email" />
+                <ScalarProperty Name="RoleId" ColumnName="RoleId" />
+                <ScalarProperty Name="IsActive" ColumnName="IsActive" />
+                <ScalarProperty Name="CreatedAt" ColumnName="CreatedAt" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="UserRole">
+            <EntityTypeMapping TypeName="EnergyMeteringSystemModel.UserRole">
+              <MappingFragment StoreEntitySet="UserRole">
+                <ScalarProperty Name="Id" ColumnName="Id" />
+                <ScalarProperty Name="Name" ColumnName="Name" />
+                <ScalarProperty Name="Description" ColumnName="Description" />
+                <ScalarProperty Name="PermissionsJson" ColumnName="PermissionsJson" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="VerificationInterval">
+            <EntityTypeMapping TypeName="EnergyMeteringSystemModel.VerificationInterval">
+              <MappingFragment StoreEntitySet="VerificationInterval">
+                <ScalarProperty Name="Id" ColumnName="Id" />
+                <ScalarProperty Name="MeterTypeId" ColumnName="MeterTypeId" />
+                <ScalarProperty Name="Years" ColumnName="Years" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+        </EntityContainerMapping>
+      </Mapping>
+    </edmx:Mappings>
+  </edmx:Runtime>
+  <!-- EF Designer content (DO NOT EDIT MANUALLY BELOW HERE) -->
+  <Designer xmlns="http://schemas.microsoft.com/ado/2009/11/edmx">
+    <Connection>
+      <DesignerInfoPropertySet>
+        <DesignerProperty Name="MetadataArtifactProcessing" Value="EmbedInOutputAssembly" />
+      </DesignerInfoPropertySet>
+    </Connection>
+    <Options>
+      <DesignerInfoPropertySet>
+        <DesignerProperty Name="ValidateOnBuild" Value="true" />
+        <DesignerProperty Name="EnablePluralization" Value="false" />
+        <DesignerProperty Name="IncludeForeignKeysInModel" Value="true" />
+        <DesignerProperty Name="UseLegacyProvider" Value="true" />
+        <DesignerProperty Name="CodeGenerationStrategy" Value="Нет" />
+      </DesignerInfoPropertySet>
+    </Options>
+    <!-- Diagram content (shape and connector positions) -->
+    <Diagrams></Diagrams>
+  </Designer>
+</edmx:Edmx>
