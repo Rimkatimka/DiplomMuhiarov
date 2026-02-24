@@ -5,8 +5,61 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:EnergyMeteringSystem.App.Views.Main"
         mc:Ignorable="d"
-        Title="ShellView" Height="450" Width="800">
+        Title="Учет электроэнергии" 
+        Height="600" Width="900"
+        WindowStartupLocation="CenterScreen">
+
     <Grid>
-        
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="200"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Левое меню -->
+        <ListBox Grid.Column="0" 
+                 ItemsSource="{Binding MenuItems}"
+                 Background="#2D3F5E"
+                 Foreground="White"
+                 BorderThickness="0"
+                 SelectionMode="Single">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <TextBlock Text="{Binding Title}" 
+                               Margin="10,5"
+                               FontSize="14"/>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+            <ListBox.ItemContainerStyle>
+                <Style TargetType="ListBoxItem">
+                    <Setter Property="Background" Value="Transparent"/>
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="ListBoxItem">
+                                <Border Background="{TemplateBinding Background}">
+                                    <ContentPresenter/>
+                                </Border>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                    <Style.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Background" Value="#1F2A40"/>
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter Property="Background" Value="#1976D2"/>
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+            </ListBox.ItemContainerStyle>
+        </ListBox>
+
+        <!-- Контентная область -->
+        <Border Grid.Column="1" Background="#F5F5F5">
+            <TextBlock Text="Добро пожаловать в систему" 
+                       HorizontalAlignment="Center" 
+                       VerticalAlignment="Center"
+                       FontSize="18"
+                       Foreground="#757575"/>
+        </Border>
     </Grid>
 </Window>

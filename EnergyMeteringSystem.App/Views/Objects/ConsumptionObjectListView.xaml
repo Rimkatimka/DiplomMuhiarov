@@ -1,0 +1,57 @@
+﻿<UserControl x:Class="EnergyMeteringSystem.App.Views.Objects.ConsumptionObjectListView"             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Панель поиска -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
+            <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" 
+                     Width="300" 
+                     Padding="5"
+                     VerticalAlignment="Center"/>
+            <Button Content="Обновить" 
+                    Command="{Binding RefreshCommand}" 
+                    Margin="10,0,0,0"
+                    Padding="10,5"/>
+        </StackPanel>
+
+        <!-- Список объектов -->
+        <ListBox Grid.Row="1" 
+                 ItemsSource="{Binding FilteredObjects}"
+                 DisplayMemberPath="Address"
+                 SelectedItem="{Binding SelectedObject}"/>
+        <DataGrid Grid.Row="1" 
+          ItemsSource="{Binding FilteredObjects}"
+          AutoGenerateColumns="False"
+          IsReadOnly="True"
+          SelectionMode="Single">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Адрес" Binding="{Binding Address}" Width="*"/>
+                <DataGridTextColumn Header="Тип" Binding="{Binding ObjectTypeName}" Width="Auto"/>
+                <DataGridTextColumn Header="Площадь" Binding="{Binding TotalArea}" Width="Auto"/>
+                <DataGridTemplateColumn Header="Действия">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Button Content="Счётчики"
+                            Command="{Binding DataContext.ShowMetersCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                            CommandParameter="{Binding}"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="Счётчики">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Button Content="Просмотр"
+                    Command="{Binding DataContext.ShowMetersCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                    CommandParameter="{Binding}"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+    </Grid>
+</UserControl>

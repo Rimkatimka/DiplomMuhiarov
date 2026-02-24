@@ -11,20 +11,17 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
-using EnergyMeteringSystem.App.ViewModels.Main;
 
-namespace EnergyMeteringSystem.App.Views.Main
+namespace EnergyMeteringSystem.App.Views.Billing
 {
     /// <summary>
-    /// Логика взаимодействия для ShellView.xaml
+    /// Логика взаимодействия для AccrualView.xaml
     /// </summary>
-    public partial class ShellView : Window
+    public partial class AccrualView : Window
     {
-        public ShellView()
+        public AccrualView()
         {
             InitializeComponent();
-
-            DataContext = new ShellViewModel();
         }
     }
 }

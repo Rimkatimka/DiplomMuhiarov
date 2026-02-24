@@ -6,15 +6,12 @@ using System.Threading.Tasks;
 
 namespace EnergyMeteringSystem.Core.Models.DTO
 {
-    public class MeterDto
+    public class MeterForReadingDto
     {
         public int Id { get; set; }
         public string SerialNumber { get; set; }
         public string MeterTypeName { get; set; }
-        public string StatusName { get; set; }
-        public DateTime InstallationDate { get; set; }
-        public DateTime? VerificationDate { get; set; }
-        public DateTime? NextVerificationDate { get; set; }
-        public decimal InitialReading { get; set; }
+        public decimal? LastReading { get; set; }
+        public DateTime? LastReadingDate { get; set; }
     }
 }

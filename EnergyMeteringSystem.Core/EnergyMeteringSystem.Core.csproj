@@ -46,17 +46,26 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Interfaces\Repositories\IAccrualRepository.cs" />
     <Compile Include="Interfaces\Repositories\IConsumptionObjectRepository.cs" />
     <Compile Include="Interfaces\Repositories\IMeterReadingRepository.cs" />
     <Compile Include="Interfaces\Repositories\IMeterRepository.cs" />
+    <Compile Include="Interfaces\Repositories\IRejectionReasonRepository.cs" />
     <Compile Include="Interfaces\Repositories\IUserRepository.cs" />
     <Compile Include="Interfaces\Services\IAuthService.cs" />
     <Compile Include="Interfaces\Services\ICalculationService.cs" />
     <Compile Include="Interfaces\Services\IReadingService.cs" />
+    <Compile Include="Models\DTO\AccrualCalculationDto.cs" />
+    <Compile Include="Models\DTO\AccrualDto.cs" />
     <Compile Include="Models\DTO\ConsumptionObjectDto.cs" />
     <Compile Include="Models\DTO\LoginDto.cs" />
     <Compile Include="Models\DTO\MeterDto.cs" />
+    <Compile Include="Models\DTO\MeterForReadingDto.cs" />
     <Compile Include="Models\DTO\MeterReadingDto.cs" />
+    <Compile Include="Models\DTO\MeterReadingHistoryDto.cs" />
+    <Compile Include="Models\DTO\MeterReadingInputDto.cs" />
+    <Compile Include="Models\DTO\MeterReadingVerificationDto.cs" />
+    <Compile Include="Models\DTO\RejectionReasonDto.cs" />
     <Compile Include="Models\DTO\UserDto.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

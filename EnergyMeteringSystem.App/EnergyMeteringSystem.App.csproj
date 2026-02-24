@@ -47,8 +47,15 @@
     <Reference Include="GalaSoft.MvvmLight.Platform, Version=5.4.1.0, Culture=neutral, PublicKeyToken=5f873c45e98af8a1, processorArchitecture=MSIL">
       <HintPath>..\packages\MvvmLightLibs.5.4.1.1\lib\net45\GalaSoft.MvvmLight.Platform.dll</HintPath>
     </Reference>
+    <Reference Include="LiveCharts, Version=0.9.7.0, Culture=neutral, PublicKeyToken=0bc1f845d1ebb8df, processorArchitecture=MSIL">
+      <HintPath>..\packages\LiveCharts.0.9.7\lib\net45\LiveCharts.dll</HintPath>
+    </Reference>
+    <Reference Include="LiveCharts.Wpf, Version=0.9.7.0, Culture=neutral, PublicKeyToken=0bc1f845d1ebb8df, processorArchitecture=MSIL">
+      <HintPath>..\packages\LiveCharts.Wpf.0.9.7\lib\net45\LiveCharts.Wpf.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Web.DataVisualization" />
     <Reference Include="System.Windows.Interactivity, Version=4.5.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\MvvmLightLibs.5.4.1.1\lib\net45\System.Windows.Interactivity.dll</HintPath>
     </Reference>
@@ -70,20 +77,44 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Commands\RelayCommand.cs" />
+    <Compile Include="Converters\MonthIndexConverter.cs" />
     <Compile Include="ViewModels\Auth\LoginViewModel.cs" />
     <Compile Include="ViewModels\Base\ViewModelBase.cs" />
+    <Compile Include="ViewModels\Billing\AccrualViewModel.cs" />
+    <Compile Include="ViewModels\Main\MenuItemViewModel.cs" />
     <Compile Include="ViewModels\Main\ShellViewModel.cs" />
     <Compile Include="ViewModels\Meters\MeterEditViewModel.cs" />
     <Compile Include="ViewModels\Meters\MeterListViewModel.cs" />
     <Compile Include="ViewModels\Objects\ConsumptionObjectEditViewModel.cs" />
     <Compile Include="ViewModels\Objects\ConsumptionObjectListViewModel.cs" />
+    <Compile Include="ViewModels\Objects\ObjectMetersViewModel.cs" />
     <Compile Include="ViewModels\Readings\MeterReadingHistoryViewModel.cs" />
     <Compile Include="ViewModels\Readings\MeterReadingInputViewModel.cs" />
+    <Compile Include="ViewModels\Readings\MeterReadingVerificationViewModel.cs" />
     <Compile Include="Views\Auth\LoginView.xaml.cs">
       <DependentUpon>LoginView.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Views\Billing\AccrualView.xaml.cs">
+      <DependentUpon>AccrualView.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\Main\ShellView.xaml.cs">
       <DependentUpon>ShellView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Objects\ConsumptionObjectListView.xaml.cs">
+      <DependentUpon>ConsumptionObjectListView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Objects\ObjectMetersView.xaml.cs">
+      <DependentUpon>ObjectMetersView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Readings\MeterReadingHistoryView.xaml.cs">
+      <DependentUpon>MeterReadingHistoryView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Readings\MeterReadingInputView.xaml.cs">
+      <DependentUpon>MeterReadingInputView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Readings\MeterReadingVerificationView.xaml.cs">
+      <DependentUpon>MeterReadingVerificationView.xaml</DependentUpon>
     </Compile>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
@@ -101,7 +132,31 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="Views\Billing\AccrualView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Views\Main\ShellView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\Objects\ConsumptionObjectListView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\Objects\ObjectMetersView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\Readings\MeterReadingHistoryView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\Readings\MeterReadingInputView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\Readings\MeterReadingVerificationView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

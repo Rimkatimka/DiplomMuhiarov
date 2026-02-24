@@ -1,0 +1,39 @@
+﻿<Window x:Class="EnergyMeteringSystem.App.Views.Objects.ObjectMetersView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:EnergyMeteringSystem.App.Views.Objects"
+        mc:Ignorable="d"
+        Title="{Binding ObjectTitle}" 
+        Height="400" Width="600"
+        WindowStartupLocation="CenterScreen">
+
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <DataGrid Grid.Row="0" 
+                  ItemsSource="{Binding Meters}"
+                  AutoGenerateColumns="False"
+                  IsReadOnly="True"
+                  SelectionMode="Single">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Серийный номер" Binding="{Binding SerialNumber}" Width="*"/>
+                <DataGridTextColumn Header="Тип" Binding="{Binding MeterTypeName}" Width="*"/>
+                <DataGridTextColumn Header="Статус" Binding="{Binding StatusName}" Width="*"/>
+                <DataGridTextColumn Header="Дата установки" Binding="{Binding InstallationDate, StringFormat={}{0:dd.MM.yyyy}}" Width="Auto"/>
+                <DataGridTextColumn Header="Поверка до" Binding="{Binding NextVerificationDate, StringFormat={}{0:dd.MM.yyyy}}" Width="Auto"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <Button Grid.Row="1" 
+                Content="Закрыть"
+                Command="{Binding CloseCommand}"
+                HorizontalAlignment="Right"
+                Margin="0,10,0,0"
+                Padding="20,5"/>
+    </Grid>
+</Window>

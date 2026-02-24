@@ -149,9 +149,11 @@
       <DependentUpon>EnergyMeteringModel.tt</DependentUpon>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Repositories\AccrualRepository.cs" />
     <Compile Include="Repositories\ConsumptionObjectRepository.cs" />
     <Compile Include="Repositories\MeterReadingRepository.cs" />
     <Compile Include="Repositories\MeterRepository.cs" />
+    <Compile Include="Repositories\RejectionReasonRepository.cs" />
     <Compile Include="Repositories\UserRepository.cs" />
   </ItemGroup>
   <ItemGroup>

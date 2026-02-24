@@ -11,20 +11,19 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
-using EnergyMeteringSystem.App.ViewModels.Main;
 
-namespace EnergyMeteringSystem.App.Views.Main
+namespace EnergyMeteringSystem.App.Views.Readings
 {
     /// <summary>
-    /// Логика взаимодействия для ShellView.xaml
+    /// Логика взаимодействия для MeterReadingVerificationView.xaml
     /// </summary>
-    public partial class ShellView : Window
+    public partial class MeterReadingVerificationView : UserControl
     {
-        public ShellView()
+        public MeterReadingVerificationView()
         {
             InitializeComponent();
 
-            DataContext = new ShellViewModel();
+            DataContext = new ViewModels.Readings.MeterReadingVerificationViewModel();
         }
     }
 }
