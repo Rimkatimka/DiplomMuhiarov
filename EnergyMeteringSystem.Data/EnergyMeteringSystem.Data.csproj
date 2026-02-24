@@ -151,10 +151,21 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Repositories\AccrualRepository.cs" />
     <Compile Include="Repositories\ConsumptionObjectRepository.cs" />
+    <Compile Include="Repositories\ContractStatusRepository.cs" />
+    <Compile Include="Repositories\EnergySourceRepository.cs" />
     <Compile Include="Repositories\MeterReadingRepository.cs" />
     <Compile Include="Repositories\MeterRepository.cs" />
+    <Compile Include="Repositories\MeterStatusRepository.cs" />
+    <Compile Include="Repositories\MeterTypeRepository.cs" />
+    <Compile Include="Repositories\ObjectTypeRepository.cs" />
+    <Compile Include="Repositories\PaymentMethodRepository.cs" />
+    <Compile Include="Repositories\PaymentRepository.cs" />
+    <Compile Include="Repositories\ReadingStatusRepository.cs" />
     <Compile Include="Repositories\RejectionReasonRepository.cs" />
+    <Compile Include="Repositories\TariffTypeRepository.cs" />
+    <Compile Include="Repositories\UnitOfMeasureRepository.cs" />
     <Compile Include="Repositories\UserRepository.cs" />
+    <Compile Include="Repositories\VerificationIntervalRepository.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\EnergyMeteringSystem.Core\EnergyMeteringSystem.Core.csproj">

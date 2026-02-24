@@ -1,0 +1,100 @@
+﻿<UserControl x:Class="EnergyMeteringSystem.App.Views.Billing.PaymentView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Верхняя панель -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
+            <TextBlock Text="Год:" VerticalAlignment="Center"/>
+            <ComboBox ItemsSource="{Binding Years}" 
+                      SelectedItem="{Binding SelectedYear}"
+                      Width="80" Margin="5"/>
+
+            <TextBlock Text="Месяц:" VerticalAlignment="Center" Margin="15,0,0,0"/>
+            <ComboBox ItemsSource="{Binding Months}" 
+                      SelectedIndex="{Binding SelectedMonth, Converter={StaticResource MonthIndexConverter}}"
+                      Width="100" Margin="5"/>
+
+            <Button Content="Обновить" 
+                    Command="{Binding RefreshCommand}"
+                    Padding="10,5" Margin="15,0,0,0"/>
+        </StackPanel>
+
+        <!-- Форма регистрации платежа -->
+        <GroupBox Grid.Row="1" Header="Регистрация платежа" Margin="0,0,0,10">
+            <Grid Margin="10">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="Объект:" Margin="5" VerticalAlignment="Center"/>
+                <ComboBox Grid.Row="0" Grid.Column="1" 
+                          ItemsSource="{Binding Objects}"
+                          SelectedItem="{Binding SelectedObject}"
+                          DisplayMemberPath="Address"
+                          Margin="5" MinWidth="300"/>
+
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="Способ оплаты:" Margin="5" VerticalAlignment="Center"/>
+                <ComboBox Grid.Row="1" Grid.Column="1" 
+                          ItemsSource="{Binding PaymentMethods}"
+                          SelectedItem="{Binding SelectedMethod}"
+                          DisplayMemberPath="Name"
+                          Margin="5"/>
+
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="Сумма:" Margin="5" VerticalAlignment="Center"/>
+                <TextBox Grid.Row="2" Grid.Column="1" 
+                         Text="{Binding Amount}"
+                         Margin="5" Padding="5"/>
+
+                <Button Grid.Row="0" Grid.Column="2" 
+                        Content="Печать квитанции"
+                        Command="{Binding PrintReceiptCommand}"
+                        Margin="10,5,0,5"
+                        Padding="10,5"
+                        VerticalAlignment="Center"/>
+            </Grid>
+        </GroupBox>
+
+        <!-- Кнопка сохранения и итог -->
+        <StackPanel Grid.Row="2" Orientation="Vertical">
+            <Button Content="Сохранить платеж" 
+                    Command="{Binding SaveCommand}"
+                    HorizontalAlignment="Right"
+                    Padding="20,5" Margin="0,0,0,10"
+                    Background="#4CAF50" Foreground="White"/>
+
+            <TextBlock Text="Поступления за период:" FontWeight="Bold" Margin="0,5"/>
+            <TextBlock Text="{Binding TotalPayments, StringFormat={}{0:F2} ₽}" 
+                       FontSize="16" FontWeight="Bold" Foreground="Green"
+                       Margin="0,0,0,10"/>
+
+            <!-- Список платежей -->
+            <DataGrid ItemsSource="{Binding Payments}"
+                      AutoGenerateColumns="False"
+                      IsReadOnly="True"
+                      MaxHeight="300">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Дата" Binding="{Binding PaymentDate, StringFormat={}{0:dd.MM.yyyy HH:mm}}" Width="120"/>
+                    <DataGridTextColumn Header="Объект" Binding="{Binding Address}" Width="300"/>
+                    <DataGridTextColumn Header="Сумма" Binding="{Binding Amount, StringFormat={}{0:F2} ₽}" Width="100"/>
+                    <DataGridTextColumn Header="Способ" Binding="{Binding PaymentMethodName}" Width="120"/>
+                    <DataGridTextColumn Header="Кто принял" Binding="{Binding ReceivedBy}" Width="150"/>
+                    <DataGridTextColumn Header="№ квитанции" Binding="{Binding ReceiptNumber}" Width="120"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </StackPanel>
+    </Grid>
+</UserControl>

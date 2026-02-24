@@ -9,6 +9,7 @@ using EnergyMeteringSystem.Services.Auth;
 using EnergyMeteringSystem.App.ViewModels.Base;
 using EnergyMeteringSystem.App.Commands;
 using System.Windows;
+using EnergyMeteringSystem.App.ViewModels.Directories;
 
 namespace EnergyMeteringSystem.App.ViewModels.Main
 {
@@ -41,17 +42,114 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
                 });
             }
 
+            if (_currentUser.IsAdmin)
+            {
+                var dirMenu = new MenuItemViewModel { Title = "Справочники" };
+
+                dirMenu.Children.Add(new MenuItemViewModel
+                {
+                    Title = "Типы счетчиков",
+                    Command = new RelayCommand(_ => OpenDirectory(DirectoryFactory.CreateMeterTypeViewModel(), "Типы счетчиков"))
+                });
+
+                dirMenu.Children.Add(new MenuItemViewModel
+                {
+                    Title = "Статусы показаний",
+                    Command = new RelayCommand(_ => OpenDirectory(DirectoryFactory.CreateReadingStatusViewModel(), "Статусы показаний"))
+                });
+
+                dirMenu.Children.Add(new MenuItemViewModel
+                {
+                    Title = "Способы оплаты",
+                    Command = new RelayCommand(_ => OpenDirectory(DirectoryFactory.CreatePaymentMethodViewModel(), "Способы оплаты"))
+                });
+
+                MenuItems.Add(dirMenu);
+            }
             MenuItems.Add(new MenuItemViewModel
             {
                 Title = "История показаний",
                 Command = new RelayCommand(_ => OpenReadingHistory())
             });
 
+            if (_currentUser.IsAdmin)
+            {
+                var dirMenu = new MenuItemViewModel { Title = "Справочники" };
+
+                dirMenu.Children.Add(new MenuItemViewModel
+                {
+                    Title = "Типы счетчиков",
+                    Command = new RelayCommand(_ => OpenDirectory(DirectoryFactory.CreateMeterTypeViewModel(), "Типы счетчиков"))
+                });
+
+                dirMenu.Children.Add(new MenuItemViewModel
+                {
+                    Title = "Статусы показаний",
+                    Command = new RelayCommand(_ => OpenDirectory(DirectoryFactory.CreateReadingStatusViewModel(), "Статусы показаний"))
+                });
+
+                dirMenu.Children.Add(new MenuItemViewModel
+                {
+                    Title = "Способы оплаты",
+                    Command = new RelayCommand(_ => OpenDirectory(DirectoryFactory.CreatePaymentMethodViewModel(), "Способы оплаты"))
+                });
+
+                dirMenu.Children.Add(new MenuItemViewModel
+                {
+                    Title = "Типы объектов",
+                    Command = new RelayCommand(_ => OpenDirectory(DirectoryFactory.CreateObjectTypeViewModel(), "Типы объектов"))
+                });
+
+                dirMenu.Children.Add(new MenuItemViewModel
+                {
+                    Title = "Причины отклонения",
+                    Command = new RelayCommand(_ => OpenDirectory(DirectoryFactory.CreateRejectionReasonViewModel(), "Причины отклонения"))
+                });
+
+                dirMenu.Children.Add(new MenuItemViewModel
+                {
+                    Title = "Статусы счетчиков",
+                    Command = new RelayCommand(_ => OpenDirectory(DirectoryFactory.CreateMeterStatusViewModel(), "Статусы счетчиков"))
+                });
+
+                dirMenu.Children.Add(new MenuItemViewModel
+                {
+                    Title = "Статусы договоров",
+                    Command = new RelayCommand(_ => OpenDirectory(DirectoryFactory.CreateContractStatusViewModel(), "Статусы договоров"))
+                });
+
+                dirMenu.Children.Add(new MenuItemViewModel
+                {
+                    Title = "Типы тарифов",
+                    Command = new RelayCommand(_ => OpenDirectory(DirectoryFactory.CreateTariffTypeViewModel(), "Типы тарифов"))
+                });
+
+                dirMenu.Children.Add(new MenuItemViewModel
+                {
+                    Title = "Единицы измерения",
+                    Command = new RelayCommand(_ => OpenDirectory(DirectoryFactory.CreateUnitOfMeasureViewModel(), "Единицы измерения"))
+                });
+
+                dirMenu.Children.Add(new MenuItemViewModel
+                {
+                    Title = "Источники энергии",
+                    Command = new RelayCommand(_ => OpenDirectory(DirectoryFactory.CreateEnergySourceViewModel(), "Источники энергии"))
+                });
+
+                dirMenu.Children.Add(new MenuItemViewModel
+                {
+                    Title = "Интервалы поверки",
+                    Command = new RelayCommand(_ => OpenDirectory(DirectoryFactory.CreateVerificationIntervalViewModel(), "Интервалы поверки"))
+                });
+
+                MenuItems.Add(dirMenu);
+            }
+
             MenuItems = new ObservableCollection<MenuItemViewModel>();
             BuildMenu();
             
         }
-        
+
 
         private void BuildMenu()
         {
@@ -71,15 +169,22 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
 
             // Показания
             var readingsMenu = new MenuItemViewModel { Title = "Показания" };
-            readingsMenu.Command = new RelayCommand(_ => { }); // заглушка
 
             // Ввод показаний — всем
-            readingsMenu.Command = new RelayCommand(_ => OpenReadingInput());
+            readingsMenu.Children.Add(new MenuItemViewModel
+            {
+                Title = "Ввод показаний",
+                Command = new RelayCommand(_ => OpenReadingInput())
+            });
 
             // Верификация — только инспектору и админу
             if (_currentUser.IsInspector || _currentUser.IsAdmin)
             {
-                readingsMenu.Command = new RelayCommand(_ => OpenVerification());
+                readingsMenu.Children.Add(new MenuItemViewModel
+                {
+                    Title = "Верификация",
+                    Command = new RelayCommand(_ => OpenVerification())
+                });
             }
 
             MenuItems.Add(readingsMenu);
@@ -103,11 +208,97 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
             // Справочники — только админу
             if (_currentUser.IsAdmin)
             {
-                MenuItems.Add(new MenuItemViewModel
+                var dirMenu = new MenuItemViewModel { Title = "Справочники" };
+
+                dirMenu.Children.Add(new MenuItemViewModel
                 {
-                    Title = "Справочники",
-                    Command = new RelayCommand(_ => OpenDirectories())
+                    Title = "Типы счетчиков",
+                    Command = new RelayCommand(_ => OpenDirectory(
+                        DirectoryFactory.CreateMeterTypeViewModel(),
+                        "Типы счетчиков"))
                 });
+
+                dirMenu.Children.Add(new MenuItemViewModel
+                {
+                    Title = "Статусы показаний",
+                    Command = new RelayCommand(_ => OpenDirectory(
+                        DirectoryFactory.CreateReadingStatusViewModel(),
+                        "Статусы показаний"))
+                });
+
+                dirMenu.Children.Add(new MenuItemViewModel
+                {
+                    Title = "Способы оплаты",
+                    Command = new RelayCommand(_ => OpenDirectory(
+                        DirectoryFactory.CreatePaymentMethodViewModel(),
+                        "Способы оплаты"))
+                });
+
+                dirMenu.Children.Add(new MenuItemViewModel
+                {
+                    Title = "Типы объектов",
+                    Command = new RelayCommand(_ => OpenDirectory(
+                        DirectoryFactory.CreateObjectTypeViewModel(),
+                        "Типы объектов"))
+                });
+
+                dirMenu.Children.Add(new MenuItemViewModel
+                {
+                    Title = "Причины отклонения",
+                    Command = new RelayCommand(_ => OpenDirectory(
+                        DirectoryFactory.CreateRejectionReasonViewModel(),
+                        "Причины отклонения"))
+                });
+
+                dirMenu.Children.Add(new MenuItemViewModel
+                {
+                    Title = "Статусы счетчиков",
+                    Command = new RelayCommand(_ => OpenDirectory(
+                        DirectoryFactory.CreateMeterStatusViewModel(),
+                        "Статусы счетчиков"))
+                });
+
+                dirMenu.Children.Add(new MenuItemViewModel
+                {
+                    Title = "Статусы договоров",
+                    Command = new RelayCommand(_ => OpenDirectory(
+                        DirectoryFactory.CreateContractStatusViewModel(),
+                        "Статусы договоров"))
+                });
+
+                dirMenu.Children.Add(new MenuItemViewModel
+                {
+                    Title = "Типы тарифов",
+                    Command = new RelayCommand(_ => OpenDirectory(
+                        DirectoryFactory.CreateTariffTypeViewModel(),
+                        "Типы тарифов"))
+                });
+
+                dirMenu.Children.Add(new MenuItemViewModel
+                {
+                    Title = "Единицы измерения",
+                    Command = new RelayCommand(_ => OpenDirectory(
+                        DirectoryFactory.CreateUnitOfMeasureViewModel(),
+                        "Единицы измерения"))
+                });
+
+                dirMenu.Children.Add(new MenuItemViewModel
+                {
+                    Title = "Источники энергии",
+                    Command = new RelayCommand(_ => OpenDirectory(
+                        DirectoryFactory.CreateEnergySourceViewModel(),
+                        "Источники энергии"))
+                });
+
+                dirMenu.Children.Add(new MenuItemViewModel
+                {
+                    Title = "Интервалы поверки",
+                    Command = new RelayCommand(_ => OpenDirectory(
+                        DirectoryFactory.CreateVerificationIntervalViewModel(),
+                        "Интервалы поверки"))
+                });
+
+                MenuItems.Add(dirMenu);
 
                 MenuItems.Add(new MenuItemViewModel
                 {
@@ -123,7 +314,6 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
                 Command = new RelayCommand(_ => Logout())
             });
         }
-
         private void OpenDashboard() { }
         private void OpenObjects()
         {
@@ -156,8 +346,34 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
             };
             win.Show();
         }
-        private void OpenPayment() { }
-        private void OpenDirectories() { }
+        private void OpenPayment()
+        {
+            var view = new Views.Billing.PaymentView();
+            var win = new Window
+            {
+                Title = "Платежи",
+                Content = view,
+                Width = 1000,
+                Height = 700,
+                WindowStartupLocation = WindowStartupLocation.CenterScreen
+            };
+            win.Show();
+        }
+        private void OpenDirectory(DirectoryListViewModel viewModel, string title)
+        {
+            var view = new Views.Directories.DirectoryListView();
+            view.DataContext = viewModel;
+
+            var win = new Window
+            {
+                Title = title,
+                Content = view,
+                Width = 800,
+                Height = 500,
+                WindowStartupLocation = WindowStartupLocation.CenterScreen
+            };
+            win.Show();
+        }
         private void OpenUsers() { }
         private void OpenReadingHistory()
         {

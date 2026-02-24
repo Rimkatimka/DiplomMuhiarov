@@ -82,6 +82,9 @@
     <Compile Include="ViewModels\Auth\LoginViewModel.cs" />
     <Compile Include="ViewModels\Base\ViewModelBase.cs" />
     <Compile Include="ViewModels\Billing\AccrualViewModel.cs" />
+    <Compile Include="ViewModels\Billing\PaymentViewModel.cs" />
+    <Compile Include="ViewModels\Directories\DirectoryFactory.cs" />
+    <Compile Include="ViewModels\Directories\DirectoryListViewModel.cs" />
     <Compile Include="ViewModels\Main\MenuItemViewModel.cs" />
     <Compile Include="ViewModels\Main\ShellViewModel.cs" />
     <Compile Include="ViewModels\Meters\MeterEditViewModel.cs" />
@@ -97,6 +100,12 @@
     </Compile>
     <Compile Include="Views\Billing\AccrualView.xaml.cs">
       <DependentUpon>AccrualView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Billing\PaymentView.xaml.cs">
+      <DependentUpon>PaymentView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Directories\DirectoryListView.xaml.cs">
+      <DependentUpon>DirectoryListView.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\Main\ShellView.xaml.cs">
       <DependentUpon>ShellView.xaml</DependentUpon>
@@ -133,6 +142,14 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Views\Billing\AccrualView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\Billing\PaymentView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\Directories\DirectoryListView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
