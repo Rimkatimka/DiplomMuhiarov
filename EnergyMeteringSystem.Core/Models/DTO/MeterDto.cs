@@ -16,5 +16,26 @@ namespace EnergyMeteringSystem.Core.Models.DTO
         public DateTime? VerificationDate { get; set; }
         public DateTime? NextVerificationDate { get; set; }
         public decimal InitialReading { get; set; }
+        public string VerificationStatusText
+        {
+            get
+            {
+                if (!NextVerificationDate.HasValue) return "Не указана";
+                if (NextVerificationDate.Value < DateTime.Today) return "Просрочена";
+                if (NextVerificationDate.Value <= DateTime.Today.AddMonths(1)) return "Скоро";
+                return "В норме";
+            }
+        }
+
+        public string VerificationStatusColor
+        {
+            get
+            {
+                if (!NextVerificationDate.HasValue) return "Gray";
+                if (NextVerificationDate.Value < DateTime.Today) return "Red";
+                if (NextVerificationDate.Value <= DateTime.Today.AddMonths(1)) return "Orange";
+                return "Green";
+            }
+        }
     }
 }

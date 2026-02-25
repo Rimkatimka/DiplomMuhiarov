@@ -111,42 +111,87 @@ namespace EnergyMeteringSystem.Data.Repositories
                 .Sum(p => (decimal?)p.Amount) ?? 0;
         }
 
-        public List<PaymentDto> GetDebtors()
+        public List<DebtDto> GetDebtors()
         {
-            // Получаем все начисления за последний месяц
-            var lastMonth = DateTime.Now.AddMonths(-1);
-            var accruals = _context.Accrual
-                .Where(a => a.PeriodYear == lastMonth.Year &&
-                           a.PeriodMonth == lastMonth.Month &&
-                           !a.IsPaid)
-                .ToList();
+            var result = new List<DebtDto>();
+            var currentDate = DateTime.Now;
 
-            var result = new List<PaymentDto>();
+            // Берем объекты с начислениями за последние 3 месяца
+            var objects = _context.ConsumptionObject.ToList();
 
-            foreach (var a in accruals)
+            foreach (var obj in objects)
             {
-                // Сумма оплат за этот период
-                var paid = _context.Payment
-                    .Where(p => p.ConsumptionObjectId == a.ConsumptionObjectId &&
-                               p.PeriodYear == a.PeriodYear &&
-                               p.PeriodMonth == a.PeriodMonth)
-                    .Sum(p => (decimal?)p.Amount) ?? 0;
+                decimal totalDebt = 0;
+                int lastMonthWithDebt = 0;
+                int lastYearWithDebt = 0;
 
-                if (paid < a.Amount)
+                // Проверяем последние 6 месяцев
+                for (int i = 1; i <= 6; i++)
                 {
-                    var obj = _context.ConsumptionObject.Find(a.ConsumptionObjectId);
-                    result.Add(new PaymentDto
+                    var periodDate = currentDate.AddMonths(-i);
+                    int year = periodDate.Year;
+                    int month = periodDate.Month;
+
+                    var accrual = _context.Accrual
+                        .FirstOrDefault(a => a.ConsumptionObjectId == obj.Id &&
+                                             a.PeriodYear == year &&
+                                             a.PeriodMonth == month);
+
+                    if (accrual != null && !accrual.IsPaid)
                     {
-                        ConsumptionObjectId = a.ConsumptionObjectId,
-                        Address = obj?.Street.Name + ", д. " + obj?.HouseNumber,
-                        Amount = a.Amount - paid,
-                        PeriodMonth = a.PeriodMonth,
-                        PeriodYear = a.PeriodYear
+                        decimal paid = _context.Payment
+                            .Where(p => p.ConsumptionObjectId == obj.Id &&
+                                        p.PeriodYear == year &&
+                                        p.PeriodMonth == month)
+                            .Sum(p => (decimal?)p.Amount) ?? 0;
+
+                        if (paid < accrual.Amount)
+                        {
+                            totalDebt += (accrual.Amount - paid);
+                            lastMonthWithDebt = month;
+                            lastYearWithDebt = year;
+                        }
+                    }
+                }
+
+                if (totalDebt > 0)
+                {
+                    result.Add(new DebtDto
+                    {
+                        ConsumptionObjectId = obj.Id,
+                        Address = obj.Street.Name + ", д. " + obj.HouseNumber +
+                                 (obj.ApartmentNumber != null ? ", кв. " + obj.ApartmentNumber : ""),
+                        DebtAmount = totalDebt,
+                        PeriodMonth = lastMonthWithDebt,
+                        PeriodYear = lastYearWithDebt,
+                        LastPaymentDate = GetLastPaymentDate(obj.Id),
+                        MonthsOverdue = CalculateMonthsOverdue(lastYearWithDebt, lastMonthWithDebt)
                     });
                 }
             }
 
-            return result;
+            return result.OrderByDescending(d => d.DebtAmount).ToList();
+        }
+
+        private DateTime GetLastPaymentDate(int objectId)
+        {
+            var lastPayment = _context.Payment
+                .Where(p => p.ConsumptionObjectId == objectId)
+                .OrderByDescending(p => p.PaymentDate)
+                .FirstOrDefault();
+
+            return lastPayment?.PaymentDate ?? DateTime.MinValue;
+        }
+
+        private int CalculateMonthsOverdue(int year, int month)
+        {
+            if (year == 0 || month == 0) return 0;
+
+            var currentDate = DateTime.Now;
+            var debtDate = new DateTime(year, month, 1);
+
+            return ((currentDate.Year - debtDate.Year) * 12) +
+                   (currentDate.Month - debtDate.Month);
         }
     }
 }

@@ -14,6 +14,7 @@
     <WarningLevel>4</WarningLevel>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -78,13 +79,24 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Commands\RelayCommand.cs" />
+    <Compile Include="Converters\ActiveStatusConverter.cs" />
+    <Compile Include="Converters\InverseBooleanConverter.cs" />
     <Compile Include="Converters\MonthIndexConverter.cs" />
+    <Compile Include="Converters\ValueToHeightConverter.cs" />
+    <Compile Include="ViewModels\Admin\AuditLogViewModel.cs" />
+    <Compile Include="ViewModels\Admin\BackupViewModel.cs" />
+    <Compile Include="ViewModels\Admin\UserEditViewModel.cs" />
+    <Compile Include="ViewModels\Admin\UserManagementViewModel.cs" />
     <Compile Include="ViewModels\Auth\LoginViewModel.cs" />
     <Compile Include="ViewModels\Base\ViewModelBase.cs" />
     <Compile Include="ViewModels\Billing\AccrualViewModel.cs" />
+    <Compile Include="ViewModels\Billing\DebtViewModel.cs" />
     <Compile Include="ViewModels\Billing\PaymentViewModel.cs" />
+    <Compile Include="ViewModels\Contracts\ContractEditViewModel.cs" />
+    <Compile Include="ViewModels\Contracts\ContractListViewModel.cs" />
     <Compile Include="ViewModels\Directories\DirectoryFactory.cs" />
     <Compile Include="ViewModels\Directories\DirectoryListViewModel.cs" />
+    <Compile Include="ViewModels\Main\DashboardViewModel.cs" />
     <Compile Include="ViewModels\Main\MenuItemViewModel.cs" />
     <Compile Include="ViewModels\Main\ShellViewModel.cs" />
     <Compile Include="ViewModels\Meters\MeterEditViewModel.cs" />
@@ -95,17 +107,44 @@
     <Compile Include="ViewModels\Readings\MeterReadingHistoryViewModel.cs" />
     <Compile Include="ViewModels\Readings\MeterReadingInputViewModel.cs" />
     <Compile Include="ViewModels\Readings\MeterReadingVerificationViewModel.cs" />
+    <Compile Include="ViewModels\Reports\ReportViewModel.cs" />
+    <Compile Include="ViewModels\Tariffs\TariffEditViewModel.cs" />
+    <Compile Include="ViewModels\Tariffs\TariffListViewModel.cs" />
+    <Compile Include="Views\Admin\AuditLogView.xaml.cs">
+      <DependentUpon>AuditLogView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Admin\BackupView.xaml.cs">
+      <DependentUpon>BackupView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Admin\UserEditView.xaml.cs">
+      <DependentUpon>UserEditView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Admin\UserManagementView.xaml.cs">
+      <DependentUpon>UserManagementView.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\Auth\LoginView.xaml.cs">
       <DependentUpon>LoginView.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\Billing\AccrualView.xaml.cs">
       <DependentUpon>AccrualView.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Views\Billing\DebtView.xaml.cs">
+      <DependentUpon>DebtView.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\Billing\PaymentView.xaml.cs">
       <DependentUpon>PaymentView.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Views\Contracts\ContractEditView.xaml.cs">
+      <DependentUpon>ContractEditView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Contracts\ContractListView.xaml.cs">
+      <DependentUpon>ContractListView.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\Directories\DirectoryListView.xaml.cs">
       <DependentUpon>DirectoryListView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Main\DashboardView.xaml.cs">
+      <DependentUpon>DashboardView.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\Main\ShellView.xaml.cs">
       <DependentUpon>ShellView.xaml</DependentUpon>
@@ -125,6 +164,15 @@
     <Compile Include="Views\Readings\MeterReadingVerificationView.xaml.cs">
       <DependentUpon>MeterReadingVerificationView.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Views\Reports\ReportView.xaml.cs">
+      <DependentUpon>ReportView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Tariffs\TariffEditView.xaml.cs">
+      <DependentUpon>TariffEditView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Tariffs\TariffListView.xaml.cs">
+      <DependentUpon>TariffListView.xaml</DependentUpon>
+    </Compile>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -137,6 +185,22 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="Views\Admin\AuditLogView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\Admin\BackupView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\Admin\UserEditView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\Admin\UserManagementView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Views\Auth\LoginView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -145,11 +209,27 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="Views\Billing\DebtView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Views\Billing\PaymentView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="Views\Contracts\ContractEditView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\Contracts\ContractListView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Views\Directories\DirectoryListView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\Main\DashboardView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -174,6 +254,18 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Views\Readings\MeterReadingVerificationView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\Reports\ReportView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\Tariffs\TariffEditView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\Tariffs\TariffListView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

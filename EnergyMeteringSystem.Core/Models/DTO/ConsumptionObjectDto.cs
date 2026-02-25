@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace EnergyMeteringSystem.Core.Models.DTO
 {
@@ -10,9 +6,19 @@ namespace EnergyMeteringSystem.Core.Models.DTO
     {
         public int Id { get; set; }
         public string Name { get; set; }
-        public string Address { get; set; } // можно склеить улицу + дом + кв
+        public string Street { get; set; }
+        public string HouseNumber { get; set; }
+        public string ApartmentNumber { get; set; }
         public string ObjectTypeName { get; set; }
         public decimal? TotalArea { get; set; }
         public int? ResidentCount { get; set; }
+
+        public string Address => $"{Street}, д. {HouseNumber}" +
+            (string.IsNullOrEmpty(ApartmentNumber) ? "" : $", кв. {ApartmentNumber}");
+
+        public string ShortAddress => $"{Street}, {HouseNumber}" +
+            (string.IsNullOrEmpty(ApartmentNumber) ? "" : $"-{ApartmentNumber}");
+
+        public string FullInfo => $"{ShortAddress} ({ObjectTypeName})";
     }
 }

@@ -1,0 +1,59 @@
+﻿<UserControl x:Class="EnergyMeteringSystem.App.Views.Tariffs.TariffEditView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Тип тарифа -->
+        <TextBlock Grid.Row="0" Grid.Column="0" Text="Тип тарифа:" Margin="5" VerticalAlignment="Center"/>
+        <ComboBox Grid.Row="0" Grid.Column="1" 
+                  ItemsSource="{Binding TariffTypes}"
+                  SelectedItem="{Binding SelectedTariffType}"
+                  DisplayMemberPath="Name"
+                  Margin="5" Padding="5"/>
+
+        <!-- Зона -->
+        <TextBlock Grid.Row="1" Grid.Column="0" Text="Зона:" Margin="5" VerticalAlignment="Center"/>
+        <ComboBox Grid.Row="1" Grid.Column="1" 
+                  SelectedItem="{Binding ZoneNumber}"
+                  Margin="5" Padding="5">
+            <ComboBoxItem Content="День" IsSelected="True"/>
+            <ComboBoxItem Content="Ночь"/>
+        </ComboBox>
+
+        <!-- Цена -->
+        <TextBlock Grid.Row="2" Grid.Column="0" Text="Цена (за кВт):" Margin="5" VerticalAlignment="Center"/>
+        <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding PricePerUnit}" Margin="5" Padding="5"/>
+
+        <!-- Дата начала -->
+        <TextBlock Grid.Row="3" Grid.Column="0" Text="Начало действия:" Margin="5" VerticalAlignment="Center"/>
+        <DatePicker Grid.Row="3" Grid.Column="1" SelectedDate="{Binding StartDate}" Margin="5"/>
+
+        <!-- Дата окончания -->
+        <TextBlock Grid.Row="4" Grid.Column="0" Text="Окончание:" Margin="5" VerticalAlignment="Center"/>
+        <DatePicker Grid.Row="4" Grid.Column="1" SelectedDate="{Binding EndDate}" Margin="5"/>
+
+        <!-- Кнопки -->
+        <StackPanel Grid.Row="5" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+            <Button Content="Сохранить" 
+                    Command="{Binding SaveCommand}"
+                    Padding="20,8" Margin="5"
+                    Background="#4CAF50" Foreground="White"/>
+            <Button Content="Отмена" 
+                    Command="{Binding CancelCommand}"
+                    Padding="20,8" Margin="5"/>
+        </StackPanel>
+    </Grid>
+</UserControl>

@@ -66,12 +66,50 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
 
                 MenuItems.Add(dirMenu);
             }
+
+            if (_currentUser.IsAdmin)
+            {
+                var adminMenu = new MenuItemViewModel { Title = "Администрирование" };
+
+                adminMenu.Children.Add(new MenuItemViewModel
+                {
+                    Title = "Пользователи",
+                    Command = new RelayCommand(_ => OpenUserManagement())
+                });
+
+                adminMenu.Children.Add(new MenuItemViewModel
+                {
+                    Title = "Журнал аудита",
+                    Command = new RelayCommand(_ => OpenAuditLog())
+                });
+
+                adminMenu.Children.Add(new MenuItemViewModel
+                {
+                    Title = "Резервное копирование",
+                    Command = new RelayCommand(_ => OpenBackup())
+                });
+
+                MenuItems.Add(adminMenu);
+            }
+
             MenuItems.Add(new MenuItemViewModel
             {
                 Title = "История показаний",
                 Command = new RelayCommand(_ => OpenReadingHistory())
             });
-
+            if (_currentUser.IsAccountant || _currentUser.IsAdmin)
+            {
+                MenuItems.Add(new MenuItemViewModel
+                {
+                    Title = "Задолженность",
+                    Command = new RelayCommand(_ => OpenDebt())
+                });
+            }
+            MenuItems.Add(new MenuItemViewModel
+            {
+                Title = "Договоры",
+                Command = new RelayCommand(_ => OpenContracts())
+            });
             if (_currentUser.IsAdmin)
             {
                 var dirMenu = new MenuItemViewModel { Title = "Справочники" };
@@ -143,6 +181,18 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
                 });
 
                 MenuItems.Add(dirMenu);
+            }
+            if (_currentUser.IsAdmin)
+            {
+                var dirMenu = MenuItems.FirstOrDefault(m => m.Title == "Справочники");
+                if (dirMenu != null)
+                {
+                    dirMenu.Children.Add(new MenuItemViewModel
+                    {
+                        Title = "Тарифы",
+                        Command = new RelayCommand(_ => OpenTariffs())
+                    });
+                }
             }
 
             MenuItems = new ObservableCollection<MenuItemViewModel>();
@@ -314,12 +364,37 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
                 Command = new RelayCommand(_ => Logout())
             });
         }
-        private void OpenDashboard() { }
+        private void OpenDashboard()
+        {
+            var view = new Views.Main.DashboardView();
+            var win = new Window
+            {
+                Title = "Главная панель",
+                Content = view,
+                Width = 1100,
+                Height = 700,
+                WindowStartupLocation = WindowStartupLocation.CenterScreen
+            };
+            win.Show();
+        }
         private void OpenObjects()
         {
             var view = new Views.Objects.ConsumptionObjectListView();
         }
         private void OpenReadingInput() { }
+        private void OpenDebt()
+        {
+            var view = new Views.Billing.DebtView();
+            var win = new Window
+            {
+                Title = "Задолженность",
+                Content = view,
+                Width = 1000,
+                Height = 600,
+                WindowStartupLocation = WindowStartupLocation.CenterScreen
+            };
+            win.Show();
+        }
         private void OpenVerification()
         {
             var view = new Views.Readings.MeterReadingVerificationView();
@@ -384,6 +459,73 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
                 Content = view,
                 Width = 1000,
                 Height = 700,
+                WindowStartupLocation = WindowStartupLocation.CenterScreen
+            };
+            win.Show();
+        }
+        private void OpenContracts()
+        {
+            var view = new Views.Contracts.ContractListView();
+            var win = new Window
+            {
+                Title = "Договоры",
+                Content = view,
+                Width = 1100,
+                Height = 600,
+                WindowStartupLocation = WindowStartupLocation.CenterScreen
+            };
+            win.Show();
+        }
+        private void OpenTariffs()
+        {
+            var view = new Views.Tariffs.TariffListView();
+            var win = new Window
+            {
+                Title = "Тарифы",
+                Content = view,
+                Width = 900,
+                Height = 600,
+                WindowStartupLocation = WindowStartupLocation.CenterScreen
+            };
+            win.Show();
+        }
+        private void OpenUserManagement()
+        {
+            var view = new Views.Admin.UserManagementView();
+            var win = new Window
+            {
+                Title = "Управление пользователями",
+                Content = view,
+                Width = 1000,
+                Height = 600,
+                WindowStartupLocation = WindowStartupLocation.CenterScreen
+            };
+            win.Show();
+        }
+
+        private void OpenAuditLog()
+        {
+            var view = new Views.Admin.AuditLogView();
+            var win = new Window
+            {
+                Title = "Журнал аудита",
+                Content = view,
+                Width = 1100,
+                Height = 600,
+                WindowStartupLocation = WindowStartupLocation.CenterScreen
+            };
+            win.Show();
+        }
+
+        private void OpenBackup()
+        {
+            var view = new Views.Admin.BackupView();
+            var win = new Window
+            {
+                Title = "Резервное копирование",
+                Content = view,
+                Width = 600,
+                Height = 400,
                 WindowStartupLocation = WindowStartupLocation.CenterScreen
             };
             win.Show();

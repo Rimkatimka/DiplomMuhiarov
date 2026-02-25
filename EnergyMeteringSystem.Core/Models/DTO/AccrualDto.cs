@@ -17,6 +17,9 @@ namespace EnergyMeteringSystem.Core.Models.DTO
         public decimal Amount { get; set; }
         public bool IsPaid { get; set; }
         public DateTime? PaidDate { get; set; }
+        public string PaidText => IsPaid ? "Оплачено" : "Не оплачено";
+        public string PaidColor => IsPaid ? "Green" : "Red";
+        public string PeriodText => $"{PeriodMonth:00}.{PeriodYear}";
     }
 
 }

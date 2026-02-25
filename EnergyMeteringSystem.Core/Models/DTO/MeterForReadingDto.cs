@@ -13,5 +13,13 @@ namespace EnergyMeteringSystem.Core.Models.DTO
         public string MeterTypeName { get; set; }
         public decimal? LastReading { get; set; }
         public DateTime? LastReadingDate { get; set; }
+
+        // Если нужно показывать статус
+        public string StatusName { get; set; }
+
+        // Вычисляемые свойства
+        public string LastReadingInfo => LastReading.HasValue
+            ? $"Последнее: {LastReading} от {LastReadingDate:dd.MM.yyyy}"
+            : "Нет показаний";
     }
 }

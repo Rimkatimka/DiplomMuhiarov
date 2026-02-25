@@ -14,6 +14,6 @@ namespace EnergyMeteringSystem.Core.Interfaces.Repositories
         PaymentDto GetById(int id);
         void Add(PaymentRegistrationDto dto);
         decimal GetTotalForPeriod(int year, int month);
-        List<PaymentDto> GetDebtors();
+        List<DebtDto> GetDebtors();  // ← исправили на DebtDto
     }
 }

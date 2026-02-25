@@ -12,6 +12,7 @@
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -150,8 +151,11 @@
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Repositories\AccrualRepository.cs" />
+    <Compile Include="Repositories\AuditRepository.cs" />
     <Compile Include="Repositories\ConsumptionObjectRepository.cs" />
+    <Compile Include="Repositories\ContractRepository.cs" />
     <Compile Include="Repositories\ContractStatusRepository.cs" />
+    <Compile Include="Repositories\DashboardRepository.cs" />
     <Compile Include="Repositories\EnergySourceRepository.cs" />
     <Compile Include="Repositories\MeterReadingRepository.cs" />
     <Compile Include="Repositories\MeterRepository.cs" />
@@ -162,6 +166,8 @@
     <Compile Include="Repositories\PaymentRepository.cs" />
     <Compile Include="Repositories\ReadingStatusRepository.cs" />
     <Compile Include="Repositories\RejectionReasonRepository.cs" />
+    <Compile Include="Repositories\ReportRepository.cs" />
+    <Compile Include="Repositories\TariffRepository.cs" />
     <Compile Include="Repositories\TariffTypeRepository.cs" />
     <Compile Include="Repositories\UnitOfMeasureRepository.cs" />
     <Compile Include="Repositories\UserRepository.cs" />

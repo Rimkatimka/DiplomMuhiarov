@@ -12,6 +12,7 @@
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -46,20 +47,32 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Helpers\PasswordHelper.cs" />
     <Compile Include="Interfaces\Repositories\IAccrualRepository.cs" />
+    <Compile Include="Interfaces\Repositories\IAuditRepository.cs" />
     <Compile Include="Interfaces\Repositories\IConsumptionObjectRepository.cs" />
+    <Compile Include="Interfaces\Repositories\IContractRepository.cs" />
+    <Compile Include="Interfaces\Repositories\IDashboardRepository.cs" />
     <Compile Include="Interfaces\Repositories\IDirectoryRepository.cs" />
     <Compile Include="Interfaces\Repositories\IMeterReadingRepository.cs" />
     <Compile Include="Interfaces\Repositories\IMeterRepository.cs" />
     <Compile Include="Interfaces\Repositories\IPaymentRepository.cs" />
     <Compile Include="Interfaces\Repositories\IRejectionReasonRepository.cs" />
+    <Compile Include="Interfaces\Repositories\IReportRepository.cs" />
+    <Compile Include="Interfaces\Repositories\ITariffRepository.cs" />
     <Compile Include="Interfaces\Repositories\IUserRepository.cs" />
     <Compile Include="Interfaces\Services\IAuthService.cs" />
     <Compile Include="Interfaces\Services\ICalculationService.cs" />
     <Compile Include="Interfaces\Services\IReadingService.cs" />
     <Compile Include="Models\DTO\AccrualCalculationDto.cs" />
     <Compile Include="Models\DTO\AccrualDto.cs" />
+    <Compile Include="Models\DTO\AccrualReportDto.cs" />
+    <Compile Include="Models\DTO\AuditLogDto.cs" />
     <Compile Include="Models\DTO\ConsumptionObjectDto.cs" />
+    <Compile Include="Models\DTO\ConsumptionReportDto.cs" />
+    <Compile Include="Models\DTO\ContractDto.cs" />
+    <Compile Include="Models\DTO\DashboardDto.cs" />
+    <Compile Include="Models\DTO\DebtDto.cs" />
     <Compile Include="Models\DTO\DirectoryDto.cs" />
     <Compile Include="Models\DTO\LoginDto.cs" />
     <Compile Include="Models\DTO\MeterDto.cs" />
@@ -71,7 +84,9 @@
     <Compile Include="Models\DTO\PaymentDto.cs" />
     <Compile Include="Models\DTO\PaymentRegistrationDto.cs" />
     <Compile Include="Models\DTO\RejectionReasonDto.cs" />
+    <Compile Include="Models\DTO\TariffDto.cs" />
     <Compile Include="Models\DTO\UserDto.cs" />
+    <Compile Include="Models\DTO\UserRoleDto.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

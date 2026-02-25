@@ -146,16 +146,19 @@ namespace EnergyMeteringSystem.Data.Repositories
         public List<MeterForReadingDto> GetMetersByObjectId(int objectId)
         {
             var meters = _context.Meter
+                .Include("MeterType")
+                .Include("MeterStatus")
                 .Where(m => m.ConsumptionObjectId == objectId)
                 .Select(m => new MeterForReadingDto
                 {
                     Id = m.Id,
                     SerialNumber = m.SerialNumber,
-                    MeterTypeName = m.MeterType.Name
+                    MeterTypeName = m.MeterType.Name,
+                    StatusName = m.MeterStatus.Name  // ← если нужно
                 })
                 .ToList();
 
-            // Добавляем последние показания для каждого счётчика
+            // Добавляем последние показания
             foreach (var meter in meters)
             {
                 var last = _context.MeterReading

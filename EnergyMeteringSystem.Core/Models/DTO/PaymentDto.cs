@@ -18,5 +18,7 @@ namespace EnergyMeteringSystem.Core.Models.DTO
         public string ReceiptNumber { get; set; }
         public int PeriodMonth { get; set; }
         public int PeriodYear { get; set; }
+        public string DateText => PaymentDate.ToString("dd.MM.yyyy HH:mm");
+        public string PeriodText => $"{PeriodMonth:00}.{PeriodYear}";
     }
 }

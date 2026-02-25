@@ -1,0 +1,60 @@
+﻿<UserControl x:Class="EnergyMeteringSystem.App.Views.Tariffs.TariffListView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Панель поиска и фильтров -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
+            <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" 
+                     Width="300" 
+                     Padding="5"
+                     VerticalAlignment="Center"/>
+
+            <CheckBox Content="Только активные" 
+                      IsChecked="{Binding ShowOnlyActive}"
+                      Margin="15,0,0,0"
+                      VerticalAlignment="Center"/>
+
+            <Button Content="Обновить" 
+                    Command="{Binding RefreshCommand}" 
+                    Margin="15,0,0,0"
+                    Padding="10,5"/>
+        </StackPanel>
+
+        <!-- Список тарифов -->
+        <DataGrid Grid.Row="1" 
+                  ItemsSource="{Binding FilteredTariffs}"
+                  SelectedItem="{Binding SelectedTariff}"
+                  AutoGenerateColumns="False"
+                  IsReadOnly="True">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Тип" Binding="{Binding TariffTypeName}" Width="150"/>
+                <DataGridTextColumn Header="Зона" Binding="{Binding ZoneName}" Width="100"/>
+                <DataGridTextColumn Header="Цена" Binding="{Binding PricePerUnit, StringFormat={}{0:F2} ₽/кВт}" Width="120"/>
+                <DataGridTextColumn Header="Начало" Binding="{Binding StartDate, StringFormat={}{0:dd.MM.yyyy}}" Width="100"/>
+                <DataGridTextColumn Header="Окончание" Binding="{Binding EndDate, StringFormat={}{0:dd.MM.yyyy}}" Width="100"/>
+                <DataGridTextColumn Header="Статус" Binding="{Binding StatusText}" Width="100"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <!-- Кнопки действий -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+            <Button Content="Добавить" 
+                    Command="{Binding AddCommand}"
+                    Padding="15,5" Margin="5"/>
+            <Button Content="Редактировать" 
+                    Command="{Binding EditCommand}"
+                    Padding="15,5" Margin="5"/>
+            <Button Content="Деактивировать" 
+                    Command="{Binding DeactivateCommand}"
+                    Padding="15,5" Margin="5"
+                    Background="#F44336" Foreground="White"/>
+        </StackPanel>
+    </Grid>
+</UserControl>

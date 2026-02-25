@@ -20,7 +20,6 @@ namespace EnergyMeteringSystem.Data.Repositories
 
         public List<ConsumptionObjectDto> GetAll()
         {
-            // ✅ Используем строки вместо лямбд
             var objects = _context.ConsumptionObject
                 .Include("ObjectType")
                 .Include("Street")
@@ -30,14 +29,14 @@ namespace EnergyMeteringSystem.Data.Repositories
             {
                 Id = o.Id,
                 Name = o.Name,
-                Address = o.Street.Name + ", д. " + o.HouseNumber +
-                          (o.ApartmentNumber != null ? ", кв. " + o.ApartmentNumber : ""),
+                Street = o.Street.Name,
+                HouseNumber = o.HouseNumber,
+                ApartmentNumber = o.ApartmentNumber,
                 ObjectTypeName = o.ObjectType?.Name,
                 TotalArea = o.TotalArea,
                 ResidentCount = o.ResidentCount
             }).ToList();
         }
-
         public ConsumptionObjectDto GetById(int id)
         {
             var o = _context.ConsumptionObject
@@ -51,8 +50,9 @@ namespace EnergyMeteringSystem.Data.Repositories
             {
                 Id = o.Id,
                 Name = o.Name,
-                Address = o.Street.Name + ", д. " + o.HouseNumber +
-                          (o.ApartmentNumber != null ? ", кв. " + o.ApartmentNumber : ""),
+                Street = o.Street.Name,
+                HouseNumber = o.HouseNumber,
+                ApartmentNumber = o.ApartmentNumber,
                 ObjectTypeName = o.ObjectType?.Name,
                 TotalArea = o.TotalArea,
                 ResidentCount = o.ResidentCount
