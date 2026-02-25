@@ -17,7 +17,6 @@ namespace EnergyMeteringSystem.App.ViewModels.Billing
         private readonly PaymentRepository _paymentRepository;
         private readonly ConsumptionObjectRepository _objectRepository;
         private readonly PaymentMethodRepository _methodRepository;
-        private readonly AuthService _authService;
 
         private int _selectedYear;
         private int _selectedMonth;
@@ -32,6 +31,16 @@ namespace EnergyMeteringSystem.App.ViewModels.Billing
         public ObservableCollection<PaymentMethodDto> PaymentMethods { get; set; }
         public ObservableCollection<PaymentDto> Payments { get; set; }
 
+        private string _selectedMonthName;
+        public string SelectedMonthName
+        {
+            get => _selectedMonthName;
+            set
+            {
+                SetProperty(ref _selectedMonthName, value);
+                SelectedMonth = Array.IndexOf(Months.ToArray(), value) + 1;
+            }
+        }
         public int SelectedYear
         {
             get => _selectedYear;
@@ -87,7 +96,6 @@ namespace EnergyMeteringSystem.App.ViewModels.Billing
             _paymentRepository = new PaymentRepository();
             _objectRepository = new ConsumptionObjectRepository();
             _methodRepository = new PaymentMethodRepository();
-            _authService = new AuthService();
 
             Years = new ObservableCollection<int>();
             Months = new ObservableCollection<string>();
@@ -166,7 +174,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Billing
 
         private void SavePayment()
         {
-            var currentUser = _authService.GetCurrentUser();
+            var currentUser = AuthService.CurrentUser;
             if (currentUser == null) return;
 
             var dto = new PaymentRegistrationDto

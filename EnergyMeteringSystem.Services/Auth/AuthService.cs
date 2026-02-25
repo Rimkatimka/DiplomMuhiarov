@@ -10,28 +10,27 @@ using EnergyMeteringSystem.Data.Repositories;
 
 namespace EnergyMeteringSystem.Services.Auth
 {
-    public class AuthService : IAuthService
+    public static class AuthService
     {
-        private readonly IUserRepository _userRepository;
-        private UserDto _currentUser;
+        public static UserDto CurrentUser { get; private set; }
 
-        public AuthService()
+        public static UserDto Login(string username, string password)
         {
-            _userRepository = new UserRepository();
+            var repo = new UserRepository();
+            var user = repo.GetByUsername(username);
+
+            if (user != null && user.IsActive && user.PasswordHash == password)
+            {
+                CurrentUser = user;
+                return user;
+            }
+
+            return null;
         }
 
-        public UserDto Login(string username, string password)
+        public static void Logout()
         {
-            var user = _userRepository.GetByUsername(username);
-
-            if (user == null || !user.IsActive)
-                return null;
-
-            _currentUser = user;
-            return user;
+            CurrentUser = null;
         }
-
-        public UserDto GetCurrentUser() => _currentUser;
-        public void Logout() => _currentUser = null;
     }
 }

@@ -20,10 +20,16 @@ namespace EnergyMeteringSystem.App.Views.Main
     /// </summary>
     public partial class ShellView : Window
     {
+        private void TreeView_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+        {
+            if (e.NewValue is MenuItemViewModel menuItem && menuItem.Command != null)
+            {
+                menuItem.Command.Execute(null);
+            }
+        }
         public ShellView()
         {
             InitializeComponent();
-
             DataContext = new ShellViewModel();
         }
     }

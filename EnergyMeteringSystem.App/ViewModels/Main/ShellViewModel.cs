@@ -15,102 +15,129 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
 {
     public class ShellViewModel : ViewModelBase
     {
-        private readonly AuthService _authService;
-        private UserDto _currentUser;
+        public UserDto CurrentUser => AuthService.CurrentUser;
 
         public ObservableCollection<MenuItemViewModel> MenuItems { get; set; }
+        public RelayCommand LogoutCommand { get; }
+        private object _currentView;
+        public object CurrentView
+        {
+            get => _currentView;
+            set => SetProperty(ref _currentView, value);
+        }
+        private MenuItemViewModel _selectedMenuItem;
+        public MenuItemViewModel SelectedMenuItem
+        {
+            get => _selectedMenuItem;
+            set
+            {
+                if (SetProperty(ref _selectedMenuItem, value) && value?.Command != null)
+                {
+                    value.Command.Execute(null);
+                }
+            }
+        }
 
         public ShellViewModel()
         {
-            _authService = new AuthService();
-            _currentUser = _authService.GetCurrentUser();
-            if (_currentUser.IsInspector || _currentUser.IsAdmin)
+            if (CurrentUser == null)
             {
-                MenuItems.Add(new MenuItemViewModel
+                // Если пользователь не найден — закрываем окно
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    MessageBox.Show("Ошибка авторизации");
+                    Application.Current.Windows.OfType<Views.Main.ShellView>().FirstOrDefault()?.Close();
+                    new Views.Auth.LoginView().Show();
+                });
+                return;
+            }
+
+            LogoutCommand = new RelayCommand(_ => Logout());
+            MenuItems = new ObservableCollection<MenuItemViewModel>();
+            BuildMenu();
+        }
+
+        private void BuildMenu()
+        {
+            // Главная - всем
+            MenuItems.Add(new MenuItemViewModel
+            {
+                Title = "Главная",
+                Command = new RelayCommand(_ => OpenDashboard())
+            });
+
+            // Объекты - всем
+            MenuItems.Add(new MenuItemViewModel
+            {
+                Title = "Объекты",
+                Command = new RelayCommand(_ => OpenObjects())
+            });
+
+            // Показания (главное меню)
+            var readingsMenu = new MenuItemViewModel { Title = "Показания" };
+
+            readingsMenu.Children.Add(new MenuItemViewModel
+            {
+                Title = "Ввод показаний",
+                Command = new RelayCommand(_ => OpenReadingInput())
+            });
+
+            readingsMenu.Children.Add(new MenuItemViewModel
+            {
+                Title = "История показаний",
+                Command = new RelayCommand(_ => OpenReadingHistory())
+            });
+
+            // Верификация - только инспектор и админ
+            if (CurrentUser.IsInspector || CurrentUser.IsAdmin)
+            {
+                readingsMenu.Children.Add(new MenuItemViewModel
                 {
                     Title = "Верификация",
                     Command = new RelayCommand(_ => OpenVerification())
                 });
             }
 
-            if (_currentUser.IsAccountant || _currentUser.IsAdmin)
+            MenuItems.Add(readingsMenu);
+
+            // Начисления и платежи - бухгалтер и админ
+            if (CurrentUser.IsAccountant || CurrentUser.IsAdmin)
             {
                 MenuItems.Add(new MenuItemViewModel
                 {
                     Title = "Начисления",
                     Command = new RelayCommand(_ => OpenAccrual())
                 });
-            }
 
-            if (_currentUser.IsAdmin)
-            {
-                var dirMenu = new MenuItemViewModel { Title = "Справочники" };
-
-                dirMenu.Children.Add(new MenuItemViewModel
+                MenuItems.Add(new MenuItemViewModel
                 {
-                    Title = "Типы счетчиков",
-                    Command = new RelayCommand(_ => OpenDirectory(DirectoryFactory.CreateMeterTypeViewModel(), "Типы счетчиков"))
+                    Title = "Платежи",
+                    Command = new RelayCommand(_ => OpenPayment())
                 });
 
-                dirMenu.Children.Add(new MenuItemViewModel
-                {
-                    Title = "Статусы показаний",
-                    Command = new RelayCommand(_ => OpenDirectory(DirectoryFactory.CreateReadingStatusViewModel(), "Статусы показаний"))
-                });
-
-                dirMenu.Children.Add(new MenuItemViewModel
-                {
-                    Title = "Способы оплаты",
-                    Command = new RelayCommand(_ => OpenDirectory(DirectoryFactory.CreatePaymentMethodViewModel(), "Способы оплаты"))
-                });
-
-                MenuItems.Add(dirMenu);
-            }
-
-            if (_currentUser.IsAdmin)
-            {
-                var adminMenu = new MenuItemViewModel { Title = "Администрирование" };
-
-                adminMenu.Children.Add(new MenuItemViewModel
-                {
-                    Title = "Пользователи",
-                    Command = new RelayCommand(_ => OpenUserManagement())
-                });
-
-                adminMenu.Children.Add(new MenuItemViewModel
-                {
-                    Title = "Журнал аудита",
-                    Command = new RelayCommand(_ => OpenAuditLog())
-                });
-
-                adminMenu.Children.Add(new MenuItemViewModel
-                {
-                    Title = "Резервное копирование",
-                    Command = new RelayCommand(_ => OpenBackup())
-                });
-
-                MenuItems.Add(adminMenu);
-            }
-
-            MenuItems.Add(new MenuItemViewModel
-            {
-                Title = "История показаний",
-                Command = new RelayCommand(_ => OpenReadingHistory())
-            });
-            if (_currentUser.IsAccountant || _currentUser.IsAdmin)
-            {
                 MenuItems.Add(new MenuItemViewModel
                 {
                     Title = "Задолженность",
                     Command = new RelayCommand(_ => OpenDebt())
                 });
             }
+
+            // Отчёты - всем
+            MenuItems.Add(new MenuItemViewModel
+            {
+                Title = "Отчёты",
+                Command = new RelayCommand(_ => OpenReports())
+            });
+
+            // Договоры - всем
             MenuItems.Add(new MenuItemViewModel
             {
                 Title = "Договоры",
                 Command = new RelayCommand(_ => OpenContracts())
             });
-            if (_currentUser.IsAdmin)
+
+            // Справочники - только админ
+            if (CurrentUser.IsAdmin)
             {
                 var dirMenu = new MenuItemViewModel { Title = "Справочники" };
 
@@ -180,363 +207,127 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
                     Command = new RelayCommand(_ => OpenDirectory(DirectoryFactory.CreateVerificationIntervalViewModel(), "Интервалы поверки"))
                 });
 
-                MenuItems.Add(dirMenu);
-            }
-            if (_currentUser.IsAdmin)
-            {
-                var dirMenu = MenuItems.FirstOrDefault(m => m.Title == "Справочники");
-                if (dirMenu != null)
-                {
-                    dirMenu.Children.Add(new MenuItemViewModel
-                    {
-                        Title = "Тарифы",
-                        Command = new RelayCommand(_ => OpenTariffs())
-                    });
-                }
-            }
-
-            MenuItems = new ObservableCollection<MenuItemViewModel>();
-            BuildMenu();
-            
-        }
-
-
-        private void BuildMenu()
-        {
-            // Главная — всем
-            MenuItems.Add(new MenuItemViewModel
-            {
-                Title = "Главная",
-                Command = new RelayCommand(_ => OpenDashboard())
-            });
-
-            // Объекты — всем
-            MenuItems.Add(new MenuItemViewModel
-            {
-                Title = "Объекты",
-                Command = new RelayCommand(_ => OpenObjects())
-            });
-
-            // Показания
-            var readingsMenu = new MenuItemViewModel { Title = "Показания" };
-
-            // Ввод показаний — всем
-            readingsMenu.Children.Add(new MenuItemViewModel
-            {
-                Title = "Ввод показаний",
-                Command = new RelayCommand(_ => OpenReadingInput())
-            });
-
-            // Верификация — только инспектору и админу
-            if (_currentUser.IsInspector || _currentUser.IsAdmin)
-            {
-                readingsMenu.Children.Add(new MenuItemViewModel
-                {
-                    Title = "Верификация",
-                    Command = new RelayCommand(_ => OpenVerification())
-                });
-            }
-
-            MenuItems.Add(readingsMenu);
-
-            // Начисления и платежи — только бухгалтеру и админу
-            if (_currentUser.IsAccountant || _currentUser.IsAdmin)
-            {
-                MenuItems.Add(new MenuItemViewModel
-                {
-                    Title = "Начисления",
-                    Command = new RelayCommand(_ => OpenAccrual())
-                });
-
-                MenuItems.Add(new MenuItemViewModel
-                {
-                    Title = "Платежи",
-                    Command = new RelayCommand(_ => OpenPayment())
-                });
-            }
-
-            // Справочники — только админу
-            if (_currentUser.IsAdmin)
-            {
-                var dirMenu = new MenuItemViewModel { Title = "Справочники" };
-
                 dirMenu.Children.Add(new MenuItemViewModel
                 {
-                    Title = "Типы счетчиков",
-                    Command = new RelayCommand(_ => OpenDirectory(
-                        DirectoryFactory.CreateMeterTypeViewModel(),
-                        "Типы счетчиков"))
-                });
-
-                dirMenu.Children.Add(new MenuItemViewModel
-                {
-                    Title = "Статусы показаний",
-                    Command = new RelayCommand(_ => OpenDirectory(
-                        DirectoryFactory.CreateReadingStatusViewModel(),
-                        "Статусы показаний"))
-                });
-
-                dirMenu.Children.Add(new MenuItemViewModel
-                {
-                    Title = "Способы оплаты",
-                    Command = new RelayCommand(_ => OpenDirectory(
-                        DirectoryFactory.CreatePaymentMethodViewModel(),
-                        "Способы оплаты"))
-                });
-
-                dirMenu.Children.Add(new MenuItemViewModel
-                {
-                    Title = "Типы объектов",
-                    Command = new RelayCommand(_ => OpenDirectory(
-                        DirectoryFactory.CreateObjectTypeViewModel(),
-                        "Типы объектов"))
-                });
-
-                dirMenu.Children.Add(new MenuItemViewModel
-                {
-                    Title = "Причины отклонения",
-                    Command = new RelayCommand(_ => OpenDirectory(
-                        DirectoryFactory.CreateRejectionReasonViewModel(),
-                        "Причины отклонения"))
-                });
-
-                dirMenu.Children.Add(new MenuItemViewModel
-                {
-                    Title = "Статусы счетчиков",
-                    Command = new RelayCommand(_ => OpenDirectory(
-                        DirectoryFactory.CreateMeterStatusViewModel(),
-                        "Статусы счетчиков"))
-                });
-
-                dirMenu.Children.Add(new MenuItemViewModel
-                {
-                    Title = "Статусы договоров",
-                    Command = new RelayCommand(_ => OpenDirectory(
-                        DirectoryFactory.CreateContractStatusViewModel(),
-                        "Статусы договоров"))
-                });
-
-                dirMenu.Children.Add(new MenuItemViewModel
-                {
-                    Title = "Типы тарифов",
-                    Command = new RelayCommand(_ => OpenDirectory(
-                        DirectoryFactory.CreateTariffTypeViewModel(),
-                        "Типы тарифов"))
-                });
-
-                dirMenu.Children.Add(new MenuItemViewModel
-                {
-                    Title = "Единицы измерения",
-                    Command = new RelayCommand(_ => OpenDirectory(
-                        DirectoryFactory.CreateUnitOfMeasureViewModel(),
-                        "Единицы измерения"))
-                });
-
-                dirMenu.Children.Add(new MenuItemViewModel
-                {
-                    Title = "Источники энергии",
-                    Command = new RelayCommand(_ => OpenDirectory(
-                        DirectoryFactory.CreateEnergySourceViewModel(),
-                        "Источники энергии"))
-                });
-
-                dirMenu.Children.Add(new MenuItemViewModel
-                {
-                    Title = "Интервалы поверки",
-                    Command = new RelayCommand(_ => OpenDirectory(
-                        DirectoryFactory.CreateVerificationIntervalViewModel(),
-                        "Интервалы поверки"))
+                    Title = "Тарифы",
+                    Command = new RelayCommand(_ => OpenTariffs())
                 });
 
                 MenuItems.Add(dirMenu);
 
-                MenuItems.Add(new MenuItemViewModel
+                // Администрирование
+                var adminMenu = new MenuItemViewModel { Title = "Администрирование" };
+
+                adminMenu.Children.Add(new MenuItemViewModel
                 {
                     Title = "Пользователи",
-                    Command = new RelayCommand(_ => OpenUsers())
+                    Command = new RelayCommand(_ => OpenUserManagement())
                 });
+
+                adminMenu.Children.Add(new MenuItemViewModel
+                {
+                    Title = "Журнал аудита",
+                    Command = new RelayCommand(_ => OpenAuditLog())
+                });
+
+                adminMenu.Children.Add(new MenuItemViewModel
+                {
+                    Title = "Резервное копирование",
+                    Command = new RelayCommand(_ => OpenBackup())
+                });
+
+                MenuItems.Add(adminMenu);
             }
 
-            // Выход — всем
+            // Выход - всем
             MenuItems.Add(new MenuItemViewModel
             {
                 Title = "Выход",
                 Command = new RelayCommand(_ => Logout())
             });
         }
+
+        // Методы открытия окон
         private void OpenDashboard()
         {
-            var view = new Views.Main.DashboardView();
-            var win = new Window
-            {
-                Title = "Главная панель",
-                Content = view,
-                Width = 1100,
-                Height = 700,
-                WindowStartupLocation = WindowStartupLocation.CenterScreen
-            };
-            win.Show();
+            CurrentView = new Views.Main.DashboardView();
         }
+
         private void OpenObjects()
         {
-            var view = new Views.Objects.ConsumptionObjectListView();
+            CurrentView = new Views.Objects.ConsumptionObjectListView();
         }
-        private void OpenReadingInput() { }
-        private void OpenDebt()
-        {
-            var view = new Views.Billing.DebtView();
-            var win = new Window
-            {
-                Title = "Задолженность",
-                Content = view,
-                Width = 1000,
-                Height = 600,
-                WindowStartupLocation = WindowStartupLocation.CenterScreen
-            };
-            win.Show();
-        }
-        private void OpenVerification()
-        {
-            var view = new Views.Readings.MeterReadingVerificationView();
-            var win = new Window
-            {
-                Title = "Верификация показаний",
-                Content = view,
-                Width = 1000,
-                Height = 600,
-                WindowStartupLocation = WindowStartupLocation.CenterScreen
-            };
-            win.Show();
-        }
-        private void OpenAccrual()
-        {
-            var view = new Views.Billing.AccrualView();
-            var win = new Window
-            {
-                Title = "Начисления за потребление",
-                Content = view,
-                Width = 1000,
-                Height = 700,
-                WindowStartupLocation = WindowStartupLocation.CenterScreen
-            };
-            win.Show();
-        }
-        private void OpenPayment()
-        {
-            var view = new Views.Billing.PaymentView();
-            var win = new Window
-            {
-                Title = "Платежи",
-                Content = view,
-                Width = 1000,
-                Height = 700,
-                WindowStartupLocation = WindowStartupLocation.CenterScreen
-            };
-            win.Show();
-        }
-        private void OpenDirectory(DirectoryListViewModel viewModel, string title)
-        {
-            var view = new Views.Directories.DirectoryListView();
-            view.DataContext = viewModel;
 
-            var win = new Window
-            {
-                Title = title,
-                Content = view,
-                Width = 800,
-                Height = 500,
-                WindowStartupLocation = WindowStartupLocation.CenterScreen
-            };
-            win.Show();
+        private void OpenReadingInput()
+        {
+            CurrentView = new Views.Readings.MeterReadingInputView();
         }
-        private void OpenUsers() { }
+
         private void OpenReadingHistory()
         {
-            var view = new Views.Readings.MeterReadingHistoryView();
-            var win = new Window
-            {
-                Title = "История показаний",
-                Content = view,
-                Width = 1000,
-                Height = 700,
-                WindowStartupLocation = WindowStartupLocation.CenterScreen
-            };
-            win.Show();
+            CurrentView = new Views.Readings.MeterReadingHistoryView();
         }
+
+        private void OpenVerification()
+        {
+            CurrentView = new Views.Readings.MeterReadingVerificationView();
+        }
+
+        private void OpenAccrual()
+        {
+            CurrentView = new Views.Billing.AccrualView();
+        }
+
+        private void OpenPayment()
+        {
+            CurrentView = new Views.Billing.PaymentView();
+        }
+
+        private void OpenDebt()
+        {
+            CurrentView = new Views.Billing.DebtView();
+        }
+
+        private void OpenReports()
+        {
+            CurrentView = new Views.Reports.ReportView();
+        }
+
         private void OpenContracts()
         {
-            var view = new Views.Contracts.ContractListView();
-            var win = new Window
-            {
-                Title = "Договоры",
-                Content = view,
-                Width = 1100,
-                Height = 600,
-                WindowStartupLocation = WindowStartupLocation.CenterScreen
-            };
-            win.Show();
+            CurrentView = new Views.Contracts.ContractListView();
         }
+
         private void OpenTariffs()
         {
-            var view = new Views.Tariffs.TariffListView();
-            var win = new Window
-            {
-                Title = "Тарифы",
-                Content = view,
-                Width = 900,
-                Height = 600,
-                WindowStartupLocation = WindowStartupLocation.CenterScreen
-            };
-            win.Show();
+            CurrentView = new Views.Tariffs.TariffListView();
         }
+
         private void OpenUserManagement()
         {
-            var view = new Views.Admin.UserManagementView();
-            var win = new Window
-            {
-                Title = "Управление пользователями",
-                Content = view,
-                Width = 1000,
-                Height = 600,
-                WindowStartupLocation = WindowStartupLocation.CenterScreen
-            };
-            win.Show();
+            CurrentView = new Views.Admin.UserManagementView();
         }
 
         private void OpenAuditLog()
         {
-            var view = new Views.Admin.AuditLogView();
-            var win = new Window
-            {
-                Title = "Журнал аудита",
-                Content = view,
-                Width = 1100,
-                Height = 600,
-                WindowStartupLocation = WindowStartupLocation.CenterScreen
-            };
-            win.Show();
+            CurrentView = new Views.Admin.AuditLogView();
         }
 
         private void OpenBackup()
         {
-            var view = new Views.Admin.BackupView();
-            var win = new Window
-            {
-                Title = "Резервное копирование",
-                Content = view,
-                Width = 600,
-                Height = 400,
-                WindowStartupLocation = WindowStartupLocation.CenterScreen
-            };
-            win.Show();
+            CurrentView = new Views.Admin.BackupView();
+        }
+
+        private void OpenDirectory(DirectoryListViewModel viewModel, string title)
+        {
+            CurrentView = new Views.Directories.DirectoryListView();        
         }
 
         private void Logout()
         {
-            _authService.Logout();
-            System.Windows.Application.Current.Windows[0]?.Close();
-            var login = new Views.Auth.LoginView();
-            login.Show();
+            new Views.Auth.LoginView().Show();
+            AuthService.Logout();
+            Application.Current.Windows[0]?.Close();               
         }
     }
 }

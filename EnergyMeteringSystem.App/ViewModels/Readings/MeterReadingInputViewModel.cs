@@ -16,7 +16,6 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
     {
         private readonly ConsumptionObjectRepository _objectRepository;
         private readonly MeterReadingRepository _readingRepository;
-        private readonly AuthService _authService;
 
         private string _searchText;
         private ConsumptionObjectDto _selectedObject;
@@ -80,7 +79,6 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
         {
             _objectRepository = new ConsumptionObjectRepository();
             _readingRepository = new MeterReadingRepository();
-            _authService = new AuthService();
 
             FoundObjects = new ObservableCollection<ConsumptionObjectDto>();
             Meters = new ObservableCollection<MeterForReadingDto>();
@@ -124,7 +122,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
 
         private void SaveReading()
         {
-            var currentUser = _authService.GetCurrentUser();
+            var currentUser = AuthService.CurrentUser;
             if (currentUser == null)
             {
                 Message = "Ошибка: пользователь не найден";

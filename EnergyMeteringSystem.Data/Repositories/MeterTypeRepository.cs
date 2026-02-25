@@ -20,14 +20,24 @@ namespace EnergyMeteringSystem.Data.Repositories
 
         public List<DirectoryDto> GetAll()
         {
-            return _context.MeterType
-                .Select(m => new DirectoryDto
+            var data = _context.MeterType
+                .Select(m => new
                 {
-                    Id = m.Id,
-                    Name = m.Name,
-                    Description = $"{m.Voltage}В, {m.MaxCurrent}А, класс {m.AccuracyClass}"
+                    m.Id,
+                    m.Name,
+                    m.Voltage,
+                    m.MaxCurrent,
+                    m.AccuracyClass
                 })
-                .ToList();
+                .ToList(); // ← сначала выполняем запрос к БД
+
+            // Теперь форматируем в памяти
+            return data.Select(m => new DirectoryDto
+            {
+                Id = m.Id,
+                Name = m.Name,
+                Description = $"{m.Voltage}В, {m.MaxCurrent}А, класс {m.AccuracyClass}"
+            }).ToList();
         }
 
         public DirectoryDto GetById(int id)

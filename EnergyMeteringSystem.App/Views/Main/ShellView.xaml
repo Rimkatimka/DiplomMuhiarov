@@ -1,91 +1,86 @@
 ﻿<Window x:Class="EnergyMeteringSystem.App.Views.Main.ShellView"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:EnergyMeteringSystem.App.Views.Main"
-        mc:Ignorable="d"
         Title="Учет электроэнергии" 
         Height="600" Width="900"
-        WindowStartupLocation="CenterScreen">
+        WindowStartupLocation="CenterScreen"
+        MinHeight="500"
+        MinWidth="900"
+        xmlns:local="clr-namespace:EnergyMeteringSystem.App.ViewModels.Main">
 
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="200"/>
+            <ColumnDefinition Width="250"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <!-- Левое меню -->
-        <ListBox Grid.Column="0" 
-                 ItemsSource="{Binding MenuItems}"
-                 Background="#2D3F5E"
-                 Foreground="White"
-                 BorderThickness="0"
-                 SelectionMode="Single">
-            <ListBox.ItemTemplate>
-                <DataTemplate>
-                    <TextBlock Text="{Binding Title}" 
-                               Margin="10,5"
-                               FontSize="14"/>
-                </DataTemplate>
-            </ListBox.ItemTemplate>
-            <ListBox.ItemContainerStyle>
-                <Style TargetType="ListBoxItem">
-                    <Setter Property="Background" Value="Transparent"/>
-                    <Setter Property="Template">
-                        <Setter.Value>
-                            <ControlTemplate TargetType="ListBoxItem">
-                                <Border Background="{TemplateBinding Background}">
-                                    <ContentPresenter/>
-                                </Border>
-                            </ControlTemplate>
-                        </Setter.Value>
-                    </Setter>
-                    <Style.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter Property="Background" Value="#1F2A40"/>
-                        </Trigger>
-                        <Trigger Property="IsSelected" Value="True">
-                            <Setter Property="Background" Value="#1976D2"/>
-                        </Trigger>
-                    </Style.Triggers>
-                </Style>
-            </ListBox.ItemContainerStyle>
-        </ListBox>
+        <!-- Левая панель с меню -->
+        <Border Grid.Column="0" Background="#2D3F5E">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
 
-        <!-- Контентная область -->
-        <Border Grid.Column="1" Background="#F5F5F5">
-            <TextBlock Text="Добро пожаловать в систему" 
-                       HorizontalAlignment="Center" 
-                       VerticalAlignment="Center"
-                       FontSize="18"
-                       Foreground="#757575"/>
+                <!-- Имя пользователя -->
+                <StackPanel Grid.Row="0" Background="#1F2A40" Margin="10">
+                    <TextBlock Text="Пользователь:" Foreground="#AAAAAA" FontSize="11"/>
+                    <TextBlock Text="{Binding CurrentUser.DisplayName}" 
+                               Foreground="White" FontSize="14" FontWeight="Bold"/>
+                    <TextBlock Text="{Binding CurrentUser.RoleText}" 
+                               Foreground="#4CAF50" FontSize="12"/>
+                </StackPanel>
+
+                <!-- TreeView меню -->
+                <TreeView Grid.Row="1" 
+                          ItemsSource="{Binding MenuItems}"
+                          SelectedItemChanged="TreeView_SelectedItemChanged"
+                          Background="Transparent"
+                          BorderThickness="0"
+                          Foreground="White">
+
+                    <TreeView.ItemTemplate>
+                        <HierarchicalDataTemplate DataType="{x:Type local:MenuItemViewModel}" 
+                                                  ItemsSource="{Binding Children}">
+                            <TextBlock Text="{Binding Title}" Margin="10,5" FontSize="14"/>
+                        </HierarchicalDataTemplate>
+                    </TreeView.ItemTemplate>
+
+                    <TreeView.ItemContainerStyle>
+                        <Style TargetType="TreeViewItem">
+                            <Setter Property="IsExpanded" Value="True"/>
+                            <Setter Property="Background" Value="Transparent"/>
+                            <Setter Property="Foreground" Value="White"/>
+                            <Setter Property="Cursor" Value="Hand"/>
+                            <Style.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Background" Value="#1F2A40"/>
+                                </Trigger>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter Property="Background" Value="#1976D2"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TreeView.ItemContainerStyle>
+                </TreeView>
+
+                <!-- Кнопка выхода -->
+                <Button Grid.Row="2" 
+                        Content="Выйти"
+                        Command="{Binding LogoutCommand}"
+                        Background="#F44336"
+                        Foreground="White"
+                        BorderThickness="0"
+                        Padding="10"
+                        Margin="10"
+                        HorizontalAlignment="Stretch"/>
+            </Grid>
         </Border>
-        <TreeView Grid.Column="0" 
-          ItemsSource="{Binding MenuItems}"
-          Background="#2D3F5E"
-          Foreground="White"
-          BorderThickness="0">
-            <TreeView.ItemTemplate>
-                <HierarchicalDataTemplate ItemsSource="{Binding Children}">
-                    <TextBlock Text="{Binding Title}" Margin="10,5"/>
-                </HierarchicalDataTemplate>
-            </TreeView.ItemTemplate>
-            <TreeView.ItemContainerStyle>
-                <Style TargetType="TreeViewItem">
-                    <Setter Property="Background" Value="Transparent"/>
-                    <Setter Property="Foreground" Value="White"/>
-                    <Setter Property="IsExpanded" Value="True"/>
-                    <Style.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter Property="Background" Value="#1F2A40"/>
-                        </Trigger>
-                        <Trigger Property="IsSelected" Value="True">
-                            <Setter Property="Background" Value="#1976D2"/>
-                        </Trigger>
-                    </Style.Triggers>
-                </Style>
-            </TreeView.ItemContainerStyle>
-        </TreeView>
+
+        <!-- Правая область - Контейнер для View -->
+        <Border Grid.Column="1" Background="#F5F5F5">
+            <ContentControl Content="{Binding CurrentView}"/>
+        </Border>
     </Grid>
 </Window>

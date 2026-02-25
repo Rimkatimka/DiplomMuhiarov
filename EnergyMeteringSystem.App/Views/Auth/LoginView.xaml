@@ -31,7 +31,7 @@
                        Foreground="#1976D2"
                        Margin="0,0,0,30"/>
 
-            <!-- Логин -->
+            <!-- Логин - TextBox, а не TextBlock! -->
             <StackPanel Grid.Row="1" Margin="0,0,0,15">
                 <TextBlock Text="Имя пользователя" Margin="0,0,0,5"/>
                 <TextBox Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}" 

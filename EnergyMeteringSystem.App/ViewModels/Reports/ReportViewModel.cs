@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 using EnergyMeteringSystem.App.Commands;
 using EnergyMeteringSystem.App.ViewModels.Base;
 using EnergyMeteringSystem.Core.Models.DTO;
@@ -26,6 +27,12 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
         public ObservableCollection<ConsumptionReportDto> ConsumptionData { get; set; }
         public ObservableCollection<AccrualReportDto> AccrualData { get; set; }
         public ObservableCollection<DebtDto> DebtData { get; set; }
+
+
+
+        public Visibility ConsumptionVisibility => _selectedReportType == 0 ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility AccrualVisibility => _selectedReportType == 1 ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility DebtVisibility => _selectedReportType == 2 ? Visibility.Visible : Visibility.Collapsed;
 
         // Простые свойства для видимости в XAML
         public bool ShowConsumption => _selectedReportType == 0;
@@ -78,10 +85,9 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
             set
             {
                 SetProperty(ref _selectedReportType, value);
-                // Обновляем видимость
-                OnPropertyChanged(nameof(ShowConsumption));
-                OnPropertyChanged(nameof(ShowAccrual));
-                OnPropertyChanged(nameof(ShowDebt));
+                OnPropertyChanged(nameof(ConsumptionVisibility));
+                OnPropertyChanged(nameof(AccrualVisibility));
+                OnPropertyChanged(nameof(DebtVisibility));
                 LoadReport();
             }
         }
@@ -89,7 +95,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
         public decimal TotalConsumption => ConsumptionData?.Sum(c => c.Consumption) ?? 0;
         public decimal TotalAccrual => AccrualData?.Sum(a => a.AccrualAmount) ?? 0;
         public decimal TotalPaid => AccrualData?.Sum(a => a.PaidAmount) ?? 0;
-        public decimal TotalDebtSum => AccrualData?.Sum(a => a.DebtAmount) ?? 0;
+        public decimal TotalDebtSum => DebtData?.Sum(d => d.DebtAmount) ?? 0;
 
         public RelayCommand RefreshCommand { get; }
         public RelayCommand ExportCommand { get; }

@@ -7,13 +7,12 @@ using System.Windows;
 using EnergyMeteringSystem.Core.Models.DTO;
 using EnergyMeteringSystem.App.ViewModels.Base;
 using EnergyMeteringSystem.Services.Auth;
-using GalaSoft.MvvmLight.Command;
+using EnergyMeteringSystem.App.Commands;
 
 namespace EnergyMeteringSystem.App.ViewModels.Auth
 {
-    internal class LoginViewModel : ViewModelBase
+    public class LoginViewModel : ViewModelBase
     {
-        private readonly AuthService _authService;
 
         private string _username;
         private string _password;
@@ -22,13 +21,21 @@ namespace EnergyMeteringSystem.App.ViewModels.Auth
         public string Username
         {
             get => _username;
-            set => SetProperty(ref _username, value);
+            set
+            {
+                SetProperty(ref _username, value);
+                LoginCommand.RaiseCanExecuteChanged(); // ← обновляем команду
+            }
         }
 
         public string Password
         {
             get => _password;
-            set => SetProperty(ref _password, value);
+            set
+            {
+                SetProperty(ref _password, value);
+                LoginCommand.RaiseCanExecuteChanged(); // ← обновляем команду
+            }
         }
 
         public string ErrorMessage
@@ -41,33 +48,28 @@ namespace EnergyMeteringSystem.App.ViewModels.Auth
 
         public LoginViewModel()
         {
-            _authService = new AuthService();
             LoginCommand = new RelayCommand(ExecuteLogin, CanExecuteLogin);
         }
 
-        private bool CanExecuteLogin()
+        private bool CanExecuteLogin(object parameter) // ← с object
         {
             return !string.IsNullOrWhiteSpace(Username) &&
                    !string.IsNullOrWhiteSpace(Password);
         }
 
-        private void ExecuteLogin()
+        private void ExecuteLogin(object parameter) // ← с object
         {
-            var user = _authService.Login(Username, Password);
+            var user = AuthService.Login(Username, Password);
 
             if (user != null)
             {
-                // Открываем главное окно
                 var shellView = new Views.Main.ShellView();
                 shellView.Show();
-
-                // Закрываем окно входа
                 Application.Current.Windows[0]?.Close();
             }
             else
             {
                 ErrorMessage = "Неверное имя пользователя или пароль";
-                Password = string.Empty;
             }
         }
     }

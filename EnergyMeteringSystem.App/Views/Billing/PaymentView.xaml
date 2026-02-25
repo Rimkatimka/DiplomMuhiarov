@@ -18,7 +18,7 @@
 
             <TextBlock Text="Месяц:" VerticalAlignment="Center" Margin="15,0,0,0"/>
             <ComboBox ItemsSource="{Binding Months}" 
-                      SelectedIndex="{Binding SelectedMonth, Converter={StaticResource MonthIndexConverter}}"
+                      SelectedItem="{Binding SelectedMonthName}"
                       Width="100" Margin="5"/>
 
             <Button Content="Обновить" 
@@ -68,7 +68,7 @@
             </Grid>
         </GroupBox>
 
-        <!-- Кнопка сохранения и итог -->
+        <!-- Кнопка сохранения -->
         <StackPanel Grid.Row="2" Orientation="Vertical">
             <Button Content="Сохранить платеж" 
                     Command="{Binding SaveCommand}"

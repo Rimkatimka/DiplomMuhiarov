@@ -22,7 +22,6 @@ namespace EnergyMeteringSystem.App.Views.Readings
         public MeterReadingInputView()
         {
             InitializeComponent();
-            DataContext = new ViewModels.Readings.MeterReadingInputViewModel();
         }
     }
 }

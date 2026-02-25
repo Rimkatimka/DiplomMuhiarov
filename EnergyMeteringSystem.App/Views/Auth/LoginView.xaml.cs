@@ -31,7 +31,9 @@ namespace EnergyMeteringSystem.App.Views.Auth
             PasswordBox.PasswordChanged += (s, e) =>
             {
                 viewModel.Password = PasswordBox.Password;
+                System.Diagnostics.Debug.WriteLine($"Password set to: '{viewModel.Password}'");
             };
+
         }
     }
     public partial class App : Application

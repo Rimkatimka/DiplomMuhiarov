@@ -15,27 +15,60 @@
             <Button Content="Потребление" 
                     Command="{Binding RefreshCommand}"
                     CommandParameter="0"
-                    Background="{Binding SelectedReportType}"
-                    Width="120" Margin="5" Padding="5"/>
+                    Width="120" Margin="5" Padding="5">
+                <Button.Style>
+                    <Style TargetType="Button">
+                        <Setter Property="Background" Value="#2196F3"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding SelectedReportType}" Value="0">
+                                <Setter Property="Background" Value="#1976D2"/>
+                                <Setter Property="FontWeight" Value="Bold"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
 
             <Button Content="Начисления/Оплаты" 
                     Command="{Binding RefreshCommand}"
                     CommandParameter="1"
-                    Background="{Binding SelectedReportType}"
-                    Width="120" Margin="5" Padding="5"/>
+                    Width="120" Margin="5" Padding="5">
+                <Button.Style>
+                    <Style TargetType="Button">
+                        <Setter Property="Background" Value="#2196F3"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding SelectedReportType}" Value="1">
+                                <Setter Property="Background" Value="#1976D2"/>
+                                <Setter Property="FontWeight" Value="Bold"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
 
             <Button Content="Задолженность" 
                     Command="{Binding RefreshCommand}"
                     CommandParameter="2"
-                    Background="{Binding SelectedReportType}"
-                    Width="120" Margin="5" Padding="5"/>
+                    Width="120" Margin="5" Padding="5">
+                <Button.Style>
+                    <Style TargetType="Button">
+                        <Setter Property="Background" Value="#2196F3"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding SelectedReportType}" Value="2">
+                                <Setter Property="Background" Value="#1976D2"/>
+                                <Setter Property="FontWeight" Value="Bold"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
         </StackPanel>
 
         <!-- Параметры отчёта -->
         <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,10">
             <!-- Для отчёта по потреблению -->
             <StackPanel Orientation="Horizontal" 
-                        Visibility="{Binding ShowConsumption, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        Visibility="{Binding ConsumptionVisibility}">
                 <TextBlock Text="С:" VerticalAlignment="Center" Margin="5"/>
                 <DatePicker SelectedDate="{Binding StartDate}" Width="120" Margin="5"/>
                 <TextBlock Text="По:" VerticalAlignment="Center" Margin="5"/>
@@ -44,7 +77,7 @@
 
             <!-- Для отчёта по начислениям -->
             <StackPanel Orientation="Horizontal" 
-                        Visibility="{Binding ShowAccrual, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        Visibility="{Binding AccrualVisibility}">
                 <TextBlock Text="Год:" VerticalAlignment="Center" Margin="5"/>
                 <ComboBox ItemsSource="{Binding Years}" 
                           SelectedItem="{Binding SelectedYear}"
@@ -63,7 +96,7 @@
         <!-- Данные отчёта -->
         <Grid Grid.Row="2">
             <!-- Отчёт по потреблению -->
-            <DataGrid Visibility="{Binding ShowConsumption, Converter={StaticResource BooleanToVisibilityConverter}}"
+            <DataGrid Visibility="{Binding ConsumptionVisibility}"
                       ItemsSource="{Binding ConsumptionData}"
                       AutoGenerateColumns="False"
                       IsReadOnly="True">
@@ -83,7 +116,7 @@
             </DataGrid>
 
             <!-- Отчёт по начислениям -->
-            <DataGrid Visibility="{Binding ShowAccrual, Converter={StaticResource BooleanToVisibilityConverter}}"
+            <DataGrid Visibility="{Binding AccrualVisibility}"
                       ItemsSource="{Binding AccrualData}"
                       AutoGenerateColumns="False"
                       IsReadOnly="True">
@@ -96,7 +129,7 @@
             </DataGrid>
 
             <!-- Отчёт по долгам -->
-            <DataGrid Visibility="{Binding ShowDebt, Converter={StaticResource BooleanToVisibilityConverter}}"
+            <DataGrid Visibility="{Binding DebtVisibility}"
                       ItemsSource="{Binding DebtData}"
                       AutoGenerateColumns="False"
                       IsReadOnly="True">
@@ -114,12 +147,16 @@
             <TextBlock Text="Итого: " FontWeight="Bold" FontSize="14" VerticalAlignment="Center"/>
 
             <TextBlock Text="{Binding TotalConsumption, StringFormat={}{0:F2}}" 
-                       Visibility="{Binding ShowConsumption, Converter={StaticResource BooleanToVisibilityConverter}}"
+                       Visibility="{Binding ConsumptionVisibility}"
                        FontSize="14" FontWeight="Bold" Foreground="Blue" Margin="5,0"/>
 
             <TextBlock Text="{Binding TotalAccrual, StringFormat={}{0:F2} ₽}" 
-                       Visibility="{Binding ShowAccrual, Converter={StaticResource BooleanToVisibilityConverter}}"
+                       Visibility="{Binding AccrualVisibility}"   
                        FontSize="14" FontWeight="Bold" Foreground="Blue" Margin="5,0"/>
+
+            <TextBlock Text="{Binding TotalDebtSum, StringFormat={}{0:F2} ₽}" 
+                       Visibility="{Binding DebtVisibility}"   
+                       FontSize="14" FontWeight="Bold" Foreground="Red" Margin="5,0"/>
 
             <Button Content="Экспорт в Excel" 
                     Command="{Binding ExportCommand}"

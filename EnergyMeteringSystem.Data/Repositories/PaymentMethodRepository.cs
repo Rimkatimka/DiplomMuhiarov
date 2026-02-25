@@ -20,15 +20,17 @@ namespace EnergyMeteringSystem.Data.Repositories
 
         public List<DirectoryDto> GetAll()
         {
-            return _context.PaymentMethod
-                .Select(p => new DirectoryDto
-                {
-                    Id = p.Id,
-                    Name = p.Name,
-                    Description = p.RequiresCashier ? "Требуется кассир" : "Без кассира",
-                    IsActive = true
-                })
+            var data = _context.PaymentMethod
+                .Select(p => new { p.Id, p.Name, p.RequiresCashier })
                 .ToList();
+
+            return data.Select(p => new DirectoryDto
+            {
+                Id = p.Id,
+                Name = p.Name,
+                Description = p.RequiresCashier ? "Требуется кассир" : "Без кассира",
+                IsActive = true
+            }).ToList();
         }
 
         public DirectoryDto GetById(int id)

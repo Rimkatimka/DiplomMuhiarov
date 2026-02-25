@@ -20,16 +20,18 @@ namespace EnergyMeteringSystem.Data.Repositories
 
         public List<DirectoryDto> GetAll()
         {
-            return _context.VerificationInterval
+            var data = _context.VerificationInterval
                 .Include("MeterType")
-                .Select(v => new DirectoryDto
-                {
-                    Id = v.Id,
-                    Name = v.MeterType.Name,
-                    Description = $"Интервал: {v.Years} лет",
-                    IsActive = true
-                })
+                .Select(v => new { v.Id, v.MeterType.Name, v.Years })
                 .ToList();
+
+            return data.Select(v => new DirectoryDto
+            {
+                Id = v.Id,
+                Name = v.Name,
+                Description = "Интервал: " + v.Years + " лет",
+                IsActive = true
+            }).ToList();
         }
 
         public DirectoryDto GetById(int id)

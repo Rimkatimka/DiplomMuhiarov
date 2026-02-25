@@ -60,22 +60,31 @@ namespace EnergyMeteringSystem.Data.Repositories
 
         public UserDto GetByUsername(string username)
         {
-            var u = _context.User
-                .Include(u => u.UserRole)
-                .FirstOrDefault(x => x.Username == username);
+            System.Diagnostics.Debug.WriteLine($"Searching for user: {username}");
 
-            if (u == null) return null;
+            var user = _context.User
+                .Include("UserRole")
+                .FirstOrDefault(u => u.Username == username);
+
+            if (user == null)
+            {
+                System.Diagnostics.Debug.WriteLine($"User {username} not found in database");
+                return null;
+            }
+
+            System.Diagnostics.Debug.WriteLine($"Found user: ID={user.Id}, RoleId={user.RoleId}");
 
             return new UserDto
             {
-                Id = u.Id,
-                Username = u.Username,
-                FullName = u.FullName,
-                Email = u.Email,
-                RoleId = u.RoleId,
-                RoleName = u.UserRole?.Name,
-                IsActive = u.IsActive,
-                CreatedAt = u.CreatedAt
+                Id = user.Id,
+                Username = user.Username,
+                PasswordHash = user.PasswordHash,
+                FullName = user.FullName,
+                Email = user.Email,
+                RoleId = user.RoleId,
+                RoleName = user.UserRole?.Name,
+                IsActive = user.IsActive,
+                CreatedAt = user.CreatedAt
             };
         }
 

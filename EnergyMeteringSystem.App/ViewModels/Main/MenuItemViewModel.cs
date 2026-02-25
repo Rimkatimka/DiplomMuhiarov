@@ -12,8 +12,6 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
     {
         public string Title { get; set; }
         public RelayCommand Command { get; set; }
-        public object Icon { get; set; }
-
         public ObservableCollection<MenuItemViewModel> Children { get; set; }
 
         public MenuItemViewModel()

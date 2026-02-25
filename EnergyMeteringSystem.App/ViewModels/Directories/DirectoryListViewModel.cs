@@ -48,6 +48,8 @@ namespace EnergyMeteringSystem.App.ViewModels.Directories
 
         public DirectoryListViewModel(IDirectoryRepository<DirectoryDto> repository)
         {
+            System.Diagnostics.Debug.WriteLine("DirectoryListViewModel constructor START");
+
             _repository = repository;
             Items = new ObservableCollection<DirectoryDto>();
             FilteredItems = new ObservableCollection<DirectoryDto>();
@@ -57,13 +59,17 @@ namespace EnergyMeteringSystem.App.ViewModels.Directories
             EditCommand = new RelayCommand(_ => EditItem(), _ => SelectedItem != null);
             DeleteCommand = new RelayCommand(_ => DeleteItem(), _ => SelectedItem != null);
 
+            System.Diagnostics.Debug.WriteLine("DirectoryListViewModel constructor calling LoadData");
             LoadData();
+            System.Diagnostics.Debug.WriteLine("DirectoryListViewModel constructor END");
         }
 
         private void LoadData()
         {
             Items.Clear();
             var list = _repository.GetAll();
+            System.Diagnostics.Debug.WriteLine($"LoadData: got {list.Count} items");
+
             foreach (var item in list)
                 Items.Add(item);
 
