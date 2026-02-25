@@ -71,6 +71,7 @@
     <Compile Include="Models\DTO\ConsumptionObjectDto.cs" />
     <Compile Include="Models\DTO\ConsumptionReportDto.cs" />
     <Compile Include="Models\DTO\ContractDto.cs" />
+    <Compile Include="Models\DTO\ContractStatusDto.cs" />
     <Compile Include="Models\DTO\DashboardDto.cs" />
     <Compile Include="Models\DTO\DebtDto.cs" />
     <Compile Include="Models\DTO\DirectoryDto.cs" />
@@ -85,6 +86,7 @@
     <Compile Include="Models\DTO\PaymentRegistrationDto.cs" />
     <Compile Include="Models\DTO\RejectionReasonDto.cs" />
     <Compile Include="Models\DTO\TariffDto.cs" />
+    <Compile Include="Models\DTO\TariffTypeDto.cs" />
     <Compile Include="Models\DTO\UserDto.cs" />
     <Compile Include="Models\DTO\UserRoleDto.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

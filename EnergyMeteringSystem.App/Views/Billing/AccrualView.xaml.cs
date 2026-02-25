@@ -17,7 +17,7 @@ namespace EnergyMeteringSystem.App.Views.Billing
     /// <summary>
     /// Логика взаимодействия для AccrualView.xaml
     /// </summary>
-    public partial class AccrualView : Window
+    public partial class AccrualView : UserControl
     {
         public AccrualView()
         {

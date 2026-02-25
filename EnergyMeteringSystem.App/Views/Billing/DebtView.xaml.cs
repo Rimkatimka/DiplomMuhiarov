@@ -17,7 +17,7 @@ namespace EnergyMeteringSystem.App.Views.Billing
     /// <summary>
     /// Логика взаимодействия для DebtView.xaml
     /// </summary>
-    public partial class DebtView : Window
+    public partial class DebtView : UserControl
     {
         public DebtView()
         {

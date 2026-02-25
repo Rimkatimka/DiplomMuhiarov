@@ -17,7 +17,7 @@ namespace EnergyMeteringSystem.App.Views.Admin
     /// <summary>
     /// Логика взаимодействия для UserManagementView.xaml
     /// </summary>
-    public partial class UserManagementView : Window
+    public partial class UserManagementView : UserControl
     {
         public UserManagementView()
         {

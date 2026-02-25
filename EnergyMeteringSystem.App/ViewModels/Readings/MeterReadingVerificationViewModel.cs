@@ -24,7 +24,6 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
 
         public ObservableCollection<MeterReadingVerificationDto> Readings { get; set; }
         public ObservableCollection<RejectionReasonDto> RejectionReasons { get; set; }
-
         public MeterReadingVerificationDto SelectedReading
         {
             get => _selectedReading;
@@ -109,9 +108,17 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
         private void LoadRejectionReasons()
         {
             RejectionReasons.Clear();
-            var list = _reasonRepository.GetAll();
+            var list = _reasonRepository.GetAll(); // это List<DirectoryDto>
+
             foreach (var item in list)
-                RejectionReasons.Add(item);
+            {
+                RejectionReasons.Add(new RejectionReasonDto
+                {
+                    Id = item.Id,
+                    Name = item.Name,
+                    RequiresComment = item.Description?.Contains("Требует") ?? false
+                });
+            }
         }
 
         private bool CanVerify()

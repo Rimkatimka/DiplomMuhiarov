@@ -17,7 +17,7 @@ namespace EnergyMeteringSystem.App.Views.Contracts
     /// <summary>
     /// Логика взаимодействия для ContractEditView.xaml
     /// </summary>
-    public partial class ContractEditView : Window
+    public partial class ContractEditView : UserControl
     {
         public ContractEditView()
         {

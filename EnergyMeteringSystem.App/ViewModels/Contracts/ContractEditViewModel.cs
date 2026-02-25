@@ -93,15 +93,22 @@ namespace EnergyMeteringSystem.App.ViewModels.Contracts
             foreach (var obj in objects)
                 Objects.Add(obj);
 
-            // Загрузка тарифов (упрощённо)
+            // Загрузка тарифов
             var tariffs = _tariffRepository.GetAll();
             foreach (var tariff in tariffs)
                 Tariffs.Add(tariff);
 
-            // Загрузка статусов
+            // Загрузка статусов — преобразуем DirectoryDto в ContractStatusDto
             var statuses = _statusRepository.GetAll();
             foreach (var status in statuses)
-                Statuses.Add(status);
+            {
+                Statuses.Add(new ContractStatusDto
+                {
+                    Id = status.Id,
+                    Name = status.Name,
+                    Description = status.Description
+                });
+            }
         }
 
         private void LoadContract(ContractDto contract)

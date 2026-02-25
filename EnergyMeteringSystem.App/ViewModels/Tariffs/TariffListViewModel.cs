@@ -114,8 +114,22 @@ namespace EnergyMeteringSystem.App.ViewModels.Tariffs
 
         private void AddTariff()
         {
-            var types = _typeRepository.GetAll();
-            var editViewModel = new TariffEditViewModel(types);
+            var types = _typeRepository.GetAll(); // List<DirectoryDto>
+
+            // Преобразуем List<DirectoryDto> в ObservableCollection<TariffTypeDto>
+            var tariffTypes = new ObservableCollection<TariffTypeDto>();
+            foreach (var item in types)
+            {
+                tariffTypes.Add(new TariffTypeDto
+                {
+                    Id = item.Id,
+                    Name = item.Name,
+                    ZoneCount = 1, // значение по умолчанию
+                    Description = item.Description
+                });
+            }
+
+            var editViewModel = new TariffEditViewModel(tariffTypes);
             var editView = new Views.Tariffs.TariffEditView
             {
                 DataContext = editViewModel
@@ -143,8 +157,22 @@ namespace EnergyMeteringSystem.App.ViewModels.Tariffs
         {
             if (SelectedTariff == null) return;
 
-            var types = _typeRepository.GetAll();
-            var editViewModel = new TariffEditViewModel(types, SelectedTariff);
+            var types = _typeRepository.GetAll(); // List<DirectoryDto>
+
+            // Преобразуем List<DirectoryDto> в ObservableCollection<TariffTypeDto>
+            var tariffTypes = new ObservableCollection<TariffTypeDto>();
+            foreach (var item in types)
+            {
+                tariffTypes.Add(new TariffTypeDto
+                {
+                    Id = item.Id,
+                    Name = item.Name,
+                    ZoneCount = 1, // значение по умолчанию
+                    Description = item.Description
+                });
+            }
+
+            var editViewModel = new TariffEditViewModel(tariffTypes, SelectedTariff);
             var editView = new Views.Tariffs.TariffEditView
             {
                 DataContext = editViewModel

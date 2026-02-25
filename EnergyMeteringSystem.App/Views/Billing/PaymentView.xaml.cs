@@ -17,7 +17,7 @@ namespace EnergyMeteringSystem.App.Views.Billing
     /// <summary>
     /// Логика взаимодействия для PaymentView.xaml
     /// </summary>
-    public partial class PaymentView : Window
+    public partial class PaymentView : UserControl
     {
         public PaymentView()
         {

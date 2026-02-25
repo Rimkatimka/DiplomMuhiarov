@@ -17,7 +17,7 @@ namespace EnergyMeteringSystem.App.Views.Admin
     /// <summary>
     /// Логика взаимодействия для AuditLogView.xaml
     /// </summary>
-    public partial class AuditLogView : Window
+    public partial class AuditLogView : UserControl
     {
         public AuditLogView()
         {

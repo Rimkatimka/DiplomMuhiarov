@@ -17,7 +17,7 @@ namespace EnergyMeteringSystem.App.Views.Tariffs
     /// <summary>
     /// Логика взаимодействия для TariffListView.xaml
     /// </summary>
-    public partial class TariffListView : Window
+    public partial class TariffListView : UserControl
     {
         public TariffListView()
         {

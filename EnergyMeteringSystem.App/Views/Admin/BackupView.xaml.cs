@@ -17,7 +17,7 @@ namespace EnergyMeteringSystem.App.Views.Admin
     /// <summary>
     /// Логика взаимодействия для BackupView.xaml
     /// </summary>
-    public partial class BackupView : Window
+    public partial class BackupView : UserControl
     {
         public BackupView()
         {
