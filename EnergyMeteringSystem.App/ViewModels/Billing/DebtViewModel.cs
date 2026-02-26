@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 using EnergyMeteringSystem.App.Commands;
 using EnergyMeteringSystem.App.ViewModels.Base;
 using EnergyMeteringSystem.Core.Models.DTO;
@@ -59,6 +60,8 @@ namespace EnergyMeteringSystem.App.ViewModels.Billing
         {
             Debts.Clear();
             var list = _paymentRepository.GetDebtors();
+            System.Diagnostics.Debug.WriteLine($"LoadData: got {list.Count} debtors");
+
             foreach (var debt in list)
                 Debts.Add(debt);
 
@@ -72,28 +75,26 @@ namespace EnergyMeteringSystem.App.ViewModels.Billing
             var filtered = string.IsNullOrWhiteSpace(SearchText)
                 ? Debts
                 : new ObservableCollection<DebtDto>(
-                    Debts.Where(d =>
-                        d.Address.Contains(SearchText)));
+                    Debts.Where(d => d.Address.Contains(SearchText)));
 
             foreach (var debt in filtered)
                 FilteredDebts.Add(debt);
 
             OnPropertyChanged(nameof(TotalDebt));
             OnPropertyChanged(nameof(DebtorsCount));
-        }
 
-        
+            System.Diagnostics.Debug.WriteLine($"ApplyFilter: {FilteredDebts.Count} debtors");
+        }
 
         private void MarkAsPaid()
         {
             if (SelectedDebt == null) return;
 
-            // Здесь можно открыть окно регистрации платежа
-            System.Windows.MessageBox.Show(
+            MessageBox.Show(
                 $"Отметить оплату для объекта: {SelectedDebt.Address}\nСумма долга: {SelectedDebt.DebtAmount:F2} ₽",
                 "Оплата долга",
-                System.Windows.MessageBoxButton.OK,
-                System.Windows.MessageBoxImage.Information);
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
         }
     }
 }

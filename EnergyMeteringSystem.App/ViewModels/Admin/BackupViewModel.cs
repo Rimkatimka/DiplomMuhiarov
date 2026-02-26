@@ -3,6 +3,7 @@ using System.IO;
 using System.Windows;
 using EnergyMeteringSystem.App.Commands;
 using EnergyMeteringSystem.App.ViewModels.Base;
+using System.Data.Entity.Core.EntityClient;
 
 namespace EnergyMeteringSystem.App.ViewModels.Admin
 {
@@ -11,6 +12,15 @@ namespace EnergyMeteringSystem.App.ViewModels.Admin
         private string _backupPath;
         private string _statusMessage;
         private bool _isBusy;
+        private string GetSqlConnectionString()
+        {
+            // Получаем EF-строку
+            var efConnectionString = System.Configuration.ConfigurationManager.ConnectionStrings["EnergyMeteringSystemEntities"].ConnectionString;
+
+            // Извлекаем обычную SQL-строку из метаданных
+            var builder = new System.Data.Entity.Core.EntityClient.EntityConnectionStringBuilder(efConnectionString);
+            return builder.ProviderConnectionString;
+        }
 
         public string BackupPath
         {
@@ -36,10 +46,15 @@ namespace EnergyMeteringSystem.App.ViewModels.Admin
 
         public BackupViewModel()
         {
-            // Путь по умолчанию
-            BackupPath = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-                "EnergyMeteringBackup.bak");
+            // Папка Backups в корне проекта
+            string solutionPath = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\"));
+            string backupFolder = @"C:\Users\Рим Мухияров\Desktop\DiplomMuhiarov\EnergyMeteringSystem.App\Backups";
+            if (!Directory.Exists(backupFolder))
+            {
+                Directory.CreateDirectory(backupFolder);
+            }
+
+            BackupPath = Path.Combine(backupFolder, "EnergyMeteringBackup.bak");
 
             BrowseCommand = new RelayCommand(_ => Browse());
             CreateBackupCommand = new RelayCommand(_ => CreateBackup(), _ => !IsBusy);
@@ -54,7 +69,8 @@ namespace EnergyMeteringSystem.App.ViewModels.Admin
             {
                 FileName = "EnergyMeteringBackup",
                 DefaultExt = ".bak",
-                Filter = "Backup files (.bak)|*.bak"
+                Filter = "Backup files (*.bak)|*.bak",
+                InitialDirectory = Path.GetDirectoryName(BackupPath)
             };
 
             if (dialog.ShowDialog() == true)
@@ -70,11 +86,27 @@ namespace EnergyMeteringSystem.App.ViewModels.Admin
                 IsBusy = true;
                 StatusMessage = "Создание резервной копии...";
 
-                // Здесь будет код бэкапа через SQL
-                System.Threading.Thread.Sleep(2000); // Имитация работы
+                string databaseName = "EnergyMeteringSystem";
+
+                // Получаем обычную SQL-строку подключения
+                string sqlConnectionString = GetSqlConnectionString();
+
+                string backupCommand = $@"
+            BACKUP DATABASE [{databaseName}] 
+            TO DISK = '{BackupPath}' 
+            WITH FORMAT, 
+                 MEDIANAME = 'SQLServerBackup', 
+                 NAME = 'Full Backup of {databaseName}';";
+
+                using (var connection = new System.Data.SqlClient.SqlConnection(sqlConnectionString))
+                {
+                    var command = new System.Data.SqlClient.SqlCommand(backupCommand, connection);
+                    connection.Open();
+                    command.ExecuteNonQuery();
+                }
 
                 StatusMessage = $"Резервная копия создана: {BackupPath}";
-                MessageBox.Show("Резервное копирование выполнено успешно", "Успех",
+                MessageBox.Show("Резервное копирование выполнено успешно!", "Успех",
                     MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
@@ -88,11 +120,12 @@ namespace EnergyMeteringSystem.App.ViewModels.Admin
                 IsBusy = false;
             }
         }
-
         private void Restore()
         {
             var result = MessageBox.Show(
-                "Восстановление из резервной копии заменит все текущие данные. Продолжить?",
+                "Восстановление из резервной копии заменит все текущие данные!\n\n" +
+                "Все несохранённые изменения будут потеряны.\n\n" +
+                "Продолжить?",
                 "Подтверждение",
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Warning);
@@ -104,11 +137,27 @@ namespace EnergyMeteringSystem.App.ViewModels.Admin
                 IsBusy = true;
                 StatusMessage = "Восстановление из резервной копии...";
 
-                // Здесь будет код восстановления
-                System.Threading.Thread.Sleep(3000); // Имитация работы
+                string databaseName = "EnergyMeteringSystem";
+
+                // Переводим БД в SINGLE_USER режим и восстанавливаем
+                string restoreCommand = $@"
+                    USE master;
+                    ALTER DATABASE [{databaseName}] SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+                    RESTORE DATABASE [{databaseName}] 
+                    FROM DISK = '{BackupPath}' 
+                    WITH REPLACE;
+                    ALTER DATABASE [{databaseName}] SET MULTI_USER;";
+
+                using (var connection = new System.Data.SqlClient.SqlConnection(
+                    System.Configuration.ConfigurationManager.ConnectionStrings["EnergyMeteringSystemEntities"].ConnectionString))
+                {
+                    var command = new System.Data.SqlClient.SqlCommand(restoreCommand, connection);
+                    connection.Open();
+                    command.ExecuteNonQuery();
+                }
 
                 StatusMessage = "Восстановление завершено";
-                MessageBox.Show("Восстановление выполнено успешно", "Успех",
+                MessageBox.Show("Восстановление выполнено успешно!", "Успех",
                     MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)

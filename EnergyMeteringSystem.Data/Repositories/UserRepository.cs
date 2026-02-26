@@ -20,21 +20,31 @@ namespace EnergyMeteringSystem.Data.Repositories
 
         public List<UserDto> GetAll()
         {
-            return _context.User
-                .Include(u => u.UserRole)
-                .Select(u => new UserDto
+            try
+            {
+                var users = _context.User
+                    .Include("UserRole")
+                    .ToList();
+
+                System.Diagnostics.Debug.WriteLine($"UserRepository: loaded {users.Count} users");
+
+                return users.Select(u => new UserDto
                 {
                     Id = u.Id,
                     Username = u.Username,
                     FullName = u.FullName,
                     Email = u.Email,
                     RoleId = u.RoleId,
-                    RoleName = u.UserRole.Name,
+                    RoleName = u.UserRole?.Name,
                     IsActive = u.IsActive,
                     CreatedAt = u.CreatedAt
-                })
-                .OrderBy(u => u.FullName)
-                .ToList();
+                }).ToList();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"ERROR in UserRepository.GetAll: {ex.Message}");
+                return new List<UserDto>();
+            }
         }
 
         public UserDto GetById(int id)

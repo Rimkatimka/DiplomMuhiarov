@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using EnergyMeteringSystem.App.Commands;
 using EnergyMeteringSystem.App.ViewModels.Base;
 using EnergyMeteringSystem.Core.Models.DTO;
+using EnergyMeteringSystem.Data.Database;
 using EnergyMeteringSystem.Data.Repositories;
 
 namespace EnergyMeteringSystem.App.ViewModels.Admin
@@ -24,7 +26,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Admin
             set
             {
                 SetProperty(ref _fromDate, value);
-                LoadData();
+                LoadData(); // ← должно вызываться!
             }
         }
 
@@ -34,7 +36,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Admin
             set
             {
                 SetProperty(ref _toDate, value);
-                LoadData();
+                LoadData(); // ← должно вызываться!
             }
         }
 
@@ -64,13 +66,16 @@ namespace EnergyMeteringSystem.App.ViewModels.Admin
             RefreshCommand = new RelayCommand(_ => LoadData());
             ClearFilterCommand = new RelayCommand(_ => ClearFilter());
 
-            LoadData();
+            LoadData(); // ← вызываем при создании
         }
+        
 
         private void LoadData()
         {
             Logs.Clear();
             var list = _auditRepository.GetByDate(_fromDate, _toDate);
+            System.Diagnostics.Debug.WriteLine($"AuditLog: loaded {list.Count} logs");
+
             foreach (var log in list)
                 Logs.Add(log);
 
@@ -92,6 +97,8 @@ namespace EnergyMeteringSystem.App.ViewModels.Admin
 
             foreach (var log in filtered)
                 FilteredLogs.Add(log);
+
+            System.Diagnostics.Debug.WriteLine($"ApplyFilter: {FilteredLogs.Count} logs");
         }
 
         private void ClearFilter()

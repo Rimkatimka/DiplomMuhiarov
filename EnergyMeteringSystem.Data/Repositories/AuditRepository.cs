@@ -37,21 +37,32 @@ namespace EnergyMeteringSystem.Data.Repositories
 
         public List<AuditLogDto> GetByDate(DateTime from, DateTime to)
         {
-            return _context.AuditLog
-                .Where(a => a.ActionTime >= from && a.ActionTime <= to)
-                .OrderByDescending(a => a.ActionTime)
-                .Select(a => new AuditLogDto
+            try
+            {
+                var logs = _context.AuditLog
+                    .Where(a => a.ActionTime >= from && a.ActionTime <= to)
+                    .OrderByDescending(a => a.ActionTime)
+                    .ToList();
+
+                System.Diagnostics.Debug.WriteLine($"AuditRepository: loaded {logs.Count} logs");
+
+                return logs.Select(a => new AuditLogDto
                 {
                     Id = a.Id,
                     UserId = a.UserId,
-                    UserName = a.User.FullName,
+                    UserName = a.User?.FullName ?? "Система",
                     ActionTime = a.ActionTime,
                     ActionType = a.ActionType,
                     TableName = a.TableName,
                     RecordId = a.RecordId,
-                    Details = GetDetails(a)
-                })
-                .ToList();
+                    Details = a.OldValuesJson ?? a.NewValuesJson ?? a.ActionType
+                }).ToList();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"ERROR in AuditRepository.GetByDate: {ex.Message}");
+                return new List<AuditLogDto>();
+            }
         }
 
         public List<AuditLogDto> GetByUser(int userId)

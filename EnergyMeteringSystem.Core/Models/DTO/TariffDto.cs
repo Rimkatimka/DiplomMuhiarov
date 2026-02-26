@@ -13,13 +13,12 @@ namespace EnergyMeteringSystem.Core.Models.DTO
         public int TariffTypeId { get; set; }
         public string TariffTypeName { get; set; }
         public int ZoneNumber { get; set; }
-        public string ZoneName { get; set; }
         public decimal PricePerUnit { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime? EndDate { get; set; }
         public bool IsActive => EndDate == null || EndDate > DateTime.Today;
         public string StatusText => IsActive ? "Активен" : "Неактивен";
-        public string ZoneText => ZoneNumber == 1 ? "День" : "Ночь";
+        public string ZoneName => ZoneNumber == 1 ? "День" : "Ночь";
         public string PriceText => $"{PricePerUnit:F2} ₽/кВт";
         public string PeriodText => $"{StartDate:dd.MM.yyyy} - {(EndDate?.ToString("dd.MM.yyyy") ?? "бессрочно")}";
     }

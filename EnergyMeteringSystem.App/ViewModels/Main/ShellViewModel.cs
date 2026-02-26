@@ -320,7 +320,11 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
 
         private void OpenDirectory(DirectoryListViewModel viewModel, string title)
         {
-            CurrentView = new Views.Directories.DirectoryListView();        
+            System.Diagnostics.Debug.WriteLine($"OpenDirectory: {title}");
+
+            var view = new Views.Directories.DirectoryListView();
+            view.DataContext = viewModel;
+            CurrentView = view;
         }
 
         private void Logout()

@@ -47,7 +47,7 @@
 
         <!-- Список должников -->
         <DataGrid Grid.Row="2" 
-                  ItemsSource="{Binding FilteredDebts}"
+                  ItemsSource="{Binding Debts}"
                   SelectedItem="{Binding SelectedDebt}"
                   AutoGenerateColumns="False"
                   IsReadOnly="True">

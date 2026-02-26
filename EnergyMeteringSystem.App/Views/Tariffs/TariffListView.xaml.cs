@@ -11,6 +11,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using EnergyMeteringSystem.App.ViewModels.Tariffs;
 
 namespace EnergyMeteringSystem.App.Views.Tariffs
 {
@@ -22,6 +23,7 @@ namespace EnergyMeteringSystem.App.Views.Tariffs
         public TariffListView()
         {
             InitializeComponent();
+            DataContext = new TariffListViewModel();
         }
     }
 }

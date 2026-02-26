@@ -11,6 +11,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using EnergyMeteringSystem.App.ViewModels.Admin;
 
 namespace EnergyMeteringSystem.App.Views.Admin
 {
@@ -22,6 +23,7 @@ namespace EnergyMeteringSystem.App.Views.Admin
         public AuditLogView()
         {
             InitializeComponent();
+            DataContext = new AuditLogViewModel();
         }
     }
 }

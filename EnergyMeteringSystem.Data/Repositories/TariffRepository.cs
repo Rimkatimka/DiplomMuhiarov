@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using EnergyMeteringSystem.Core.Interfaces.Repositories;
 using EnergyMeteringSystem.Core.Models.DTO;
 using EnergyMeteringSystem.Data.Database;
@@ -20,44 +18,35 @@ namespace EnergyMeteringSystem.Data.Repositories
 
         public List<TariffDto> GetAll()
         {
-            return _context.Tariff
+            // 1. Загружаем данные из БД
+            var data = _context.Tariff
                 .Include("TariffType")
                 .OrderBy(t => t.TariffType.Name)
                 .ThenBy(t => t.ZoneNumber)
                 .ThenByDescending(t => t.StartDate)
-                .Select(t => new TariffDto
+                .Select(t => new
                 {
-                    Id = t.Id,
-                    TariffTypeId = t.TariffTypeId,
+                    t.Id,
+                    t.TariffTypeId,
                     TariffTypeName = t.TariffType.Name,
-                    ZoneNumber = t.ZoneNumber,
-                    ZoneName = GetZoneName(t.ZoneNumber),
-                    PricePerUnit = t.PricePerUnit,
-                    StartDate = t.StartDate,
-                    EndDate = t.EndDate
+                    t.ZoneNumber,
+                    t.PricePerUnit,
+                    t.StartDate,
+                    t.EndDate
                 })
                 .ToList();
-        }
 
-        public List<TariffDto> GetActive()
-        {
-            var today = DateTime.Today;
-            return _context.Tariff
-                .Include("TariffType")
-                .Where(t => t.StartDate <= today &&
-                           (t.EndDate == null || t.EndDate > today))
-                .Select(t => new TariffDto
-                {
-                    Id = t.Id,
-                    TariffTypeId = t.TariffTypeId,
-                    TariffTypeName = t.TariffType.Name,
-                    ZoneNumber = t.ZoneNumber,
-                    ZoneName = GetZoneName(t.ZoneNumber),
-                    PricePerUnit = t.PricePerUnit,
-                    StartDate = t.StartDate,
-                    EndDate = t.EndDate
-                })
-                .ToList();
+            // 2. Форматируем в памяти
+            return data.Select(t => new TariffDto
+            {
+                Id = t.Id,
+                TariffTypeId = t.TariffTypeId,
+                TariffTypeName = t.TariffTypeName,
+                ZoneNumber = t.ZoneNumber,
+                PricePerUnit = t.PricePerUnit,
+                StartDate = t.StartDate,
+                EndDate = t.EndDate
+            }).ToList();
         }
 
         public TariffDto GetById(int id)
@@ -74,7 +63,6 @@ namespace EnergyMeteringSystem.Data.Repositories
                 TariffTypeId = t.TariffTypeId,
                 TariffTypeName = t.TariffType.Name,
                 ZoneNumber = t.ZoneNumber,
-                ZoneName = GetZoneName(t.ZoneNumber),
                 PricePerUnit = t.PricePerUnit,
                 StartDate = t.StartDate,
                 EndDate = t.EndDate
@@ -99,16 +87,47 @@ namespace EnergyMeteringSystem.Data.Repositories
                 TariffTypeId = t.TariffTypeId,
                 TariffTypeName = t.TariffType.Name,
                 ZoneNumber = t.ZoneNumber,
-                ZoneName = GetZoneName(t.ZoneNumber),
                 PricePerUnit = t.PricePerUnit,
                 StartDate = t.StartDate,
                 EndDate = t.EndDate
             };
         }
+        public List<TariffDto> GetActive()
+        {
+            var today = DateTime.Today;
+
+            var data = _context.Tariff
+                .Include("TariffType")
+                .Where(t => t.StartDate <= today &&
+                            (t.EndDate == null || t.EndDate > today))
+                .OrderBy(t => t.TariffType.Name)
+                .ThenBy(t => t.ZoneNumber)
+                .Select(t => new
+                {
+                    t.Id,
+                    t.TariffTypeId,
+                    TariffTypeName = t.TariffType.Name,
+                    t.ZoneNumber,
+                    t.PricePerUnit,
+                    t.StartDate,
+                    t.EndDate
+                })
+                .ToList();
+
+            return data.Select(t => new TariffDto
+            {
+                Id = t.Id,
+                TariffTypeId = t.TariffTypeId,
+                TariffTypeName = t.TariffTypeName,
+                ZoneNumber = t.ZoneNumber,
+                PricePerUnit = t.PricePerUnit,
+                StartDate = t.StartDate,
+                EndDate = t.EndDate
+            }).ToList();
+        }
 
         public void Add(TariffDto dto)
         {
-            // Проверяем, нет ли уже активного тарифа на эту дату
             var existing = _context.Tariff
                 .FirstOrDefault(t => t.TariffTypeId == dto.TariffTypeId &&
                                     t.ZoneNumber == dto.ZoneNumber &&
@@ -127,7 +146,7 @@ namespace EnergyMeteringSystem.Data.Repositories
                 PricePerUnit = dto.PricePerUnit,
                 StartDate = dto.StartDate,
                 EndDate = dto.EndDate,
-                UnitId = 1 // кВт·ч
+                UnitId = 1
             };
 
             _context.Tariff.Add(entity);
@@ -155,6 +174,7 @@ namespace EnergyMeteringSystem.Data.Repositories
             }
         }
 
+        // ✅ Один метод GetZoneName
         private string GetZoneName(int zoneNumber)
         {
             return zoneNumber == 1 ? "День" : "Ночь";
