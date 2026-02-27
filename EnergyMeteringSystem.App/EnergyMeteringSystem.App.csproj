@@ -166,6 +166,15 @@
     <Compile Include="Views\Main\ShellView.xaml.cs">
       <DependentUpon>ShellView.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Views\Meters\MeterEditView.xaml.cs">
+      <DependentUpon>MeterEditView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Meters\MeterListView.xaml.cs">
+      <DependentUpon>MeterListView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Objects\ConsumptionObjectEditView.xaml.cs">
+      <DependentUpon>ConsumptionObjectEditView.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\Objects\ConsumptionObjectListView.xaml.cs">
       <DependentUpon>ConsumptionObjectListView.xaml</DependentUpon>
     </Compile>
@@ -254,6 +263,18 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="Views\Meters\MeterEditView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\Meters\MeterListView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\Objects\ConsumptionObjectEditView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Views\Objects\ConsumptionObjectListView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -330,7 +351,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Navigation\" />
-    <Folder Include="Views\Meters\" />
   </ItemGroup>
   <ItemGroup>
     <Resource Include="icons8-электричество-100.ico" />

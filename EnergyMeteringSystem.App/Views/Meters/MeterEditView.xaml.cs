@@ -11,20 +11,21 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
-using EnergyMeteringSystem.App.ViewModels.Readings;
-using EnergyMeteringSystem.Core.Models.DTO;
+using EnergyMeteringSystem.App.ViewModels.Meters;
 
-namespace EnergyMeteringSystem.App.Views.Readings
+namespace EnergyMeteringSystem.App.Views.Meters
 {
     /// <summary>
-    /// Логика взаимодействия для MeterReadingInputView.xaml
+    /// Логика взаимодействия для MeterEditView.xaml
     /// </summary>
-    public partial class MeterReadingInputView : UserControl
+    public partial class MeterEditView : Window
     {
-        public MeterReadingInputView(UserDto currentUser)
+        public MeterEditView(MeterEditViewModel viewModel)
         {
             InitializeComponent();
-            DataContext = new MeterReadingInputViewModel(currentUser);
+            DataContext = viewModel;
+
+            viewModel.OnMeterSaved += (s, e) => this.Close();
         }
     }
 }

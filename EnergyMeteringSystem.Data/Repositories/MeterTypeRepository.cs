@@ -1,15 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using EnergyMeteringSystem.Core.Interfaces.Repositories;
 using EnergyMeteringSystem.Core.Models.DTO;
 using EnergyMeteringSystem.Data.Database;
 
 namespace EnergyMeteringSystem.Data.Repositories
 {
-    public class MeterTypeRepository : IDirectoryRepository<DirectoryDto>
+    public class MeterTypeRepository
     {
         private readonly EnergyMeteringSystemEntities _context;
 
@@ -18,59 +15,52 @@ namespace EnergyMeteringSystem.Data.Repositories
             _context = new EnergyMeteringSystemEntities();
         }
 
-        public List<DirectoryDto> GetAll()
+        public List<MeterTypeDto> GetAll()
         {
-            var data = _context.MeterType
-                .Select(m => new
+            try
+            {
+                var types = _context.MeterType.ToList();
+
+                return types.Select(t => new MeterTypeDto
                 {
-                    m.Id,
-                    m.Name,
-                    m.Voltage,
-                    m.MaxCurrent,
-                    m.AccuracyClass
-                })
-                .ToList(); // ← сначала выполняем запрос к БД
-
-            // Теперь форматируем в памяти
-            return data.Select(m => new DirectoryDto
+                    Id = t.Id,
+                    Name = t.Name,
+                    Voltage = t.Voltage,
+                    MaxCurrent = t.MaxCurrent,
+                    AccuracyClass = t.AccuracyClass,
+                    DigitCount = t.DigitCount,
+                    DecimalPlaces = t.DecimalPlaces
+                }).ToList();
+            }
+            catch (Exception ex)
             {
-                Id = m.Id,
-                Name = m.Name,
-                Description = $"{m.Voltage}В, {m.MaxCurrent}А, класс {m.AccuracyClass}"
-            }).ToList();
+                System.Diagnostics.Debug.WriteLine($"Ошибка в MeterTypeRepository.GetAll: {ex.Message}");
+                return new List<MeterTypeDto>();
+            }
         }
 
-        public DirectoryDto GetById(int id)
+        public MeterTypeDto GetById(int id)
         {
-            var entity = _context.MeterType.Find(id);
-            if (entity == null) return null;
-
-            return new DirectoryDto
+            try
             {
-                Id = entity.Id,
-                Name = entity.Name,
-                Description = $"{entity.Voltage}В, {entity.MaxCurrent}А, класс {entity.AccuracyClass}"
-            };
-        }
+                var t = _context.MeterType.Find(id);
+                if (t == null) return null;
 
-        public void Add(DirectoryDto dto)
-        {
-            // Для простоты — заглушка
-            // В реальности нужно маппить на полную сущность
-        }
-
-        public void Update(DirectoryDto dto)
-        {
-            // Заглушка
-        }
-
-        public void Delete(int id)
-        {
-            var entity = _context.MeterType.Find(id);
-            if (entity != null)
+                return new MeterTypeDto
+                {
+                    Id = t.Id,
+                    Name = t.Name,
+                    Voltage = t.Voltage,
+                    MaxCurrent = t.MaxCurrent,
+                    AccuracyClass = t.AccuracyClass,
+                    DigitCount = t.DigitCount,
+                    DecimalPlaces = t.DecimalPlaces
+                };
+            }
+            catch (Exception ex)
             {
-                _context.MeterType.Remove(entity);
-                _context.SaveChanges();
+                System.Diagnostics.Debug.WriteLine($"Ошибка в MeterTypeRepository.GetById: {ex.Message}");
+                return null;
             }
         }
     }

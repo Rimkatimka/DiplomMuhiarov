@@ -1,0 +1,84 @@
+﻿<Window x:Class="EnergyMeteringSystem.App.Views.Meters.MeterEditView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Регистрация счетчика" 
+        Height="450" Width="500"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize">
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Серийный номер -->
+        <TextBlock Grid.Row="0" Grid.Column="0" Text="Серийный номер:" Margin="5" VerticalAlignment="Center"/>
+        <TextBox Grid.Row="0" Grid.Column="1" 
+                 Text="{Binding SerialNumber}" 
+                 Margin="5" Padding="5"/>
+
+        <!-- Тип счетчика -->
+        <TextBlock Grid.Row="1" Grid.Column="0" Text="Тип счетчика:" Margin="5" VerticalAlignment="Center"/>
+        <ComboBox Grid.Row="1" Grid.Column="1" 
+                  ItemsSource="{Binding MeterTypes}"
+                  SelectedItem="{Binding SelectedMeterType}"
+                  DisplayMemberPath="Name"
+                  Margin="5" Padding="5"/>
+
+        <!-- Объект установки -->
+        <TextBlock Grid.Row="2" Grid.Column="0" Text="Объект установки:" Margin="5" VerticalAlignment="Center"/>
+        <ComboBox Grid.Row="2" Grid.Column="1" 
+                  ItemsSource="{Binding Objects}"
+                  SelectedItem="{Binding SelectedObject}"
+                  DisplayMemberPath="Address"
+                  Margin="5" Padding="5"/>
+
+        <!-- Дата установки -->
+        <TextBlock Grid.Row="3" Grid.Column="0" Text="Дата установки:" Margin="5" VerticalAlignment="Center"/>
+        <DatePicker Grid.Row="3" Grid.Column="1" 
+                    SelectedDate="{Binding InstallationDate}"
+                    Margin="5" Padding="5"/>
+
+        <!-- Начальные показания -->
+        <TextBlock Grid.Row="4" Grid.Column="0" Text="Начальные показания:" Margin="5" VerticalAlignment="Center"/>
+        <TextBox Grid.Row="4" Grid.Column="1" 
+                 Text="{Binding InitialReading}" 
+                 Margin="5" Padding="5"/>
+
+        <!-- Дата последней поверки -->
+        <TextBlock Grid.Row="5" Grid.Column="0" Text="Дата поверки:" Margin="5" VerticalAlignment="Center"/>
+        <DatePicker Grid.Row="5" Grid.Column="1" 
+                    SelectedDate="{Binding VerificationDate}"
+                    Margin="5" Padding="5"/>
+
+        <!-- Статус счетчика -->
+        <TextBlock Grid.Row="6" Grid.Column="0" Text="Статус:" Margin="5" VerticalAlignment="Center"/>
+        <ComboBox Grid.Row="6" Grid.Column="1" 
+                  ItemsSource="{Binding Statuses}"
+                  SelectedItem="{Binding SelectedStatus}"
+                  DisplayMemberPath="Name"
+                  Margin="5" Padding="5"/>
+
+        <!-- Кнопки -->
+        <StackPanel Grid.Row="7" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+            <Button Content="Сохранить" 
+                    Command="{Binding SaveCommand}"
+                    Padding="20,8" Margin="5"
+                    Background="#4CAF50" Foreground="White"/>
+            <Button Content="Отмена" 
+                    Command="{Binding CancelCommand}"
+                    Padding="20,8" Margin="5"/>
+        </StackPanel>
+    </Grid>
+</Window>

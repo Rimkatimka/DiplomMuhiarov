@@ -15,8 +15,10 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
 {
     public class ShellViewModel : ViewModelBase
     {
-        public UserDto CurrentUser => AuthService.CurrentUser;
+        private readonly AuthService _authService;
+        private UserDto _currentUser;
 
+        public UserDto CurrentUser => _currentUser;
         public ObservableCollection<MenuItemViewModel> MenuItems { get; set; }
         public RelayCommand LogoutCommand { get; }
         private object _currentView;
@@ -38,17 +40,17 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
             }
         }
 
-        public ShellViewModel()
+        public ShellViewModel(UserDto currentUser)
         {
-            if (CurrentUser == null)
+            System.Diagnostics.Debug.WriteLine("ShellViewModel: конструктор начат");
+
+            _currentUser = currentUser;  // ← получаем пользователя из параметра
+
+            System.Diagnostics.Debug.WriteLine($"ShellViewModel: _currentUser = {(_currentUser?.Username ?? "null")}");
+
+            if (_currentUser == null)
             {
-                // Если пользователь не найден — закрываем окно
-                Application.Current.Dispatcher.Invoke(() =>
-                {
-                    MessageBox.Show("Ошибка авторизации");
-                    Application.Current.Windows.OfType<Views.Main.ShellView>().FirstOrDefault()?.Close();
-                    new Views.Auth.LoginView().Show();
-                });
+                System.Diagnostics.Debug.WriteLine("ShellViewModel: _currentUser == null, выход");
                 return;
             }
 
@@ -64,6 +66,12 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
             {
                 Title = "Главная",
                 Command = new RelayCommand(_ => OpenDashboard())
+            });
+
+            MenuItems.Add(new MenuItemViewModel
+            {
+                Title = "Счетчики",
+                Command = new RelayCommand(_ => OpenMeterList())  // ← вызов здесь
             });
 
             // Объекты - всем
@@ -252,6 +260,10 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
         {
             CurrentView = new Views.Main.DashboardView();
         }
+        private void OpenMeterList()
+        {
+            CurrentView = new Views.Meters.MeterListView();  // ← открытие окна
+        }
 
         private void OpenObjects()
         {
@@ -260,7 +272,16 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
 
         private void OpenReadingInput()
         {
-            CurrentView = new Views.Readings.MeterReadingInputView();
+            if (CurrentUser == null)
+            {
+                System.Windows.MessageBox.Show("Ошибка: пользователь не авторизован", "Ошибка",
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                return;
+            }
+
+            // Передаем текущего пользователя в View
+            var view = new Views.Readings.MeterReadingInputView(CurrentUser);
+            CurrentView = view;
         }
 
         private void OpenReadingHistory()
@@ -329,9 +350,9 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
 
         private void Logout()
         {
+            _authService.Logout();  // ← вызываем метод экземпляра, а не статический
+            Application.Current.Windows[0]?.Close();
             new Views.Auth.LoginView().Show();
-            AuthService.Logout();
-            Application.Current.Windows[0]?.Close();               
         }
     }
 }

@@ -174,7 +174,8 @@ namespace EnergyMeteringSystem.App.ViewModels.Billing
 
         private void SavePayment()
         {
-            var currentUser = AuthService.CurrentUser;
+            var authService = new AuthService();
+            var currentUser = authService.GetCurrentUser();
             if (currentUser == null) return;
 
             var dto = new PaymentRegistrationDto

@@ -70,32 +70,40 @@ namespace EnergyMeteringSystem.Data.Repositories
 
         public UserDto GetByUsername(string username)
         {
-            System.Diagnostics.Debug.WriteLine($"Searching for user: {username}");
-
-            var user = _context.User
-                .Include("UserRole")
-                .FirstOrDefault(u => u.Username == username);
-
-            if (user == null)
+            try
             {
-                System.Diagnostics.Debug.WriteLine($"User {username} not found in database");
+                System.Diagnostics.Debug.WriteLine($"UserRepository.GetByUsername: поиск пользователя '{username}'");
+
+                var user = _context.User
+                    .Include("UserRole")
+                    .FirstOrDefault(u => u.Username == username);
+
+                if (user == null)
+                {
+                    System.Diagnostics.Debug.WriteLine($"UserRepository.GetByUsername: пользователь '{username}' не найден");
+                    return null;
+                }
+
+                System.Diagnostics.Debug.WriteLine($"UserRepository.GetByUsername: пользователь найден: ID={user.Id}, RoleId={user.RoleId}, IsActive={user.IsActive}");
+
+                return new UserDto
+                {
+                    Id = user.Id,
+                    Username = user.Username,
+                    PasswordHash = user.PasswordHash,
+                    FullName = user.FullName,
+                    Email = user.Email,
+                    RoleId = user.RoleId,
+                    RoleName = user.UserRole?.Name,
+                    IsActive = user.IsActive,
+                    CreatedAt = user.CreatedAt
+                };
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"UserRepository.GetByUsername ошибка: {ex.Message}");
                 return null;
             }
-
-            System.Diagnostics.Debug.WriteLine($"Found user: ID={user.Id}, RoleId={user.RoleId}");
-
-            return new UserDto
-            {
-                Id = user.Id,
-                Username = user.Username,
-                PasswordHash = user.PasswordHash,
-                FullName = user.FullName,
-                Email = user.Email,
-                RoleId = user.RoleId,
-                RoleName = user.UserRole?.Name,
-                IsActive = user.IsActive,
-                CreatedAt = user.CreatedAt
-            };
         }
 
         public void Add(UserDto dto)

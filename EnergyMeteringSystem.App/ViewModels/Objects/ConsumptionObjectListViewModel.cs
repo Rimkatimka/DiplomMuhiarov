@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 using EnergyMeteringSystem.App.Commands;
 using EnergyMeteringSystem.App.ViewModels.Base;
 using EnergyMeteringSystem.Core.Models.DTO;
@@ -16,6 +17,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
         private readonly ConsumptionObjectRepository _repository;
         private string _searchText;
         public RelayCommand<ConsumptionObjectDto> ShowMetersCommand { get; private set; }
+        public RelayCommand DeleteCommand { get; private set; }
 
         public ObservableCollection<ConsumptionObjectDto> Objects { get; set; }
         public ObservableCollection<ConsumptionObjectDto> FilteredObjects { get; set; }
@@ -27,6 +29,18 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
             {
                 SetProperty(ref _searchText, value);
                 ApplyFilter();
+            }
+        }
+        private ConsumptionObjectDto _selectedObject;
+        public ConsumptionObjectDto SelectedObject
+        {
+            get => _selectedObject;
+            set
+            {
+                SetProperty(ref _selectedObject, value);
+                // Обновление состояния команд, если нужно
+                EditCommand?.RaiseCanExecuteChanged();
+                DeleteCommand?.RaiseCanExecuteChanged();
             }
         }
 
@@ -77,20 +91,40 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
 
         private void AddObject()
         {
-            // позже
+            var editViewModel = new ConsumptionObjectEditViewModel();
+            var editView = new Views.Objects.ConsumptionObjectEditView(editViewModel);
+            editView.ShowDialog();
+            // Обновить список после закрытия окна
+            LoadData();
         }
 
         private void EditObject(ConsumptionObjectDto obj)
         {
-            // позже
+            if (SelectedObject == null) return;
+
+            var editViewModel = new ConsumptionObjectEditViewModel(SelectedObject);
+            var editView = new Views.Objects.ConsumptionObjectEditView(editViewModel);
+            editView.ShowDialog();
+
+            // Обновить список после закрытия окна
+            LoadData();
         }
         private void ShowMeters(ConsumptionObjectDto obj)
         {
             if (obj == null) return;
 
-            var window = new Views.Objects.ObjectMetersView(obj);
-            window.ShowDialog();
+            System.Diagnostics.Debug.WriteLine($"ShowMeters вызван для объекта: {obj.Address} (ID={obj.Id})");
 
+            var view = new Views.Objects.ObjectMetersView(obj);
+            var window = new Window
+            {
+                Title = $"Счетчики - {obj.Address}",
+                Content = view,
+                Width = 850,
+                Height = 550,
+                WindowStartupLocation = WindowStartupLocation.CenterScreen
+            };
+            window.ShowDialog();
         }
 
     }

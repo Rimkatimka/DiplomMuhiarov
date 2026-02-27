@@ -167,6 +167,7 @@
     <Compile Include="Repositories\ReadingStatusRepository.cs" />
     <Compile Include="Repositories\RejectionReasonRepository.cs" />
     <Compile Include="Repositories\ReportRepository.cs" />
+    <Compile Include="Repositories\StreetRepository.cs" />
     <Compile Include="Repositories\TariffRepository.cs" />
     <Compile Include="Repositories\TariffTypeRepository.cs" />
     <Compile Include="Repositories\UnitOfMeasureRepository.cs" />

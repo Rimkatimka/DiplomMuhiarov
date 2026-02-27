@@ -12,25 +12,21 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using EnergyMeteringSystem.App.ViewModels.Objects;
-using EnergyMeteringSystem.Core.Models.DTO;
 
 namespace EnergyMeteringSystem.App.Views.Objects
 {
     /// <summary>
-    /// Логика взаимодействия для ObjectMetersView.xaml
+    /// Логика взаимодействия для ConsumptionObjectEditView.xaml
     /// </summary>
-    public partial class ObjectMetersView : UserControl
+    public partial class ConsumptionObjectEditView : Window
     {
-        public ObjectMetersView(ConsumptionObjectDto selectedObject)
+        public ConsumptionObjectEditView(ConsumptionObjectEditViewModel viewModel)
         {
             InitializeComponent();
-            if (selectedObject == null) return;
-
-            // Создаем ViewModel и устанавливаем DataContext
-            var viewModel = new ObjectMetersViewModel(selectedObject);
             DataContext = viewModel;
 
-            System.Diagnostics.Debug.WriteLine($"ObjectMetersView создан для объекта: {selectedObject.Address}");
+            // Закрыть окно при успешном сохранении
+            viewModel.OnObjectSaved += (s, e) => this.Close();
         }
     }
 }

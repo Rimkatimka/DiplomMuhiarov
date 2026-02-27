@@ -15,6 +15,7 @@ namespace EnergyMeteringSystem.Core.Interfaces.Repositories
         List<MeterForReadingDto> GetMetersByObjectId(int objectId);
         decimal? GetLastReading(int meterId);
         List<MeterReadingHistoryDto> GetHistoryByMeterId(int meterId);
-        List<MeterReadingHistoryDto> GetHistoryByObjectId(int objectId);
+        List<MeterReadingHistoryDto> GetHistoryByObjectId(int objectId); 
+        List<MeterReadingDto> GetReadingsForPeriod(int objectId, int year, int month);
     }
 }

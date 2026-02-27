@@ -11,20 +11,18 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
-using EnergyMeteringSystem.App.ViewModels.Readings;
-using EnergyMeteringSystem.Core.Models.DTO;
 
-namespace EnergyMeteringSystem.App.Views.Readings
+namespace EnergyMeteringSystem.App.Views.Meters
 {
     /// <summary>
-    /// Логика взаимодействия для MeterReadingInputView.xaml
+    /// Логика взаимодействия для MeterListView.xaml
     /// </summary>
-    public partial class MeterReadingInputView : UserControl
+    public partial class MeterListView : UserControl
     {
-        public MeterReadingInputView(UserDto currentUser)
+        public MeterListView()
         {
             InitializeComponent();
-            DataContext = new MeterReadingInputViewModel(currentUser);
+            DataContext = new ViewModels.Meters.MeterListViewModel();
         }
     }
 }

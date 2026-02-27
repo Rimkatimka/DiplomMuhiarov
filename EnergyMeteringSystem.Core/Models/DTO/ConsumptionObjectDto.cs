@@ -12,6 +12,8 @@ namespace EnergyMeteringSystem.Core.Models.DTO
         public string ObjectTypeName { get; set; }
         public decimal? TotalArea { get; set; }
         public int? ResidentCount { get; set; }
+        public int StreetId { get; set; }
+        public int ObjectTypeId { get; set; }
 
         public string Address => $"{Street}, д. {HouseNumber}" +
             (string.IsNullOrEmpty(ApartmentNumber) ? "" : $", кв. {ApartmentNumber}");

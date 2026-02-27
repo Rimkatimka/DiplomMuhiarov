@@ -1,10 +1,12 @@
-﻿<UserControl x:Class="EnergyMeteringSystem.App.Views.Objects.ConsumptionObjectListView"             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+﻿<UserControl x:Class="EnergyMeteringSystem.App.Views.Objects.ConsumptionObjectListView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
         <!-- Панель поиска -->
@@ -12,46 +14,246 @@
             <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" 
                      Width="300" 
                      Padding="5"
-                     VerticalAlignment="Center"/>
+                     VerticalAlignment="Center"
+                     ToolTip="Введите адрес для поиска"/>
             <Button Content="Обновить" 
                     Command="{Binding RefreshCommand}" 
                     Margin="10,0,0,0"
-                    Padding="10,5"/>
+                    Padding="10,5"
+                    ToolTip="Обновить список объектов"/>
         </StackPanel>
 
-        <!-- Список объектов -->
-        <ListBox Grid.Row="1" 
-                 ItemsSource="{Binding FilteredObjects}"
-                 DisplayMemberPath="Address"
-                 SelectedItem="{Binding SelectedObject}"/>
+        <!-- Таблица объектов -->
         <DataGrid Grid.Row="1" 
-          ItemsSource="{Binding FilteredObjects}"
-          AutoGenerateColumns="False"
-          IsReadOnly="True"
-          SelectionMode="Single">
+                  ItemsSource="{Binding FilteredObjects}"
+                  SelectedItem="{Binding SelectedObject}"
+                  AutoGenerateColumns="False"
+                  IsReadOnly="True"
+                  SelectionMode="Single"
+                  AlternatingRowBackground="#F5F5F5"
+                  AlternationCount="2"
+                  BorderBrush="LightGray"
+                  BorderThickness="1"
+                  RowHeaderWidth="0"
+                  CanUserAddRows="False"
+                  CanUserDeleteRows="False"
+                  CanUserReorderColumns="False"
+                  CanUserResizeColumns="True"
+                  CanUserSortColumns="True"
+                  GridLinesVisibility="Horizontal"
+                  HorizontalScrollBarVisibility="Auto"
+                  VerticalScrollBarVisibility="Auto">
+
+            <DataGrid.Resources>
+                <Style TargetType="DataGridColumnHeader">
+                    <Setter Property="Background" Value="#2D3F5E"/>
+                    <Setter Property="Foreground" Value="White"/>
+                    <Setter Property="FontWeight" Value="Bold"/>
+                    <Setter Property="Height" Value="35"/>
+                    <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                </Style>
+                <Style TargetType="DataGridCell">
+                    <Setter Property="VerticalAlignment" Value="Center"/>
+                    <Setter Property="Padding" Value="5"/>
+                    <Setter Property="Height" Value="35"/>
+                </Style>
+            </DataGrid.Resources>
+
             <DataGrid.Columns>
-                <DataGridTextColumn Header="Адрес" Binding="{Binding Address}" Width="*"/>
-                <DataGridTextColumn Header="Тип" Binding="{Binding ObjectTypeName}" Width="Auto"/>
-                <DataGridTextColumn Header="Площадь" Binding="{Binding TotalArea}" Width="Auto"/>
-                <DataGridTemplateColumn Header="Действия">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <Button Content="Счётчики"
-                            Command="{Binding DataContext.ShowMetersCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                            CommandParameter="{Binding}"/>
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
-                <DataGridTemplateColumn Header="Счётчики">
+                <!-- Колонка Адрес -->
+                <DataGridTextColumn Header="Адрес" 
+                                    Binding="{Binding Address}" 
+                                    Width="2*">
+                    <DataGridTextColumn.HeaderStyle>
+                        <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource {x:Type DataGridColumnHeader}}">
+                            <Setter Property="ToolTip" Value="Полный адрес объекта"/>
+                        </Style>
+                    </DataGridTextColumn.HeaderStyle>
+                </DataGridTextColumn>
+
+                <!-- Колонка Тип объекта -->
+                <DataGridTextColumn Header="Тип" 
+                                    Binding="{Binding ObjectTypeName}" 
+                                    Width="1*"
+                                    >
+                    <DataGridTextColumn.HeaderStyle>
+                        <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource {x:Type DataGridColumnHeader}}">
+                            <Setter Property="ToolTip" Value="Тип объекта (квартира, дом, офис)"/>
+                        </Style>
+                    </DataGridTextColumn.HeaderStyle>
+                </DataGridTextColumn>
+
+                <!-- Колонка Площадь -->
+                <DataGridTextColumn Header="Площадь" 
+                                    Binding="{Binding TotalArea, StringFormat={}{0:F1} м²}" 
+                                    Width="Auto"
+                                    >
+                    <DataGridTextColumn.HeaderStyle>
+                        <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource {x:Type DataGridColumnHeader}}">
+                            <Setter Property="ToolTip" Value="Общая площадь в м²"/>
+                        </Style>
+                    </DataGridTextColumn.HeaderStyle>
+                </DataGridTextColumn>
+
+                <!-- Колонка Жильцы -->
+                <DataGridTextColumn Header="Жильцы" 
+                                    Binding="{Binding ResidentCount}" 
+                                    Width="Auto"
+                                    >
+                    <DataGridTextColumn.HeaderStyle>
+                        <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource {x:Type DataGridColumnHeader}}">
+                            <Setter Property="ToolTip" Value="Количество проживающих"/>
+                        </Style>
+                    </DataGridTextColumn.HeaderStyle>
+                </DataGridTextColumn>
+
+                <!-- Колонка с кнопкой Счетчики -->
+                <DataGridTemplateColumn Header="Счетчики" 
+                                        Width="Auto"
+                                        CanUserSort="False"
+                                        CanUserResize="False">
+                    <DataGridTemplateColumn.HeaderStyle>
+                        <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource {x:Type DataGridColumnHeader}}">
+                            <Setter Property="ToolTip" Value="Просмотр счетчиков объекта"/>
+                        </Style>
+                    </DataGridTemplateColumn.HeaderStyle>
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <Button Content="Просмотр"
-                    Command="{Binding DataContext.ShowMetersCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                    CommandParameter="{Binding}"/>
+                                    Command="{Binding DataContext.ShowMetersCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                    CommandParameter="{Binding}"
+                                    Padding="10,3"
+                                    Margin="2"
+                                    Background="#2196F3"
+                                    Foreground="White"
+                                    BorderThickness="0"
+                                    FontSize="12"
+                                    ToolTip="Показать счетчики объекта"
+                                    Cursor="Hand">
+                                <Button.Resources>
+                                    <Style TargetType="Button">
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border Background="{TemplateBinding Background}"
+                                                            CornerRadius="3"
+                                                            Padding="{TemplateBinding Padding}">
+                                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </Button.Resources>
+                            </Button>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
             </DataGrid.Columns>
         </DataGrid>
+
+        <!-- Кнопки управления -->
+        <StackPanel Grid.Row="2" 
+                    Orientation="Horizontal" 
+                    HorizontalAlignment="Right" 
+                    Margin="0,10,0,0">
+
+            <Button Content="Добавить" 
+                    Command="{Binding AddCommand}"
+                    Padding="15,8"
+                    Margin="5"
+                    Background="#4CAF50"
+                    Foreground="White"
+                    BorderThickness="0"
+                    FontWeight="Bold"
+                    ToolTip="Добавить новый объект"
+                    Cursor="Hand">
+                <Button.Resources>
+                    <Style TargetType="Button">
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="{TemplateBinding Background}"
+                                            CornerRadius="3"
+                                            Padding="{TemplateBinding Padding}">
+                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="#45a049"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </Button.Resources>
+            </Button>
+
+            <Button Content="Редактировать" 
+                    Command="{Binding EditCommand}"
+                    CommandParameter="{Binding SelectedObject}"
+                    Padding="15,8"
+                    Margin="5"
+                    Background="#2196F3"
+                    Foreground="White"
+                    BorderThickness="0"
+                    FontWeight="Bold"
+                    ToolTip="Редактировать выбранный объект"
+                    Cursor="Hand">
+                <Button.Resources>
+                    <Style TargetType="Button">
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="{TemplateBinding Background}"
+                                            CornerRadius="3"
+                                            Padding="{TemplateBinding Padding}">
+                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="#1976D2"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </Button.Resources>
+            </Button>
+
+            <Button Content="Удалить" 
+                    Command="{Binding DeleteCommand}"
+                    Padding="15,8"
+                    Margin="5"
+                    Background="#F44336"
+                    Foreground="White"
+                    BorderThickness="0"
+                    FontWeight="Bold"
+                    ToolTip="Удалить выбранный объект"
+                    Cursor="Hand">
+                <Button.Resources>
+                    <Style TargetType="Button">
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="{TemplateBinding Background}"
+                                            CornerRadius="3"
+                                            Padding="{TemplateBinding Padding}">
+                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="#d32f2f"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </Button.Resources>
+            </Button>
+        </StackPanel>
     </Grid>
 </UserControl>

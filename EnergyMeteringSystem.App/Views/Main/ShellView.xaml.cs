@@ -12,6 +12,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using EnergyMeteringSystem.App.ViewModels.Main;
+using EnergyMeteringSystem.Core.Models.DTO;
 
 namespace EnergyMeteringSystem.App.Views.Main
 {
@@ -27,10 +28,10 @@ namespace EnergyMeteringSystem.App.Views.Main
                 menuItem.Command.Execute(null);
             }
         }
-        public ShellView()
+        public ShellView(UserDto currentUser)
         {
             InitializeComponent();
-            DataContext = new ShellViewModel();
+            DataContext = new ShellViewModel(currentUser);
         }
     }
 }

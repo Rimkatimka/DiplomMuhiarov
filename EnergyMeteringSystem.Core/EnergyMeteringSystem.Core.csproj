@@ -82,9 +82,13 @@
     <Compile Include="Models\DTO\MeterReadingHistoryDto.cs" />
     <Compile Include="Models\DTO\MeterReadingInputDto.cs" />
     <Compile Include="Models\DTO\MeterReadingVerificationDto.cs" />
+    <Compile Include="Models\DTO\MeterStatusDto.cs" />
+    <Compile Include="Models\DTO\MeterTypeDto.cs" />
+    <Compile Include="Models\DTO\ObjectTypeDto.cs" />
     <Compile Include="Models\DTO\PaymentDto.cs" />
     <Compile Include="Models\DTO\PaymentRegistrationDto.cs" />
     <Compile Include="Models\DTO\RejectionReasonDto.cs" />
+    <Compile Include="Models\DTO\StreetDto.cs" />
     <Compile Include="Models\DTO\TariffDto.cs" />
     <Compile Include="Models\DTO\TariffTypeDto.cs" />
     <Compile Include="Models\DTO\UserDto.cs" />

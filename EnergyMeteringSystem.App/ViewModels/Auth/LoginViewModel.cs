@@ -1,18 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
-using EnergyMeteringSystem.Core.Models.DTO;
+﻿using EnergyMeteringSystem.App.Commands;
 using EnergyMeteringSystem.App.ViewModels.Base;
 using EnergyMeteringSystem.Services.Auth;
-using EnergyMeteringSystem.App.Commands;
+using System.Windows;
+using System.Linq;
 
 namespace EnergyMeteringSystem.App.ViewModels.Auth
 {
     public class LoginViewModel : ViewModelBase
     {
+        private readonly AuthService _authService;
 
         private string _username;
         private string _password;
@@ -24,7 +20,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Auth
             set
             {
                 SetProperty(ref _username, value);
-                LoginCommand.RaiseCanExecuteChanged(); // ← обновляем команду
+                LoginCommand?.RaiseCanExecuteChanged();
             }
         }
 
@@ -34,7 +30,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Auth
             set
             {
                 SetProperty(ref _password, value);
-                LoginCommand.RaiseCanExecuteChanged(); // ← обновляем команду
+                LoginCommand?.RaiseCanExecuteChanged();
             }
         }
 
@@ -48,24 +44,29 @@ namespace EnergyMeteringSystem.App.ViewModels.Auth
 
         public LoginViewModel()
         {
+            _authService = new AuthService();
             LoginCommand = new RelayCommand(ExecuteLogin, CanExecuteLogin);
         }
 
-        private bool CanExecuteLogin(object parameter) // ← с object
+        private bool CanExecuteLogin(object parameter)
         {
             return !string.IsNullOrWhiteSpace(Username) &&
                    !string.IsNullOrWhiteSpace(Password);
         }
 
-        private void ExecuteLogin(object parameter) // ← с object
+        private void ExecuteLogin(object parameter)
         {
-            var user = AuthService.Login(Username, Password);
+            var user = _authService.Login(Username, Password);
 
             if (user != null)
             {
-                var shellView = new Views.Main.ShellView();
+                var loginWindow = Application.Current.Windows.OfType<Views.Auth.LoginView>().FirstOrDefault();
+
+                var shellView = new Views.Main.ShellView(user);  // ← передаем пользователя
                 shellView.Show();
-                Application.Current.Windows[0]?.Close();
+                Application.Current.MainWindow = shellView;
+
+                loginWindow?.Close();
             }
             else
             {

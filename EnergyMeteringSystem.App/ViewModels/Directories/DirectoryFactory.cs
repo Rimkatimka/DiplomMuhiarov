@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using EnergyMeteringSystem.Core.Interfaces.Repositories;
+using EnergyMeteringSystem.Core.Models.DTO;
 using EnergyMeteringSystem.Data.Repositories;
 
 namespace EnergyMeteringSystem.App.ViewModels.Directories
@@ -11,7 +13,9 @@ namespace EnergyMeteringSystem.App.ViewModels.Directories
     {
         public static DirectoryListViewModel CreateMeterTypeViewModel()
         {
-            return new DirectoryListViewModel(new MeterTypeRepository());
+            // Вариант 1: Создаем репозиторий и преобразуем
+            var repo = new MeterTypeRepository();
+            return new DirectoryListViewModel(repo as IDirectoryRepository<DirectoryDto>);
         }
 
         /// <summary>
