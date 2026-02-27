@@ -37,7 +37,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
             get => _selectedObject;
             set
             {
-                SetProperty(ref _selectedObject, value);
+                _ = SetProperty(ref _selectedObject, value);
                 LoadMeters(); // Загружаем счетчики при выборе объекта
                 LoadHistory();
             }
@@ -48,7 +48,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
             get => _selectedMeter;
             set
             {
-                SetProperty(ref _selectedMeter, value);
+                _ = SetProperty(ref _selectedMeter, value);
                 LoadHistory();
             }
         }
@@ -58,7 +58,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
             get => _startDate;
             set
             {
-                SetProperty(ref _startDate, value);
+                _ = SetProperty(ref _startDate, value);
                 LoadHistory();
             }
         }
@@ -68,7 +68,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
             get => _endDate;
             set
             {
-                SetProperty(ref _endDate, value);
+                _ = SetProperty(ref _endDate, value);
                 LoadHistory();
             }
         }
@@ -83,11 +83,11 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
             _meterRepository = new MeterRepository();
             _readingRepository = new MeterReadingRepository();
 
-            Objects = new ObservableCollection<ConsumptionObjectDto>();
-            Meters = new ObservableCollection<MeterDto>();
-            Readings = new ObservableCollection<MeterReadingHistoryDto>();
+            Objects = [];
+            Meters = [];
+            Readings = [];
 
-            SeriesCollection = new SeriesCollection();
+            SeriesCollection = [];
             YFormatter = value => value.ToString("N0");
 
             _startDate = DateTime.Today.AddMonths(-6);
@@ -104,11 +104,13 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
             try
             {
                 Objects.Clear();
-                var list = _objectRepository.GetAll();
+                List<ConsumptionObjectDto> list = _objectRepository.GetAll();
                 System.Diagnostics.Debug.WriteLine($"LoadObjects: загружено {list.Count} объектов");
 
-                foreach (var obj in list)
+                foreach (ConsumptionObjectDto obj in list)
+                {
                     Objects.Add(obj);
+                }
             }
             catch (Exception ex)
             {
@@ -121,13 +123,18 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
             try
             {
                 Meters.Clear();
-                if (_selectedObject == null) return;
+                if (_selectedObject == null)
+                {
+                    return;
+                }
 
-                var list = _meterRepository.GetByObjectId(_selectedObject.Id);
+                List<MeterDto> list = _meterRepository.GetByObjectId(_selectedObject.Id);
                 System.Diagnostics.Debug.WriteLine($"LoadMeters: загружено {list.Count} счетчиков для объекта {_selectedObject.Id}");
 
-                foreach (var meter in list)
+                foreach (MeterDto meter in list)
+                {
                     Meters.Add(meter);
+                }
             }
             catch (Exception ex)
             {
@@ -142,11 +149,14 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
                 Readings.Clear();
                 SeriesCollection.Clear();
 
-                if (_selectedMeter == null) return;
+                if (_selectedMeter == null)
+                {
+                    return;
+                }
 
-                var history = _readingRepository.GetHistoryByMeterId(_selectedMeter.Id);
+                List<MeterReadingHistoryDto> history = _readingRepository.GetHistoryByMeterId(_selectedMeter.Id);
 
-                var filtered = history.Where(h =>
+                List<MeterReadingHistoryDto> filtered = history.Where(h =>
                     h.ReadingDate >= _startDate &&
                     h.ReadingDate <= _endDate)
                     .OrderBy(h => h.ReadingDate)
@@ -154,8 +164,10 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
 
                 System.Diagnostics.Debug.WriteLine($"LoadHistory: загружено {filtered.Count} записей");
 
-                foreach (var item in filtered)
+                foreach (MeterReadingHistoryDto item in filtered)
+                {
                     Readings.Add(item);
+                }
 
                 // Обновляем график
                 UpdateChart(filtered);
@@ -170,10 +182,13 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
         {
             SeriesCollection.Clear();
 
-            if (!data.Any()) return;
+            if (!data.Any())
+            {
+                return;
+            }
 
-            var values = data.Select(h => (double)h.Value).ToArray();
-            var consumptions = data.Select(h => (double)(h.Consumption ?? 0)).ToArray();
+            double[] values = data.Select(h => (double)h.Value).ToArray();
+            double[] consumptions = data.Select(h => (double)(h.Consumption ?? 0)).ToArray();
 
             ChartDates = data.Select(h => h.ReadingDate.ToString("dd.MM")).ToArray();
 

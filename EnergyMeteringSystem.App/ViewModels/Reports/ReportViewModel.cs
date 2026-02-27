@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using EnergyMeteringSystem.App.Commands;
 using EnergyMeteringSystem.App.ViewModels.Base;
@@ -44,7 +42,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
             get => _selectedYear;
             set
             {
-                SetProperty(ref _selectedYear, value);
+                _ = SetProperty(ref _selectedYear, value);
                 LoadReport();
             }
         }
@@ -54,7 +52,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
             get => _selectedMonth;
             set
             {
-                SetProperty(ref _selectedMonth, value);
+                _ = SetProperty(ref _selectedMonth, value);
                 LoadReport();
             }
         }
@@ -64,7 +62,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
             get => _startDate;
             set
             {
-                SetProperty(ref _startDate, value);
+                _ = SetProperty(ref _startDate, value);
                 LoadReport();
             }
         }
@@ -74,7 +72,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
             get => _endDate;
             set
             {
-                SetProperty(ref _endDate, value);
+                _ = SetProperty(ref _endDate, value);
                 LoadReport();
             }
         }
@@ -84,7 +82,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
             get => _selectedReportType;
             set
             {
-                SetProperty(ref _selectedReportType, value);
+                _ = SetProperty(ref _selectedReportType, value);
                 OnPropertyChanged(nameof(ConsumptionVisibility));
                 OnPropertyChanged(nameof(AccrualVisibility));
                 OnPropertyChanged(nameof(DebtVisibility));
@@ -104,11 +102,11 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
         {
             _reportRepository = new ReportRepository();
 
-            Years = new ObservableCollection<int>();
-            Months = new ObservableCollection<string>();
-            ConsumptionData = new ObservableCollection<ConsumptionReportDto>();
-            AccrualData = new ObservableCollection<AccrualReportDto>();
-            DebtData = new ObservableCollection<DebtDto>();
+            Years = [];
+            Months = [];
+            ConsumptionData = [];
+            AccrualData = [];
+            DebtData = [];
 
             RefreshCommand = new RelayCommand(_ => LoadReport());
             ExportCommand = new RelayCommand(_ => ExportReport());
@@ -119,7 +117,9 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
         private void InitializeData()
         {
             for (int i = 2020; i <= DateTime.Today.Year; i++)
+            {
                 Years.Add(i);
+            }
 
             Months.Add("Январь"); Months.Add("Февраль"); Months.Add("Март");
             Months.Add("Апрель"); Months.Add("Май"); Months.Add("Июнь");
@@ -144,21 +144,30 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
             switch (_selectedReportType)
             {
                 case 0:
-                    var consumption = _reportRepository.GetConsumptionReport(_startDate, _endDate);
-                    foreach (var item in consumption)
+                    List<ConsumptionReportDto> consumption = _reportRepository.GetConsumptionReport(_startDate, _endDate);
+                    foreach (ConsumptionReportDto item in consumption)
+                    {
                         ConsumptionData.Add(item);
+                    }
+
                     break;
 
                 case 1:
-                    var accrual = _reportRepository.GetAccrualReport(_selectedYear, _selectedMonth);
-                    foreach (var item in accrual)
+                    List<AccrualReportDto> accrual = _reportRepository.GetAccrualReport(_selectedYear, _selectedMonth);
+                    foreach (AccrualReportDto item in accrual)
+                    {
                         AccrualData.Add(item);
+                    }
+
                     break;
 
                 case 2:
-                    var debt = _reportRepository.GetDebtReport();
-                    foreach (var item in debt)
+                    List<DebtDto> debt = _reportRepository.GetDebtReport();
+                    foreach (DebtDto item in debt)
+                    {
                         DebtData.Add(item);
+                    }
+
                     break;
             }
 
@@ -170,7 +179,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
 
         private void ExportReport()
         {
-            System.Windows.MessageBox.Show(
+            _ = System.Windows.MessageBox.Show(
                 "Экспорт в Excel будет доступен в следующей версии",
                 "Экспорт",
                 System.Windows.MessageBoxButton.OK,

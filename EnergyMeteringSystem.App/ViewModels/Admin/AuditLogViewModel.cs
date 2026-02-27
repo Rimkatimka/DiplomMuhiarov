@@ -5,7 +5,6 @@ using System.Linq;
 using EnergyMeteringSystem.App.Commands;
 using EnergyMeteringSystem.App.ViewModels.Base;
 using EnergyMeteringSystem.Core.Models.DTO;
-using EnergyMeteringSystem.Data.Database;
 using EnergyMeteringSystem.Data.Repositories;
 
 namespace EnergyMeteringSystem.App.ViewModels.Admin
@@ -25,7 +24,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Admin
             get => _fromDate;
             set
             {
-                SetProperty(ref _fromDate, value);
+                _ = SetProperty(ref _fromDate, value);
                 LoadData(); // ← должно вызываться!
             }
         }
@@ -35,7 +34,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Admin
             get => _toDate;
             set
             {
-                SetProperty(ref _toDate, value);
+                _ = SetProperty(ref _toDate, value);
                 LoadData(); // ← должно вызываться!
             }
         }
@@ -45,7 +44,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Admin
             get => _searchText;
             set
             {
-                SetProperty(ref _searchText, value);
+                _ = SetProperty(ref _searchText, value);
                 ApplyFilter();
             }
         }
@@ -57,8 +56,8 @@ namespace EnergyMeteringSystem.App.ViewModels.Admin
         {
             _auditRepository = new AuditRepository();
 
-            Logs = new ObservableCollection<AuditLogDto>();
-            FilteredLogs = new ObservableCollection<AuditLogDto>();
+            Logs = [];
+            FilteredLogs = [];
 
             _fromDate = DateTime.Today.AddDays(-7);
             _toDate = DateTime.Today;
@@ -68,16 +67,18 @@ namespace EnergyMeteringSystem.App.ViewModels.Admin
 
             LoadData(); // ← вызываем при создании
         }
-        
+
 
         private void LoadData()
         {
             Logs.Clear();
-            var list = _auditRepository.GetByDate(_fromDate, _toDate);
+            List<AuditLogDto> list = _auditRepository.GetByDate(_fromDate, _toDate);
             System.Diagnostics.Debug.WriteLine($"AuditLog: loaded {list.Count} logs");
 
-            foreach (var log in list)
+            foreach (AuditLogDto log in list)
+            {
                 Logs.Add(log);
+            }
 
             ApplyFilter();
         }
@@ -86,17 +87,18 @@ namespace EnergyMeteringSystem.App.ViewModels.Admin
         {
             FilteredLogs.Clear();
 
-            var filtered = string.IsNullOrWhiteSpace(SearchText)
+            ObservableCollection<AuditLogDto> filtered = string.IsNullOrWhiteSpace(SearchText)
                 ? Logs
-                : new ObservableCollection<AuditLogDto>(
-                    Logs.Where(l =>
+                : [.. Logs.Where(l =>
                         l.UserName.Contains(SearchText) ||
                         l.ActionType.Contains(SearchText) ||
                         l.TableName.Contains(SearchText) ||
-                        l.Details.Contains(SearchText)));
+                        l.Details.Contains(SearchText))];
 
-            foreach (var log in filtered)
+            foreach (AuditLogDto log in filtered)
+            {
                 FilteredLogs.Add(log);
+            }
 
             System.Diagnostics.Debug.WriteLine($"ApplyFilter: {FilteredLogs.Count} logs");
         }

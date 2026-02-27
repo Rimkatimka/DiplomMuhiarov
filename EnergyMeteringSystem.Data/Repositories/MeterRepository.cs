@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using EnergyMeteringSystem.Core.Interfaces.Repositories;
 using EnergyMeteringSystem.Core.Models.DTO;
 using EnergyMeteringSystem.Data.Database;
+using EnergyMeteringSystem.Data.Helpers;
 
 namespace EnergyMeteringSystem.Data.Repositories
 {
@@ -24,13 +23,13 @@ namespace EnergyMeteringSystem.Data.Repositories
             {
                 System.Diagnostics.Debug.WriteLine($"MeterRepository.GetByObjectId({objectId}) начат");
 
-                var meters = _context.Meter
+                List<Meter> meters = _context.Meter
                     .Where(m => m.ConsumptionObjectId == objectId)
                     .ToList();
 
                 System.Diagnostics.Debug.WriteLine($"SQL запрос выполнен, получено {meters.Count} записей");
 
-                var result = meters.Select(m => new MeterDto
+                List<MeterDto> result = meters.Select(m => new MeterDto
                 {
                     Id = m.Id,
                     SerialNumber = m.SerialNumber,
@@ -48,7 +47,7 @@ namespace EnergyMeteringSystem.Data.Repositories
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"ОШИБКА в GetByObjectId: {ex.Message}");
-                return new List<MeterDto>();
+                return [];
             }
         }
         public List<MeterDto> GetAll()
@@ -57,14 +56,14 @@ namespace EnergyMeteringSystem.Data.Repositories
             {
                 System.Diagnostics.Debug.WriteLine("MeterRepository.GetAll() начат");
 
-                var meters = _context.Meter
+                List<Meter> meters = _context.Meter
                     .Include("MeterType")
                     .Include("MeterStatus")
                     .ToList();
 
                 System.Diagnostics.Debug.WriteLine($"Загружено {meters.Count} счетчиков из БД");
 
-                var result = meters.Select(m => new MeterDto
+                List<MeterDto> result = meters.Select(m => new MeterDto
                 {
                     Id = m.Id,
                     SerialNumber = m.SerialNumber,
@@ -84,19 +83,19 @@ namespace EnergyMeteringSystem.Data.Repositories
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Ошибка в GetAll: {ex.Message}");
-                return new List<MeterDto>();
+                return [];
             }
         }
 
         private string GetMeterTypeName(int typeId)
         {
-            var type = _context.MeterType.Find(typeId);
+            MeterType type = _context.MeterType.Find(typeId);
             return type?.Name ?? "Неизвестно";
         }
 
         private string GetMeterStatusName(int statusId)
         {
-            var status = _context.MeterStatus.Find(statusId);
+            MeterStatus status = _context.MeterStatus.Find(statusId);
             return status?.Name ?? "Неизвестно";
         }
         public void Update(MeterDto dto)
@@ -105,7 +104,7 @@ namespace EnergyMeteringSystem.Data.Repositories
             {
                 System.Diagnostics.Debug.WriteLine($"MeterRepository.Update: обновление счетчика ID={dto.Id}");
 
-                var entity = _context.Meter.Find(dto.Id);
+                Meter entity = _context.Meter.Find(dto.Id);
                 if (entity != null)
                 {
                     entity.SerialNumber = dto.SerialNumber;
@@ -123,7 +122,7 @@ namespace EnergyMeteringSystem.Data.Repositories
                         entity.NextVerificationDate = dto.VerificationDate.Value.AddYears(6);
                     }
 
-                    _context.SaveChanges();
+                    _ = _context.SaveChanges();
                     System.Diagnostics.Debug.WriteLine("MeterRepository.Update: обновление выполнено успешно");
                 }
                 else
@@ -140,36 +139,57 @@ namespace EnergyMeteringSystem.Data.Repositories
 
         public void Add(MeterDto dto)
         {
+            Meter entity = new()
+            {
+                Id = IdHelper.GetNextMeterId(_context),
+                SerialNumber = dto.SerialNumber,
+                MeterTypeId = dto.MeterTypeId,
+                ConsumptionObjectId = dto.ConsumptionObjectId,
+                InstallationDate = dto.InstallationDate,
+                InitialReading = dto.InitialReading,
+                VerificationDate = dto.VerificationDate,
+                MeterStatusId = dto.StatusId
+            };
+
+            _ = _context.Meter.Add(entity);
+            _ = _context.SaveChanges();
+        }
+        public MeterDto GetById(int id)
+        {
             try
             {
-                System.Diagnostics.Debug.WriteLine("MeterRepository.Add: добавление нового счетчика");
+                System.Diagnostics.Debug.WriteLine($"MeterRepository.GetById: id={id}");
 
-                var entity = new Meter
-                {
-                    SerialNumber = dto.SerialNumber,
-                    MeterTypeId = dto.MeterTypeId,
-                    ConsumptionObjectId = dto.ConsumptionObjectId,
-                    InstallationDate = dto.InstallationDate,
-                    InitialReading = dto.InitialReading,
-                    VerificationDate = dto.VerificationDate,
-                    MeterStatusId = dto.StatusId
-                };
+                Meter meter = _context.Meter
+                    .Include("MeterType")
+                    .Include("MeterStatus")
+                    .FirstOrDefault(m => m.Id == id);
 
-                // Вычисляем следующую дату поверки
-                if (dto.VerificationDate.HasValue)
+                if (meter == null)
                 {
-                    entity.NextVerificationDate = dto.VerificationDate.Value.AddYears(6);
+                    System.Diagnostics.Debug.WriteLine($"MeterRepository.GetById: счетчик с id={id} не найден");
+                    return null;
                 }
 
-                _context.Meter.Add(entity);
-                _context.SaveChanges();
-
-                System.Diagnostics.Debug.WriteLine($"MeterRepository.Add: счетчик добавлен с ID={entity.Id}");
+                return new MeterDto
+                {
+                    Id = meter.Id,
+                    SerialNumber = meter.SerialNumber,
+                    MeterTypeId = meter.MeterTypeId,
+                    MeterTypeName = meter.MeterType?.Name ?? "Неизвестно",
+                    StatusId = meter.MeterStatusId,
+                    StatusName = meter.MeterStatus?.Name ?? "Неизвестно",
+                    InstallationDate = meter.InstallationDate,
+                    VerificationDate = meter.VerificationDate,
+                    NextVerificationDate = meter.NextVerificationDate,
+                    InitialReading = meter.InitialReading,
+                    ConsumptionObjectId = meter.ConsumptionObjectId
+                };
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Ошибка в MeterRepository.Add: {ex.Message}");
-                throw;
+                System.Diagnostics.Debug.WriteLine($"Ошибка в GetById: {ex.Message}");
+                return null;
             }
         }
         public void Delete(int id)
@@ -178,11 +198,11 @@ namespace EnergyMeteringSystem.Data.Repositories
             {
                 System.Diagnostics.Debug.WriteLine($"MeterRepository.Delete: удаление счетчика ID={id}");
 
-                var entity = _context.Meter.Find(id);
+                Meter entity = _context.Meter.Find(id);
                 if (entity != null)
                 {
-                    _context.Meter.Remove(entity);
-                    _context.SaveChanges();
+                    _ = _context.Meter.Remove(entity);
+                    _ = _context.SaveChanges();
                     System.Diagnostics.Debug.WriteLine("MeterRepository.Delete: удаление выполнено успешно");
                 }
             }

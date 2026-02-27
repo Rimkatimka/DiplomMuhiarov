@@ -21,12 +21,13 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
         public ObservableCollection<MeterDto> FilteredMeters { get; set; }
         public ObservableCollection<MeterStatusDto> Statuses { get; set; }
 
+
         public string SearchText
         {
             get => _searchText;
             set
             {
-                SetProperty(ref _searchText, value);
+                _ = SetProperty(ref _searchText, value);
                 ApplyFilter();
             }
         }
@@ -36,7 +37,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
             get => _selectedMeter;
             set
             {
-                SetProperty(ref _selectedMeter, value);
+                _ = SetProperty(ref _selectedMeter, value);
                 EditCommand.RaiseCanExecuteChanged();
                 ReplaceCommand.RaiseCanExecuteChanged();
             }
@@ -47,7 +48,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
             get => _selectedStatus;
             set
             {
-                SetProperty(ref _selectedStatus, value);
+                _ = SetProperty(ref _selectedStatus, value);
                 ApplyFilter();
             }
         }
@@ -62,12 +63,12 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
             _meterRepository = new MeterRepository();
             _statusRepository = new MeterStatusRepository();
 
-            Meters = new ObservableCollection<MeterDto>();
-            FilteredMeters = new ObservableCollection<MeterDto>();
-            Statuses = new ObservableCollection<MeterStatusDto>();
+            Meters = [];
+            FilteredMeters = [];
+            Statuses = [];
 
             RefreshCommand = new RelayCommand(_ => LoadData());
-            AddCommand = new RelayCommand(_ => AddMeter());
+            AddCommand = new RelayCommand(_ => AddMeter());  // ← должна быть эта строка
             EditCommand = new RelayCommand(_ => EditMeter(), _ => SelectedMeter != null);
             ReplaceCommand = new RelayCommand(_ => ReplaceMeter(), _ => SelectedMeter != null);
 
@@ -78,11 +79,13 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
         private void LoadData()
         {
             Meters.Clear();
-            var list = _meterRepository.GetAll();
+            System.Collections.Generic.List<MeterDto> list = _meterRepository.GetAll();
             System.Diagnostics.Debug.WriteLine($"MeterListViewModel: загружено {list.Count} счетчиков");
 
-            foreach (var meter in list)
+            foreach (MeterDto meter in list)
+            {
                 Meters.Add(meter);
+            }
 
             ApplyFilter();
         }
@@ -95,10 +98,10 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
             Statuses.Add(new MeterStatusDto { Id = 0, Name = "Все статусы" });
 
             // Получаем список из репозитория (List<DirectoryDto>)
-            var list = _statusRepository.GetAll();
+            System.Collections.Generic.List<DirectoryDto> list = _statusRepository.GetAll();
 
             // Преобразуем DirectoryDto в MeterStatusDto
-            foreach (var item in list)
+            foreach (DirectoryDto item in list)
             {
                 Statuses.Add(new MeterStatusDto
                 {
@@ -110,18 +113,31 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
         }
         private void AddMeter()
         {
-            var editViewModel = new MeterEditViewModel();
-            var editView = new Views.Meters.MeterEditView(editViewModel);
-            editView.ShowDialog();
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("AddMeter: начало");
 
-            LoadData(); // обновить список после закрытия
+                MeterEditViewModel editViewModel = new();
+                Views.Meters.MeterEditView editView = new(editViewModel);
+                _ = editView.ShowDialog();
+
+                LoadData(); // обновить список после закрытия
+
+                System.Diagnostics.Debug.WriteLine("AddMeter: конец");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Ошибка в AddMeter: {ex.Message}");
+                _ = System.Windows.MessageBox.Show($"Ошибка: {ex.Message}", "Ошибка",
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            }
         }
 
         private void ApplyFilter()
         {
             FilteredMeters.Clear();
 
-            var filtered = Meters.AsEnumerable();
+            System.Collections.Generic.IEnumerable<MeterDto> filtered = Meters.AsEnumerable();
 
             // Фильтр по тексту (серийный номер)
             if (!string.IsNullOrWhiteSpace(SearchText))
@@ -137,8 +153,10 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
                     m.StatusId == SelectedStatus.Id);
             }
 
-            foreach (var meter in filtered)
+            foreach (MeterDto meter in filtered)
+            {
                 FilteredMeters.Add(meter);
+            }
 
             System.Diagnostics.Debug.WriteLine($"ApplyFilter: {FilteredMeters.Count} счетчиков после фильтра");
         }
@@ -146,19 +164,25 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
 
         private void EditMeter()
         {
-            if (SelectedMeter == null) return;
+            if (SelectedMeter == null)
+            {
+                return;
+            }
 
             // TODO: открыть форму редактирования счетчика
-            System.Windows.MessageBox.Show($"Редактирование счетчика {SelectedMeter.SerialNumber}", "Информация",
+            _ = System.Windows.MessageBox.Show($"Редактирование счетчика {SelectedMeter.SerialNumber}", "Информация",
                 System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
         }
 
         private void ReplaceMeter()
         {
-            if (SelectedMeter == null) return;
+            if (SelectedMeter == null)
+            {
+                return;
+            }
 
             // TODO: открыть форму замены счетчика
-            System.Windows.MessageBox.Show($"Замена счетчика {SelectedMeter.SerialNumber}", "Информация",
+            _ = System.Windows.MessageBox.Show($"Замена счетчика {SelectedMeter.SerialNumber}", "Информация",
                 System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
         }
     }

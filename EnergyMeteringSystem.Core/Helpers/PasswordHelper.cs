@@ -11,11 +11,9 @@ namespace EnergyMeteringSystem.Core.Helpers
         /// </summary>
         public static string HashPassword(string password)
         {
-            using (var sha256 = SHA256.Create())
-            {
-                var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
-                return Convert.ToBase64String(hashedBytes);
-            }
+            using SHA256 sha256 = SHA256.Create();
+            byte[] hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
+            return Convert.ToBase64String(hashedBytes);
         }
 
         /// <summary>
@@ -32,12 +30,12 @@ namespace EnergyMeteringSystem.Core.Helpers
         public static string GenerateRandomPassword(int length = 8)
         {
             const string chars = "ABCDEFGHJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-            var random = new Random();
-            var result = new StringBuilder(length);
+            Random random = new();
+            StringBuilder result = new(length);
 
             for (int i = 0; i < length; i++)
             {
-                result.Append(chars[random.Next(chars.Length)]);
+                _ = result.Append(chars[random.Next(chars.Length)]);
             }
 
             return result.ToString();

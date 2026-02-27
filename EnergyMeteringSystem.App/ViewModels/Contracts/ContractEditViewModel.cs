@@ -64,9 +64,9 @@ namespace EnergyMeteringSystem.App.ViewModels.Contracts
             _tariffRepository = tariffRepo;
             _statusRepository = statusRepo;
 
-            Objects = new ObservableCollection<ConsumptionObjectDto>();
-            Tariffs = new ObservableCollection<TariffDto>();
-            Statuses = new ObservableCollection<ContractStatusDto>();
+            Objects = [];
+            Tariffs = [];
+            Statuses = [];
 
             SaveCommand = new RelayCommand(_ => Save(), _ => CanSave());
             CancelCommand = new RelayCommand(_ => Cancel());
@@ -89,18 +89,22 @@ namespace EnergyMeteringSystem.App.ViewModels.Contracts
         private void LoadData()
         {
             // Загрузка объектов
-            var objects = _objectRepository.GetAll();
-            foreach (var obj in objects)
+            System.Collections.Generic.List<ConsumptionObjectDto> objects = _objectRepository.GetAll();
+            foreach (ConsumptionObjectDto obj in objects)
+            {
                 Objects.Add(obj);
+            }
 
             // Загрузка тарифов
-            var tariffs = _tariffRepository.GetAll();
-            foreach (var tariff in tariffs)
+            System.Collections.Generic.List<TariffDto> tariffs = _tariffRepository.GetAll();
+            foreach (TariffDto tariff in tariffs)
+            {
                 Tariffs.Add(tariff);
+            }
 
             // Загрузка статусов — преобразуем DirectoryDto в ContractStatusDto
-            var statuses = _statusRepository.GetAll();
-            foreach (var status in statuses)
+            System.Collections.Generic.List<DirectoryDto> statuses = _statusRepository.GetAll();
+            foreach (DirectoryDto status in statuses)
             {
                 Statuses.Add(new ContractStatusDto
                 {
@@ -127,22 +131,40 @@ namespace EnergyMeteringSystem.App.ViewModels.Contracts
 
         private ConsumptionObjectDto FindObject(int id)
         {
-            foreach (var obj in Objects)
-                if (obj.Id == id) return obj;
+            foreach (ConsumptionObjectDto obj in Objects)
+            {
+                if (obj.Id == id)
+                {
+                    return obj;
+                }
+            }
+
             return null;
         }
 
         private TariffDto FindTariff(int id)
         {
-            foreach (var tariff in Tariffs)
-                if (tariff.Id == id) return tariff;
+            foreach (TariffDto tariff in Tariffs)
+            {
+                if (tariff.Id == id)
+                {
+                    return tariff;
+                }
+            }
+
             return null;
         }
 
         private ContractStatusDto FindStatus(int id)
         {
-            foreach (var status in Statuses)
-                if (status.Id == id) return status;
+            foreach (ContractStatusDto status in Statuses)
+            {
+                if (status.Id == id)
+                {
+                    return status;
+                }
+            }
+
             return null;
         }
 
@@ -156,7 +178,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Contracts
 
         private void Save()
         {
-            var dto = new ContractDto
+            ContractDto dto = new()
             {
                 Id = _contract?.Id ?? 0,
                 ContractNumber = ContractNumber,
@@ -169,9 +191,13 @@ namespace EnergyMeteringSystem.App.ViewModels.Contracts
             };
 
             if (IsEditMode)
+            {
                 _contractRepository.Update(dto);
+            }
             else
+            {
                 _contractRepository.Add(dto);
+            }
 
             OnContractSaved?.Invoke(this, EventArgs.Empty);
         }

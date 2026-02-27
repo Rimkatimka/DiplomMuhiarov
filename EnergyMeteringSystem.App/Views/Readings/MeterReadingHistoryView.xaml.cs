@@ -1,5 +1,5 @@
-﻿using System.Windows;
-using System.Windows.Controls;
+﻿using System.Windows.Controls;
+using EnergyMeteringSystem.App.ViewModels.Readings;
 
 namespace EnergyMeteringSystem.App.Views.Readings
 {
@@ -11,6 +11,7 @@ namespace EnergyMeteringSystem.App.Views.Readings
         public MeterReadingHistoryView()
         {
             InitializeComponent();
+            DataContext = new MeterReadingHistoryViewModel();
         }
     }
 }

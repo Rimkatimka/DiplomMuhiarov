@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace EnergyMeteringSystem.Core.Models.DTO
 {
@@ -20,27 +16,17 @@ namespace EnergyMeteringSystem.Core.Models.DTO
         public decimal InitialReading { get; set; }
         public int StatusId { get; set; }
 
-        public string VerificationStatusText
-        {
-            get
-            {
-                if (!NextVerificationDate.HasValue) return "Не указана";
-                if (NextVerificationDate.Value < DateTime.Today) return "Просрочена";
-                if (NextVerificationDate.Value <= DateTime.Today.AddMonths(1)) return "Скоро";
-                return "В норме";
-            }
-        }
+        public string VerificationStatusText => !NextVerificationDate.HasValue
+                    ? "Не указана"
+                    : NextVerificationDate.Value < DateTime.Today
+                    ? "Просрочена"
+                    : NextVerificationDate.Value <= DateTime.Today.AddMonths(1) ? "Скоро" : "В норме";
 
-        public string VerificationStatusColor
-        {
-            get
-            {
-                if (!NextVerificationDate.HasValue) return "Gray";
-                if (NextVerificationDate.Value < DateTime.Today) return "Red";
-                if (NextVerificationDate.Value <= DateTime.Today.AddMonths(1)) return "Orange";
-                return "Green";
-            }
-        }
+        public string VerificationStatusColor => !NextVerificationDate.HasValue
+                    ? "Gray"
+                    : NextVerificationDate.Value < DateTime.Today
+                    ? "Red"
+                    : NextVerificationDate.Value <= DateTime.Today.AddMonths(1) ? "Orange" : "Green";
         public string StatusText => StatusName;
     }
 }

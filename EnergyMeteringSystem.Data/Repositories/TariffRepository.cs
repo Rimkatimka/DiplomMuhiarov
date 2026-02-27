@@ -51,50 +51,50 @@ namespace EnergyMeteringSystem.Data.Repositories
 
         public TariffDto GetById(int id)
         {
-            var t = _context.Tariff
+            Tariff t = _context.Tariff
                 .Include("TariffType")
                 .FirstOrDefault(x => x.Id == id);
 
-            if (t == null) return null;
-
-            return new TariffDto
-            {
-                Id = t.Id,
-                TariffTypeId = t.TariffTypeId,
-                TariffTypeName = t.TariffType.Name,
-                ZoneNumber = t.ZoneNumber,
-                PricePerUnit = t.PricePerUnit,
-                StartDate = t.StartDate,
-                EndDate = t.EndDate
-            };
+            return t == null
+                ? null
+                : new TariffDto
+                {
+                    Id = t.Id,
+                    TariffTypeId = t.TariffTypeId,
+                    TariffTypeName = t.TariffType.Name,
+                    ZoneNumber = t.ZoneNumber,
+                    PricePerUnit = t.PricePerUnit,
+                    StartDate = t.StartDate,
+                    EndDate = t.EndDate
+                };
         }
 
         public TariffDto GetCurrentByType(int tariffTypeId)
         {
-            var today = DateTime.Today;
-            var t = _context.Tariff
+            DateTime today = DateTime.Today;
+            Tariff t = _context.Tariff
                 .Where(tar => tar.TariffTypeId == tariffTypeId &&
                               tar.StartDate <= today &&
                               (tar.EndDate == null || tar.EndDate > today))
                 .OrderBy(tar => tar.ZoneNumber)
                 .FirstOrDefault();
 
-            if (t == null) return null;
-
-            return new TariffDto
-            {
-                Id = t.Id,
-                TariffTypeId = t.TariffTypeId,
-                TariffTypeName = t.TariffType.Name,
-                ZoneNumber = t.ZoneNumber,
-                PricePerUnit = t.PricePerUnit,
-                StartDate = t.StartDate,
-                EndDate = t.EndDate
-            };
+            return t == null
+                ? null
+                : new TariffDto
+                {
+                    Id = t.Id,
+                    TariffTypeId = t.TariffTypeId,
+                    TariffTypeName = t.TariffType.Name,
+                    ZoneNumber = t.ZoneNumber,
+                    PricePerUnit = t.PricePerUnit,
+                    StartDate = t.StartDate,
+                    EndDate = t.EndDate
+                };
         }
         public List<TariffDto> GetActive()
         {
-            var today = DateTime.Today;
+            DateTime today = DateTime.Today;
 
             var data = _context.Tariff
                 .Include("TariffType")
@@ -128,7 +128,7 @@ namespace EnergyMeteringSystem.Data.Repositories
 
         public void Add(TariffDto dto)
         {
-            var existing = _context.Tariff
+            Tariff existing = _context.Tariff
                 .FirstOrDefault(t => t.TariffTypeId == dto.TariffTypeId &&
                                     t.ZoneNumber == dto.ZoneNumber &&
                                     t.StartDate <= dto.StartDate &&
@@ -139,7 +139,7 @@ namespace EnergyMeteringSystem.Data.Repositories
                 existing.EndDate = dto.StartDate.AddDays(-1);
             }
 
-            var entity = new Tariff
+            Tariff entity = new()
             {
                 TariffTypeId = dto.TariffTypeId,
                 ZoneNumber = dto.ZoneNumber,
@@ -149,28 +149,28 @@ namespace EnergyMeteringSystem.Data.Repositories
                 UnitId = 1
             };
 
-            _context.Tariff.Add(entity);
-            _context.SaveChanges();
+            _ = _context.Tariff.Add(entity);
+            _ = _context.SaveChanges();
         }
 
         public void Update(TariffDto dto)
         {
-            var entity = _context.Tariff.Find(dto.Id);
+            Tariff entity = _context.Tariff.Find(dto.Id);
             if (entity != null)
             {
                 entity.PricePerUnit = dto.PricePerUnit;
                 entity.EndDate = dto.EndDate;
-                _context.SaveChanges();
+                _ = _context.SaveChanges();
             }
         }
 
         public void Deactivate(int id, DateTime endDate)
         {
-            var entity = _context.Tariff.Find(id);
+            Tariff entity = _context.Tariff.Find(id);
             if (entity != null)
             {
                 entity.EndDate = endDate;
-                _context.SaveChanges();
+                _ = _context.SaveChanges();
             }
         }
 

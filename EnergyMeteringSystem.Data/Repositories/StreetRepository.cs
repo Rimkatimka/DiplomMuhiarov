@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using EnergyMeteringSystem.Core.Models.DTO;
 using EnergyMeteringSystem.Data.Database;
 
@@ -35,20 +32,20 @@ namespace EnergyMeteringSystem.Data.Repositories
 
         public StreetDto GetById(int id)
         {
-            var s = _context.Street
+            Street s = _context.Street
                 .Include("City")
                 .FirstOrDefault(x => x.Id == id);
 
-            if (s == null) return null;
-
-            return new StreetDto
-            {
-                Id = s.Id,
-                Name = s.Name,
-                CityId = s.CityId,
-                CityName = s.City.Name,
-                PostalCode = s.PostalCode
-            };
+            return s == null
+                ? null
+                : new StreetDto
+                {
+                    Id = s.Id,
+                    Name = s.Name,
+                    CityId = s.CityId,
+                    CityName = s.City.Name,
+                    PostalCode = s.PostalCode
+                };
         }
     }
 }

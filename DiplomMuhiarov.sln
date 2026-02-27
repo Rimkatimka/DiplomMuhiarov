@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.13.35825.156 d17.13
+VisualStudioVersion = 17.13.35825.156
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EnergyMeteringSystem.Core", "EnergyMeteringSystem.Core\EnergyMeteringSystem.Core.csproj", "{BC9536C6-20D8-429C-AF30-DC63DDC0919D}"
 EndProject
@@ -10,6 +10,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EnergyMeteringSystem.Services", "EnergyMeteringSystem.Services\EnergyMeteringSystem.Services.csproj", "{D34236E3-F5AF-484E-8241-A1DC586C90BE}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EnergyMeteringSystem.App", "EnergyMeteringSystem.App\EnergyMeteringSystem.App.csproj", "{989AE91B-FFEF-4470-B984-503396C9691C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LoadTests", "LoadTests\LoadTests.csproj", "{997EE0CB-2F5B-4002-9C7E-43C055326B94}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +35,10 @@ Global
 		{989AE91B-FFEF-4470-B984-503396C9691C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{989AE91B-FFEF-4470-B984-503396C9691C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{989AE91B-FFEF-4470-B984-503396C9691C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{997EE0CB-2F5B-4002-9C7E-43C055326B94}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{997EE0CB-2F5B-4002-9C7E-43C055326B94}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{997EE0CB-2F5B-4002-9C7E-43C055326B94}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{997EE0CB-2F5B-4002-9C7E-43C055326B94}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

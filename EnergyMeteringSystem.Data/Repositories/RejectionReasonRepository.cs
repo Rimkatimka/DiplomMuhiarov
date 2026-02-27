@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using EnergyMeteringSystem.Core.Interfaces.Repositories;
 using EnergyMeteringSystem.Core.Models.DTO;
 using EnergyMeteringSystem.Data.Database;
@@ -35,46 +32,46 @@ namespace EnergyMeteringSystem.Data.Repositories
 
         public DirectoryDto GetById(int id)
         {
-            var r = _context.RejectionReason.Find(id);
-            if (r == null) return null;
-
-            return new DirectoryDto
-            {
-                Id = r.Id,
-                Name = r.Name,
-                Description = r.RequiresComment ? "Требует комментарий" : "Без комментария",
-                IsActive = true
-            };
+            RejectionReason r = _context.RejectionReason.Find(id);
+            return r == null
+                ? null
+                : new DirectoryDto
+                {
+                    Id = r.Id,
+                    Name = r.Name,
+                    Description = r.RequiresComment ? "Требует комментарий" : "Без комментария",
+                    IsActive = true
+                };
         }
 
         public void Add(DirectoryDto dto)
         {
-            var entity = new RejectionReason
+            RejectionReason entity = new()
             {
                 Name = dto.Name,
                 RequiresComment = dto.Description?.Contains("Требует") ?? false
             };
-            _context.RejectionReason.Add(entity);
-            _context.SaveChanges();
+            _ = _context.RejectionReason.Add(entity);
+            _ = _context.SaveChanges();
         }
 
         public void Update(DirectoryDto dto)
         {
-            var entity = _context.RejectionReason.Find(dto.Id);
+            RejectionReason entity = _context.RejectionReason.Find(dto.Id);
             if (entity != null)
             {
                 entity.Name = dto.Name;
-                _context.SaveChanges();
+                _ = _context.SaveChanges();
             }
         }
 
         public void Delete(int id)
         {
-            var entity = _context.RejectionReason.Find(id);
+            RejectionReason entity = _context.RejectionReason.Find(id);
             if (entity != null)
             {
-                _context.RejectionReason.Remove(entity);
-                _context.SaveChanges();
+                _ = _context.RejectionReason.Remove(entity);
+                _ = _context.SaveChanges();
             }
         }
     }

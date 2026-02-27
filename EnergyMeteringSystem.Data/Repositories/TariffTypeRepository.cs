@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using EnergyMeteringSystem.Core.Interfaces.Repositories;
 using EnergyMeteringSystem.Core.Models.DTO;
 using EnergyMeteringSystem.Data.Database;
@@ -35,48 +32,48 @@ namespace EnergyMeteringSystem.Data.Repositories
 
         public DirectoryDto GetById(int id)
         {
-            var entity = _context.TariffType.Find(id);
-            if (entity == null) return null;
-
-            return new DirectoryDto
-            {
-                Id = entity.Id,
-                Name = entity.Name,
-                Description = $"Зон: {entity.ZoneCount}",
-                IsActive = true
-            };
+            TariffType entity = _context.TariffType.Find(id);
+            return entity == null
+                ? null
+                : new DirectoryDto
+                {
+                    Id = entity.Id,
+                    Name = entity.Name,
+                    Description = $"Зон: {entity.ZoneCount}",
+                    IsActive = true
+                };
         }
 
         public void Add(DirectoryDto dto)
         {
-            var entity = new TariffType
+            TariffType entity = new()
             {
                 Name = dto.Name,
                 ZoneCount = 1,
                 Description = dto.Description
             };
-            _context.TariffType.Add(entity);
-            _context.SaveChanges();
+            _ = _context.TariffType.Add(entity);
+            _ = _context.SaveChanges();
         }
 
         public void Update(DirectoryDto dto)
         {
-            var entity = _context.TariffType.Find(dto.Id);
+            TariffType entity = _context.TariffType.Find(dto.Id);
             if (entity != null)
             {
                 entity.Name = dto.Name;
                 entity.Description = dto.Description;
-                _context.SaveChanges();
+                _ = _context.SaveChanges();
             }
         }
 
         public void Delete(int id)
         {
-            var entity = _context.TariffType.Find(id);
+            TariffType entity = _context.TariffType.Find(id);
             if (entity != null)
             {
-                _context.TariffType.Remove(entity);
-                _context.SaveChanges();
+                _ = _context.TariffType.Remove(entity);
+                _ = _context.SaveChanges();
             }
         }
     }

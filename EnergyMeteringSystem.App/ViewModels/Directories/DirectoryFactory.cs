@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using EnergyMeteringSystem.Core.Interfaces.Repositories;
-using EnergyMeteringSystem.Core.Models.DTO;
-using EnergyMeteringSystem.Data.Repositories;
+﻿using EnergyMeteringSystem.Data.Repositories;
 
 namespace EnergyMeteringSystem.App.ViewModels.Directories
 {
@@ -13,89 +6,73 @@ namespace EnergyMeteringSystem.App.ViewModels.Directories
     {
         public static DirectoryListViewModel CreateMeterTypeViewModel()
         {
-            // Вариант 1: Создаем репозиторий и преобразуем
-            var repo = new MeterTypeRepository();
-            return new DirectoryListViewModel(repo as IDirectoryRepository<DirectoryDto>);
+            MeterTypeRepository repo = new();
+            if (repo == null)
+            {
+                System.Diagnostics.Debug.WriteLine("ОШИБКА: repo = null");
+            }
+
+            return new DirectoryListViewModel(repo);
         }
 
-        /// <summary>
-        /// Статусы показаний
-        /// </summary>
         public static DirectoryListViewModel CreateReadingStatusViewModel()
         {
-            return new DirectoryListViewModel(new ReadingStatusRepository());
+            ReadingStatusRepository repo = new();
+            return new DirectoryListViewModel(repo);
         }
 
-        /// <summary>
-        /// Способы оплаты
-        /// </summary>
         public static DirectoryListViewModel CreatePaymentMethodViewModel()
         {
-            return new DirectoryListViewModel(new PaymentMethodRepository());
+            PaymentMethodRepository repo = new();
+            return new DirectoryListViewModel(repo);
         }
 
-        /// <summary>
-        /// Типы объектов
-        /// </summary>
         public static DirectoryListViewModel CreateObjectTypeViewModel()
         {
-            return new DirectoryListViewModel(new ObjectTypeRepository());
+            ObjectTypeRepository repo = new();
+            return new DirectoryListViewModel(repo);
         }
 
-        /// <summary>
-        /// Причины отклонения
-        /// </summary>
         public static DirectoryListViewModel CreateRejectionReasonViewModel()
         {
-            return new DirectoryListViewModel(new RejectionReasonRepository());
+            RejectionReasonRepository repo = new();
+            return new DirectoryListViewModel(repo);
         }
 
-        /// <summary>
-        /// Статусы счетчиков
-        /// </summary>
         public static DirectoryListViewModel CreateMeterStatusViewModel()
         {
-            return new DirectoryListViewModel(new MeterStatusRepository());
+            MeterStatusRepository repo = new();
+            return new DirectoryListViewModel(repo);
         }
 
-        /// <summary>
-        /// Статусы договоров
-        /// </summary>
         public static DirectoryListViewModel CreateContractStatusViewModel()
         {
-            return new DirectoryListViewModel(new ContractStatusRepository());
+            ContractStatusRepository repo = new();
+            return new DirectoryListViewModel(repo);
         }
 
-        /// <summary>
-        /// Типы тарифов
-        /// </summary>
         public static DirectoryListViewModel CreateTariffTypeViewModel()
         {
-            return new DirectoryListViewModel(new TariffTypeRepository());
+            TariffTypeRepository repo = new();
+            return new DirectoryListViewModel(repo);
         }
 
-        /// <summary>
-        /// Единицы измерения
-        /// </summary>
         public static DirectoryListViewModel CreateUnitOfMeasureViewModel()
         {
-            return new DirectoryListViewModel(new UnitOfMeasureRepository());
+            UnitOfMeasureRepository repo = new();
+            return new DirectoryListViewModel(repo);
         }
 
-        /// <summary>
-        /// Источники энергии
-        /// </summary>
         public static DirectoryListViewModel CreateEnergySourceViewModel()
         {
-            return new DirectoryListViewModel(new EnergySourceRepository());
+            EnergySourceRepository repo = new();
+            return new DirectoryListViewModel(repo);
         }
 
-        /// <summary>
-        /// Интервалы поверки
-        /// </summary>
         public static DirectoryListViewModel CreateVerificationIntervalViewModel()
         {
-            return new DirectoryListViewModel(new VerificationIntervalRepository());
+            VerificationIntervalRepository repo = new();
+            return new DirectoryListViewModel(repo);
         }
     }
 }

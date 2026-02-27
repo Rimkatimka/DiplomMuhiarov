@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace EnergyMeteringSystem.Core.Models.DTO
+﻿namespace EnergyMeteringSystem.Core.Models.DTO
 {
     public class ConsumptionObjectDto
     {

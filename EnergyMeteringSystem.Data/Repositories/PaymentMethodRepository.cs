@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using EnergyMeteringSystem.Core.Interfaces.Repositories;
 using EnergyMeteringSystem.Core.Models.DTO;
 using EnergyMeteringSystem.Data.Database;
@@ -35,46 +32,46 @@ namespace EnergyMeteringSystem.Data.Repositories
 
         public DirectoryDto GetById(int id)
         {
-            var entity = _context.PaymentMethod.Find(id);
-            if (entity == null) return null;
-
-            return new DirectoryDto
-            {
-                Id = entity.Id,
-                Name = entity.Name,
-                Description = entity.RequiresCashier ? "Требуется кассир" : "Без кассира",
-                IsActive = true
-            };
+            PaymentMethod entity = _context.PaymentMethod.Find(id);
+            return entity == null
+                ? null
+                : new DirectoryDto
+                {
+                    Id = entity.Id,
+                    Name = entity.Name,
+                    Description = entity.RequiresCashier ? "Требуется кассир" : "Без кассира",
+                    IsActive = true
+                };
         }
 
         public void Add(DirectoryDto dto)
         {
-            var entity = new PaymentMethod
+            PaymentMethod entity = new()
             {
                 Name = dto.Name,
                 RequiresCashier = dto.Description?.Contains("кассир") ?? false
             };
-            _context.PaymentMethod.Add(entity);
-            _context.SaveChanges();
+            _ = _context.PaymentMethod.Add(entity);
+            _ = _context.SaveChanges();
         }
 
         public void Update(DirectoryDto dto)
         {
-            var entity = _context.PaymentMethod.Find(dto.Id);
+            PaymentMethod entity = _context.PaymentMethod.Find(dto.Id);
             if (entity != null)
             {
                 entity.Name = dto.Name;
-                _context.SaveChanges();
+                _ = _context.SaveChanges();
             }
         }
 
         public void Delete(int id)
         {
-            var entity = _context.PaymentMethod.Find(id);
+            PaymentMethod entity = _context.PaymentMethod.Find(id);
             if (entity != null)
             {
-                _context.PaymentMethod.Remove(entity);
-                _context.SaveChanges();
+                _ = _context.PaymentMethod.Remove(entity);
+                _ = _context.SaveChanges();
             }
         }
     }

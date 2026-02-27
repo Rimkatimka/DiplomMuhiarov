@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using EnergyMeteringSystem.Core.Interfaces.Repositories;
 using EnergyMeteringSystem.Core.Models.DTO;
 using EnergyMeteringSystem.Data.Database;
@@ -35,48 +32,48 @@ namespace EnergyMeteringSystem.Data.Repositories
 
         public DirectoryDto GetById(int id)
         {
-            var entity = _context.UnitOfMeasure.Find(id);
-            if (entity == null) return null;
-
-            return new DirectoryDto
-            {
-                Id = entity.Id,
-                Name = entity.Name,
-                Description = entity.Symbol,
-                IsActive = true
-            };
+            UnitOfMeasure entity = _context.UnitOfMeasure.Find(id);
+            return entity == null
+                ? null
+                : new DirectoryDto
+                {
+                    Id = entity.Id,
+                    Name = entity.Name,
+                    Description = entity.Symbol,
+                    IsActive = true
+                };
         }
 
         public void Add(DirectoryDto dto)
         {
-            var entity = new UnitOfMeasure
+            UnitOfMeasure entity = new()
             {
                 Name = dto.Name,
                 Symbol = dto.Description ?? dto.Name,
                 IsDefault = false
             };
-            _context.UnitOfMeasure.Add(entity);
-            _context.SaveChanges();
+            _ = _context.UnitOfMeasure.Add(entity);
+            _ = _context.SaveChanges();
         }
 
         public void Update(DirectoryDto dto)
         {
-            var entity = _context.UnitOfMeasure.Find(dto.Id);
+            UnitOfMeasure entity = _context.UnitOfMeasure.Find(dto.Id);
             if (entity != null)
             {
                 entity.Name = dto.Name;
                 entity.Symbol = dto.Description ?? dto.Name;
-                _context.SaveChanges();
+                _ = _context.SaveChanges();
             }
         }
 
         public void Delete(int id)
         {
-            var entity = _context.UnitOfMeasure.Find(id);
+            UnitOfMeasure entity = _context.UnitOfMeasure.Find(id);
             if (entity != null && !entity.IsDefault)
             {
-                _context.UnitOfMeasure.Remove(entity);
-                _context.SaveChanges();
+                _ = _context.UnitOfMeasure.Remove(entity);
+                _ = _context.SaveChanges();
             }
         }
     }

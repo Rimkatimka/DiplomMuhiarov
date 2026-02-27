@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using EnergyMeteringSystem.Core.Interfaces.Repositories;
 using EnergyMeteringSystem.Core.Models.DTO;
 using EnergyMeteringSystem.Data.Database;
@@ -20,44 +18,45 @@ namespace EnergyMeteringSystem.Data.Repositories
 
         public DashboardDto GetDashboardData()
         {
-            var today = DateTime.Today;
-            var weekAgo = today.AddDays(-7);
-            var monthStart = new DateTime(today.Year, today.Month, 1);
+            DateTime today = DateTime.Today;
+            DateTime weekAgo = today.AddDays(-7);
+            DateTime monthStart = new(today.Year, today.Month, 1);
 
-            var result = new DashboardDto();
+            DashboardDto result = new()
+            {
+                // Количество объектов
+                TotalObjects = _context.ConsumptionObject.Count(),
 
-            // Количество объектов
-            result.TotalObjects = _context.ConsumptionObject.Count();
+                // Количество счетчиков
+                TotalMeters = _context.Meter.Count(),
 
-            // Количество счетчиков
-            result.TotalMeters = _context.Meter.Count();
+                // Показания за сегодня
+                ReadingsToday = _context.MeterReading
+                    .Count(r => r.ReadingDate == today),
 
-            // Показания за сегодня
-            result.ReadingsToday = _context.MeterReading
-                .Count(r => r.ReadingDate == today);
+                // Показания за неделю
+                ReadingsWeek = _context.MeterReading
+                    .Count(r => r.ReadingDate >= weekAgo),
 
-            // Показания за неделю
-            result.ReadingsWeek = _context.MeterReading
-                .Count(r => r.ReadingDate >= weekAgo);
+                // Начисления за текущий месяц
+                AccrualMonth = _context.Accrual
+                    .Where(a => a.PeriodYear == today.Year &&
+                                a.PeriodMonth == today.Month)
+                    .Sum(a => (decimal?)a.Amount) ?? 0,
 
-            // Начисления за текущий месяц
-            result.AccrualMonth = _context.Accrual
-                .Where(a => a.PeriodYear == today.Year &&
-                            a.PeriodMonth == today.Month)
-                .Sum(a => (decimal?)a.Amount) ?? 0;
+                // Оплаты за текущий месяц
+                PaymentMonth = _context.Payment
+                    .Where(p => p.PaymentDate >= monthStart)
+                    .Sum(p => (decimal?)p.Amount) ?? 0,
 
-            // Оплаты за текущий месяц
-            result.PaymentMonth = _context.Payment
-                .Where(p => p.PaymentDate >= monthStart)
-                .Sum(p => (decimal?)p.Amount) ?? 0;
-
-            // Счетчики с истекшей поверкой
-            result.ExpiredMeters = _context.Meter
-                .Count(m => m.NextVerificationDate < today);
+                // Счетчики с истекшей поверкой
+                ExpiredMeters = _context.Meter
+                    .Count(m => m.NextVerificationDate < today)
+            };
 
             // ТОП-5 должников
-            var paymentRepo = new PaymentRepository();
-            var allDebtors = paymentRepo.GetDebtors();
+            PaymentRepository paymentRepo = new();
+            List<DebtDto> allDebtors = paymentRepo.GetDebtors();
             result.TopDebtors = allDebtors.Take(5).ToList();
 
             // Данные для графика (последние 6 месяцев)
@@ -68,16 +67,16 @@ namespace EnergyMeteringSystem.Data.Repositories
 
         private List<ChartPoint> GetChartData()
         {
-            var result = new List<ChartPoint>();
-            var today = DateTime.Today;
+            List<ChartPoint> result = [];
+            DateTime today = DateTime.Today;
 
             for (int i = 5; i >= 0; i--)
             {
-                var date = today.AddMonths(-i);
+                DateTime date = today.AddMonths(-i);
                 int year = date.Year;
                 int month = date.Month;
 
-                var consumption = _context.Accrual
+                decimal consumption = _context.Accrual
                     .Where(a => a.PeriodYear == year && a.PeriodMonth == month)
                     .Sum(a => (decimal?)a.ConsumptionValue) ?? 0;
 

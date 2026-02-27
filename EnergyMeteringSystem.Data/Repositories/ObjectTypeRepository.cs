@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using EnergyMeteringSystem.Core.Interfaces.Repositories;
 using EnergyMeteringSystem.Core.Models.DTO;
 using EnergyMeteringSystem.Data.Database;
@@ -44,46 +41,46 @@ namespace EnergyMeteringSystem.Data.Repositories
 
         public DirectoryDto GetById(int id)
         {
-            var entity = _context.ObjectType.Find(id);
-            if (entity == null) return null;
-
-            return new DirectoryDto
-            {
-                Id = entity.Id,
-                Name = entity.Name,
-                Description = entity.NormConsumption.HasValue ? $"Норма: {entity.NormConsumption}" : null,
-                IsActive = true
-            };
+            ObjectType entity = _context.ObjectType.Find(id);
+            return entity == null
+                ? null
+                : new DirectoryDto
+                {
+                    Id = entity.Id,
+                    Name = entity.Name,
+                    Description = entity.NormConsumption.HasValue ? $"Норма: {entity.NormConsumption}" : null,
+                    IsActive = true
+                };
         }
 
         public void Add(DirectoryDto dto)
         {
-            var entity = new ObjectType
+            ObjectType entity = new()
             {
                 Name = dto.Name,
                 NormConsumption = null
             };
-            _context.ObjectType.Add(entity);
-            _context.SaveChanges();
+            _ = _context.ObjectType.Add(entity);
+            _ = _context.SaveChanges();
         }
 
         public void Update(DirectoryDto dto)
         {
-            var entity = _context.ObjectType.Find(dto.Id);
+            ObjectType entity = _context.ObjectType.Find(dto.Id);
             if (entity != null)
             {
                 entity.Name = dto.Name;
-                _context.SaveChanges();
+                _ = _context.SaveChanges();
             }
         }
 
         public void Delete(int id)
         {
-            var entity = _context.ObjectType.Find(id);
+            ObjectType entity = _context.ObjectType.Find(id);
             if (entity != null)
             {
-                _context.ObjectType.Remove(entity);
-                _context.SaveChanges();
+                _ = _context.ObjectType.Remove(entity);
+                _ = _context.SaveChanges();
             }
         }
     }

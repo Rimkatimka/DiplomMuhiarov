@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace EnergyMeteringSystem.Core.Models.DTO
 {
@@ -20,6 +16,6 @@ namespace EnergyMeteringSystem.Core.Models.DTO
         public string StatusText => IsActive ? "Активен" : "Неактивен";
         public string ZoneName => ZoneNumber == 1 ? "День" : "Ночь";
         public string PriceText => $"{PricePerUnit:F2} ₽/кВт";
-        public string PeriodText => $"{StartDate:dd.MM.yyyy} - {(EndDate?.ToString("dd.MM.yyyy") ?? "бессрочно")}";
+        public string PeriodText => $"{StartDate:dd.MM.yyyy} - {EndDate?.ToString("dd.MM.yyyy") ?? "бессрочно"}";
     }
 }

@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using EnergyMeteringSystem.Core.Interfaces.Repositories;
 using EnergyMeteringSystem.Core.Models.DTO;
 using EnergyMeteringSystem.Data.Database;
@@ -36,19 +33,19 @@ namespace EnergyMeteringSystem.Data.Repositories
 
         public DirectoryDto GetById(int id)
         {
-            var entity = _context.VerificationInterval
+            VerificationInterval entity = _context.VerificationInterval
                 .Include("MeterType")
                 .FirstOrDefault(v => v.Id == id);
 
-            if (entity == null) return null;
-
-            return new DirectoryDto
-            {
-                Id = entity.Id,
-                Name = entity.MeterType.Name,
-                Description = $"Интервал: {entity.Years} лет",
-                IsActive = true
-            };
+            return entity == null
+                ? null
+                : new DirectoryDto
+                {
+                    Id = entity.Id,
+                    Name = entity.MeterType.Name,
+                    Description = $"Интервал: {entity.Years} лет",
+                    IsActive = true
+                };
         }
 
         public void Add(DirectoryDto dto)
@@ -59,21 +56,21 @@ namespace EnergyMeteringSystem.Data.Repositories
 
         public void Update(DirectoryDto dto)
         {
-            var entity = _context.VerificationInterval.Find(dto.Id);
+            VerificationInterval entity = _context.VerificationInterval.Find(dto.Id);
             if (entity != null)
             {
                 // Обновление только если нужно
-                _context.SaveChanges();
+                _ = _context.SaveChanges();
             }
         }
 
         public void Delete(int id)
         {
-            var entity = _context.VerificationInterval.Find(id);
+            VerificationInterval entity = _context.VerificationInterval.Find(id);
             if (entity != null)
             {
-                _context.VerificationInterval.Remove(entity);
-                _context.SaveChanges();
+                _ = _context.VerificationInterval.Remove(entity);
+                _ = _context.SaveChanges();
             }
         }
     }

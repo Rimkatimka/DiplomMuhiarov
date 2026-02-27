@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace EnergyMeteringSystem.Core.Models.DTO
 {
@@ -18,33 +14,21 @@ namespace EnergyMeteringSystem.Core.Models.DTO
         public DateTime EnteredAt { get; set; }
 
         // Вычисляемое свойство для текста статуса
-        public string StatusText
+        public string StatusText => ReadingStatusId switch
         {
-            get
-            {
-                switch (ReadingStatusId)
-                {
-                    case 1: return "Введено";
-                    case 2: return "Подтверждено";
-                    case 3: return "Отклонено";
-                    default: return "Неизвестно";
-                }
-            }
-        }
+            1 => "Введено",
+            2 => "Подтверждено",
+            3 => "Отклонено",
+            _ => "Неизвестно",
+        };
 
         // Для отображения цвета статуса в UI
-        public string StatusColor
+        public string StatusColor => ReadingStatusId switch
         {
-            get
-            {
-                switch (ReadingStatusId)
-                {
-                    case 1: return "Orange";
-                    case 2: return "Green";
-                    case 3: return "Red";
-                    default: return "Gray";
-                }
-            }
-        }
+            1 => "Orange",
+            2 => "Green",
+            3 => "Red",
+            _ => "Gray",
+        };
     }
 }

@@ -62,8 +62,14 @@ namespace EnergyMeteringSystem.App.ViewModels.Tariffs
 
         private TariffTypeDto FindTariffType(int id)
         {
-            foreach (var type in TariffTypes)
-                if (type.Id == id) return type;
+            foreach (TariffTypeDto type in TariffTypes)
+            {
+                if (type.Id == id)
+                {
+                    return type;
+                }
+            }
+
             return null;
         }
 
@@ -75,7 +81,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Tariffs
 
         private void Save()
         {
-            var dto = new TariffDto
+            TariffDto dto = new()
             {
                 Id = _tariff?.Id ?? 0,
                 TariffTypeId = SelectedTariffType.Id,
@@ -86,9 +92,13 @@ namespace EnergyMeteringSystem.App.ViewModels.Tariffs
             };
 
             if (IsEditMode)
+            {
                 _tariffRepository.Update(dto);
+            }
             else
+            {
                 _tariffRepository.Add(dto);
+            }
 
             OnTariffSaved?.Invoke(this, EventArgs.Empty);
         }

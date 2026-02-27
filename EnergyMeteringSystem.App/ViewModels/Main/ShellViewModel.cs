@@ -1,24 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.ObjectModel;
+using System.Windows;
+using EnergyMeteringSystem.App.Commands;
+using EnergyMeteringSystem.App.ViewModels.Base;
+using EnergyMeteringSystem.App.ViewModels.Directories;
 using EnergyMeteringSystem.Core.Models.DTO;
 using EnergyMeteringSystem.Services.Auth;
-using EnergyMeteringSystem.App.ViewModels.Base;
-using EnergyMeteringSystem.App.Commands;
-using System.Windows;
-using EnergyMeteringSystem.App.ViewModels.Directories;
 
 namespace EnergyMeteringSystem.App.ViewModels.Main
 {
     public class ShellViewModel : ViewModelBase
     {
         private readonly AuthService _authService;
-        private UserDto _currentUser;
 
-        public UserDto CurrentUser => _currentUser;
+        public UserDto CurrentUser { get; }
         public ObservableCollection<MenuItemViewModel> MenuItems { get; set; }
         public RelayCommand LogoutCommand { get; }
         private object _currentView;
@@ -44,18 +38,18 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
         {
             System.Diagnostics.Debug.WriteLine("ShellViewModel: конструктор начат");
 
-            _currentUser = currentUser;  // ← получаем пользователя из параметра
+            CurrentUser = currentUser;  // ← получаем пользователя из параметра
 
-            System.Diagnostics.Debug.WriteLine($"ShellViewModel: _currentUser = {(_currentUser?.Username ?? "null")}");
+            System.Diagnostics.Debug.WriteLine($"ShellViewModel: _currentUser = {CurrentUser?.Username ?? "null"}");
 
-            if (_currentUser == null)
+            if (CurrentUser == null)
             {
                 System.Diagnostics.Debug.WriteLine("ShellViewModel: _currentUser == null, выход");
                 return;
             }
 
             LogoutCommand = new RelayCommand(_ => Logout());
-            MenuItems = new ObservableCollection<MenuItemViewModel>();
+            MenuItems = [];
             BuildMenu();
         }
 
@@ -82,7 +76,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
             });
 
             // Показания (главное меню)
-            var readingsMenu = new MenuItemViewModel { Title = "Показания" };
+            MenuItemViewModel readingsMenu = new() { Title = "Показания" };
 
             readingsMenu.Children.Add(new MenuItemViewModel
             {
@@ -147,7 +141,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
             // Справочники - только админ
             if (CurrentUser.IsAdmin)
             {
-                var dirMenu = new MenuItemViewModel { Title = "Справочники" };
+                MenuItemViewModel dirMenu = new() { Title = "Справочники" };
 
                 dirMenu.Children.Add(new MenuItemViewModel
                 {
@@ -224,7 +218,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
                 MenuItems.Add(dirMenu);
 
                 // Администрирование
-                var adminMenu = new MenuItemViewModel { Title = "Администрирование" };
+                MenuItemViewModel adminMenu = new() { Title = "Администрирование" };
 
                 adminMenu.Children.Add(new MenuItemViewModel
                 {
@@ -274,13 +268,13 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
         {
             if (CurrentUser == null)
             {
-                System.Windows.MessageBox.Show("Ошибка: пользователь не авторизован", "Ошибка",
+                _ = System.Windows.MessageBox.Show("Ошибка: пользователь не авторизован", "Ошибка",
                     System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
                 return;
             }
 
             // Передаем текущего пользователя в View
-            var view = new Views.Readings.MeterReadingInputView(CurrentUser);
+            Views.Readings.MeterReadingInputView view = new(CurrentUser);
             CurrentView = view;
         }
 
@@ -301,7 +295,16 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
 
         private void OpenPayment()
         {
-            CurrentView = new Views.Billing.PaymentView();
+            if (CurrentUser == null)
+            {
+                _ = MessageBox.Show("Ошибка: пользователь не авторизован", "Ошибка",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            // Передаем текущего пользователя в View
+            Views.Billing.PaymentView view = new(CurrentUser);
+            CurrentView = view;
         }
 
         private void OpenDebt()
@@ -341,18 +344,26 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
 
         private void OpenDirectory(DirectoryListViewModel viewModel, string title)
         {
-            System.Diagnostics.Debug.WriteLine($"OpenDirectory: {title}");
+            if (viewModel == null)
+            {
+                System.Diagnostics.Debug.WriteLine($"ОШИБКА: viewModel = null для {title}");
+                return;
+            }
 
-            var view = new Views.Directories.DirectoryListView();
-            view.DataContext = viewModel;
-            CurrentView = view;
+            CurrentView = new Views.Directories.DirectoryListView { DataContext = viewModel };
         }
 
         private void Logout()
         {
-            _authService.Logout();  // ← вызываем метод экземпляра, а не статический
-            Application.Current.Windows[0]?.Close();
-            new Views.Auth.LoginView().Show();
+            MessageBoxResult result = MessageBox.Show("Вы действительно хотите выйти?", "Подтверждение",
+        MessageBoxButton.YesNo, MessageBoxImage.Question);
+
+            if (result == MessageBoxResult.Yes)
+            {
+                new Views.Auth.LoginView().Show();
+                Application.Current.Windows[0]?.Close();
+            }
+
         }
     }
 }

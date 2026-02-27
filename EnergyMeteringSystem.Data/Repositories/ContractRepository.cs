@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using EnergyMeteringSystem.Core.Interfaces.Repositories;
 using EnergyMeteringSystem.Core.Models.DTO;
 using EnergyMeteringSystem.Data.Database;
@@ -61,33 +59,33 @@ namespace EnergyMeteringSystem.Data.Repositories
 
         public ContractDto GetById(int id)
         {
-            var c = _context.Contract
+            Contract c = _context.Contract
                 .Include("ConsumptionObject")
                 .Include("ContractStatus")
                 .Include("Tariff")
                 .FirstOrDefault(x => x.Id == id);
 
-            if (c == null) return null;
-
-            return new ContractDto
-            {
-                Id = c.Id,
-                ContractNumber = c.ContractNumber,
-                ConsumptionObjectId = c.ConsumptionObjectId,
-                Address = c.ConsumptionObject.Street.Name + ", д. " + c.ConsumptionObject.HouseNumber,
-                ContractDate = c.ContractDate,
-                StartDate = c.StartDate,
-                EndDate = c.EndDate,
-                ContractStatusId = c.ContractStatusId,
-                StatusName = c.ContractStatus.Name,
-                TariffId = c.TariffId,
-                TariffName = c.Tariff.TariffType.Name
-            };
+            return c == null
+                ? null
+                : new ContractDto
+                {
+                    Id = c.Id,
+                    ContractNumber = c.ContractNumber,
+                    ConsumptionObjectId = c.ConsumptionObjectId,
+                    Address = c.ConsumptionObject.Street.Name + ", д. " + c.ConsumptionObject.HouseNumber,
+                    ContractDate = c.ContractDate,
+                    StartDate = c.StartDate,
+                    EndDate = c.EndDate,
+                    ContractStatusId = c.ContractStatusId,
+                    StatusName = c.ContractStatus.Name,
+                    TariffId = c.TariffId,
+                    TariffName = c.Tariff.TariffType.Name
+                };
         }
 
         public void Add(ContractDto dto)
         {
-            var entity = new Contract
+            Contract entity = new()
             {
                 ContractNumber = dto.ContractNumber,
                 ConsumptionObjectId = dto.ConsumptionObjectId,
@@ -98,13 +96,13 @@ namespace EnergyMeteringSystem.Data.Repositories
                 TariffId = dto.TariffId
             };
 
-            _context.Contract.Add(entity);
-            _context.SaveChanges();
+            _ = _context.Contract.Add(entity);
+            _ = _context.SaveChanges();
         }
 
         public void Update(ContractDto dto)
         {
-            var entity = _context.Contract.Find(dto.Id);
+            Contract entity = _context.Contract.Find(dto.Id);
             if (entity != null)
             {
                 entity.ContractNumber = dto.ContractNumber;
@@ -112,18 +110,18 @@ namespace EnergyMeteringSystem.Data.Repositories
                 entity.EndDate = dto.EndDate;
                 entity.ContractStatusId = dto.ContractStatusId;
                 entity.TariffId = dto.TariffId;
-                _context.SaveChanges();
+                _ = _context.SaveChanges();
             }
         }
 
         public void Terminate(int id, DateTime endDate)
         {
-            var entity = _context.Contract.Find(id);
+            Contract entity = _context.Contract.Find(id);
             if (entity != null)
             {
                 entity.EndDate = endDate;
                 entity.ContractStatusId = 2; // Расторгнут
-                _context.SaveChanges();
+                _ = _context.SaveChanges();
             }
         }
     }

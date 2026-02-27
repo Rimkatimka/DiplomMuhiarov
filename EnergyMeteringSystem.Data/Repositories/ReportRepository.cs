@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using EnergyMeteringSystem.Core.Interfaces.Repositories;
 using EnergyMeteringSystem.Core.Models.DTO;
 using EnergyMeteringSystem.Data.Database;
@@ -20,12 +18,12 @@ namespace EnergyMeteringSystem.Data.Repositories
 
         public List<ConsumptionReportDto> GetConsumptionReport(DateTime startDate, DateTime endDate)
         {
-            var result = new List<ConsumptionReportDto>();
-            var meters = _context.Meter.ToList();
+            List<ConsumptionReportDto> result = [];
+            List<Meter> meters = _context.Meter.ToList();
 
-            foreach (var meter in meters)
+            foreach (Meter meter in meters)
             {
-                var readings = _context.MeterReading
+                List<MeterReading> readings = _context.MeterReading
                     .Where(r => r.MeterId == meter.Id &&
                                 r.ReadingDate >= startDate &&
                                 r.ReadingDate <= endDate)
@@ -34,9 +32,9 @@ namespace EnergyMeteringSystem.Data.Repositories
 
                 if (readings.Count >= 2)
                 {
-                    var first = readings.First();
-                    var last = readings.Last();
-                    var obj = _context.ConsumptionObject.Find(meter.ConsumptionObjectId);
+                    MeterReading first = readings.First();
+                    MeterReading last = readings.Last();
+                    ConsumptionObject obj = _context.ConsumptionObject.Find(meter.ConsumptionObjectId);
 
                     result.Add(new ConsumptionReportDto
                     {
@@ -58,12 +56,12 @@ namespace EnergyMeteringSystem.Data.Repositories
 
         public List<AccrualReportDto> GetAccrualReport(int year, int month)
         {
-            var result = new List<AccrualReportDto>();
-            var objects = _context.ConsumptionObject.ToList();
+            List<AccrualReportDto> result = [];
+            List<ConsumptionObject> objects = _context.ConsumptionObject.ToList();
 
-            foreach (var obj in objects)
+            foreach (ConsumptionObject obj in objects)
             {
-                var accrual = _context.Accrual
+                Accrual accrual = _context.Accrual
                     .FirstOrDefault(a => a.ConsumptionObjectId == obj.Id &&
                                          a.PeriodYear == year &&
                                          a.PeriodMonth == month);
@@ -96,7 +94,7 @@ namespace EnergyMeteringSystem.Data.Repositories
         public List<DebtDto> GetDebtReport()
         {
             // Используем уже готовый метод из PaymentRepository
-            var paymentRepo = new PaymentRepository();
+            PaymentRepository paymentRepo = new();
             return paymentRepo.GetDebtors();
         }
     }

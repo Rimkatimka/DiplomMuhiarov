@@ -18,7 +18,10 @@ namespace EnergyMeteringSystem.Core.Models.DTO
         {
             get
             {
-                if (string.IsNullOrEmpty(Details)) return ActionType;
+                if (string.IsNullOrEmpty(Details))
+                {
+                    return ActionType;
+                }
 
                 // Убираем фигурные скобки и кавычки
                 return Details.Replace("{", "").Replace("}", "").Replace("\"", "");
@@ -28,13 +31,21 @@ namespace EnergyMeteringSystem.Core.Models.DTO
         {
             get
             {
-                if (ActionType == "LOGIN") return "Вход в систему";
-                if (ActionType == "LOGOUT") return "Выход из системы";
+                if (ActionType == "LOGIN")
+                {
+                    return "Вход в систему";
+                }
+
+                if (ActionType == "LOGOUT")
+                {
+                    return "Выход из системы";
+                }
+
                 if (ActionType == "INSERT" && !string.IsNullOrEmpty(Details))
                 {
                     try
                     {
-                        var dict = Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string, object>>(Details);
+                        Dictionary<string, object> dict = Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string, object>>(Details);
                         return string.Join(", ", dict.Select(kv => $"{kv.Key}: {kv.Value}"));
                     }
                     catch

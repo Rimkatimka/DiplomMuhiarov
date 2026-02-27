@@ -26,7 +26,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Tariffs
             get => _searchText;
             set
             {
-                SetProperty(ref _searchText, value);
+                _ = SetProperty(ref _searchText, value);
                 ApplyFilter();
             }
         }
@@ -36,7 +36,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Tariffs
             get => _selectedTariff;
             set
             {
-                SetProperty(ref _selectedTariff, value);
+                _ = SetProperty(ref _selectedTariff, value);
                 EditCommand.RaiseCanExecuteChanged();
                 DeactivateCommand.RaiseCanExecuteChanged();
             }
@@ -47,7 +47,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Tariffs
             get => _showOnlyActive;
             set
             {
-                SetProperty(ref _showOnlyActive, value);
+                _ = SetProperty(ref _showOnlyActive, value);
                 ApplyFilter();
             }
         }
@@ -62,8 +62,8 @@ namespace EnergyMeteringSystem.App.ViewModels.Tariffs
             _tariffRepository = new TariffRepository();
             _typeRepository = new TariffTypeRepository();
 
-            Tariffs = new ObservableCollection<TariffDto>();
-            FilteredTariffs = new ObservableCollection<TariffDto>();
+            Tariffs = [];
+            FilteredTariffs = [];
 
             RefreshCommand = new RelayCommand(_ => LoadData());
             AddCommand = new RelayCommand(_ => AddTariff());
@@ -76,9 +76,11 @@ namespace EnergyMeteringSystem.App.ViewModels.Tariffs
         private void LoadData()
         {
             Tariffs.Clear();
-            var list = _tariffRepository.GetAll();
-            foreach (var tariff in list)
+            System.Collections.Generic.List<TariffDto> list = _tariffRepository.GetAll();
+            foreach (TariffDto tariff in list)
+            {
                 Tariffs.Add(tariff);
+            }
 
             ApplyFilter();
         }
@@ -87,7 +89,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Tariffs
         {
             FilteredTariffs.Clear();
 
-            var filtered = Tariffs.AsEnumerable();
+            System.Collections.Generic.IEnumerable<TariffDto> filtered = Tariffs.AsEnumerable();
 
             // Фильтр по тексту
             if (!string.IsNullOrWhiteSpace(SearchText))
@@ -103,8 +105,10 @@ namespace EnergyMeteringSystem.App.ViewModels.Tariffs
                 filtered = filtered.Where(t => t.IsActive);
             }
 
-            foreach (var tariff in filtered)
+            foreach (TariffDto tariff in filtered)
+            {
                 FilteredTariffs.Add(tariff);
+            }
         }
 
         private bool CanDeactivate()
@@ -114,11 +118,11 @@ namespace EnergyMeteringSystem.App.ViewModels.Tariffs
 
         private void AddTariff()
         {
-            var types = _typeRepository.GetAll(); // List<DirectoryDto>
+            System.Collections.Generic.List<DirectoryDto> types = _typeRepository.GetAll(); // List<DirectoryDto>
 
             // Преобразуем List<DirectoryDto> в ObservableCollection<TariffTypeDto>
-            var tariffTypes = new ObservableCollection<TariffTypeDto>();
-            foreach (var item in types)
+            ObservableCollection<TariffTypeDto> tariffTypes = [];
+            foreach (DirectoryDto item in types)
             {
                 tariffTypes.Add(new TariffTypeDto
                 {
@@ -129,13 +133,13 @@ namespace EnergyMeteringSystem.App.ViewModels.Tariffs
                 });
             }
 
-            var editViewModel = new TariffEditViewModel(tariffTypes);
-            var editView = new Views.Tariffs.TariffEditView
+            TariffEditViewModel editViewModel = new(tariffTypes);
+            Views.Tariffs.TariffEditView editView = new()
             {
                 DataContext = editViewModel
             };
 
-            var window = new Window
+            Window window = new()
             {
                 Title = "Новый тариф",
                 Content = editView,
@@ -150,18 +154,21 @@ namespace EnergyMeteringSystem.App.ViewModels.Tariffs
                 window.Close();
             };
 
-            window.ShowDialog();
+            _ = window.ShowDialog();
         }
 
         private void EditTariff()
         {
-            if (SelectedTariff == null) return;
+            if (SelectedTariff == null)
+            {
+                return;
+            }
 
-            var types = _typeRepository.GetAll(); // List<DirectoryDto>
+            System.Collections.Generic.List<DirectoryDto> types = _typeRepository.GetAll(); // List<DirectoryDto>
 
             // Преобразуем List<DirectoryDto> в ObservableCollection<TariffTypeDto>
-            var tariffTypes = new ObservableCollection<TariffTypeDto>();
-            foreach (var item in types)
+            ObservableCollection<TariffTypeDto> tariffTypes = [];
+            foreach (DirectoryDto item in types)
             {
                 tariffTypes.Add(new TariffTypeDto
                 {
@@ -172,13 +179,13 @@ namespace EnergyMeteringSystem.App.ViewModels.Tariffs
                 });
             }
 
-            var editViewModel = new TariffEditViewModel(tariffTypes, SelectedTariff);
-            var editView = new Views.Tariffs.TariffEditView
+            TariffEditViewModel editViewModel = new(tariffTypes, SelectedTariff);
+            Views.Tariffs.TariffEditView editView = new()
             {
                 DataContext = editViewModel
             };
 
-            var window = new Window
+            Window window = new()
             {
                 Title = "Редактирование тарифа",
                 Content = editView,
@@ -193,14 +200,17 @@ namespace EnergyMeteringSystem.App.ViewModels.Tariffs
                 window.Close();
             };
 
-            window.ShowDialog();
+            _ = window.ShowDialog();
         }
 
         private void DeactivateTariff()
         {
-            if (SelectedTariff == null) return;
+            if (SelectedTariff == null)
+            {
+                return;
+            }
 
-            var result = MessageBox.Show(
+            MessageBoxResult result = MessageBox.Show(
                 $"Деактивировать тариф {SelectedTariff.TariffTypeName} ({SelectedTariff.ZoneName})?",
                 "Подтверждение",
                 MessageBoxButton.YesNo,

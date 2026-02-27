@@ -21,13 +21,13 @@ namespace EnergyMeteringSystem.Data.Repositories
             {
                 System.Diagnostics.Debug.WriteLine("ConsumptionObjectRepository.GetAll() начат");
 
-                var objects = _context.ConsumptionObject
+                List<ConsumptionObject> objects = _context.ConsumptionObject
                     .Include("Street")
                     .ToList();
 
                 System.Diagnostics.Debug.WriteLine($"Загружено {objects.Count} объектов из БД");
 
-                var result = objects.Select(o => new ConsumptionObjectDto
+                List<ConsumptionObjectDto> result = objects.Select(o => new ConsumptionObjectDto
                 {
                     Id = o.Id,
                     Street = o.Street?.Name ?? "Неизвестно",
@@ -44,36 +44,36 @@ namespace EnergyMeteringSystem.Data.Repositories
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Ошибка в GetAll: {ex.Message}");
-                return new List<ConsumptionObjectDto>();
+                return [];
             }
         }
 
         public ConsumptionObjectDto GetById(int id)
         {
-            var o = _context.ConsumptionObject
+            ConsumptionObject o = _context.ConsumptionObject
                 .Include("ObjectType")
                 .Include("Street")
                 .FirstOrDefault(x => x.Id == id);
 
-            if (o == null) return null;
-
-            return new ConsumptionObjectDto
-            {
-                Id = o.Id,
-                Name = o.Name,
-                Street = o.Street.Name,
-                HouseNumber = o.HouseNumber,
-                ApartmentNumber = o.ApartmentNumber,
-                ObjectTypeName = o.ObjectType?.Name,
-                TotalArea = o.TotalArea,
-                ResidentCount = o.ResidentCount
-            };
+            return o == null
+                ? null
+                : new ConsumptionObjectDto
+                {
+                    Id = o.Id,
+                    Name = o.Name,
+                    Street = o.Street.Name,
+                    HouseNumber = o.HouseNumber,
+                    ApartmentNumber = o.ApartmentNumber,
+                    ObjectTypeName = o.ObjectType?.Name,
+                    TotalArea = o.TotalArea,
+                    ResidentCount = o.ResidentCount
+                };
         }
 
         // ✅ Добавьте этот метод
         public void Add(ConsumptionObjectDto dto)
         {
-            var entity = new ConsumptionObject
+            ConsumptionObject entity = new()
             {
                 Name = dto.Street + ", " + dto.HouseNumber,
                 ObjectTypeId = dto.ObjectTypeId,
@@ -84,14 +84,14 @@ namespace EnergyMeteringSystem.Data.Repositories
                 ResidentCount = dto.ResidentCount
             };
 
-            _context.ConsumptionObject.Add(entity);
-            _context.SaveChanges();
+            _ = _context.ConsumptionObject.Add(entity);
+            _ = _context.SaveChanges();
         }
 
         // ✅ Добавьте метод Update
         public void Update(ConsumptionObjectDto dto)
         {
-            var entity = _context.ConsumptionObject.Find(dto.Id);
+            ConsumptionObject entity = _context.ConsumptionObject.Find(dto.Id);
             if (entity != null)
             {
                 entity.Name = dto.Street + ", " + dto.HouseNumber;
@@ -102,18 +102,18 @@ namespace EnergyMeteringSystem.Data.Repositories
                 entity.TotalArea = dto.TotalArea;
                 entity.ResidentCount = dto.ResidentCount;
 
-                _context.SaveChanges();
+                _ = _context.SaveChanges();
             }
         }
 
         // ✅ Добавьте метод Delete
         public void Delete(int id)
         {
-            var entity = _context.ConsumptionObject.Find(id);
+            ConsumptionObject entity = _context.ConsumptionObject.Find(id);
             if (entity != null)
             {
-                _context.ConsumptionObject.Remove(entity);
-                _context.SaveChanges();
+                _ = _context.ConsumptionObject.Remove(entity);
+                _ = _context.SaveChanges();
             }
         }
     }

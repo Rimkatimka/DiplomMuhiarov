@@ -1,14 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
-using System.Text;
-using System.Data.Entity;
-using System.Data.Entity.Infrastructure;
-using System.Threading.Tasks;
 using EnergyMeteringSystem.Core.Interfaces.Repositories;
 using EnergyMeteringSystem.Core.Models.DTO;
 using EnergyMeteringSystem.Data.Database;
-using System.Data;
 
 namespace EnergyMeteringSystem.Data.Repositories
 {
@@ -26,7 +22,7 @@ namespace EnergyMeteringSystem.Data.Repositories
             {
                 System.Diagnostics.Debug.WriteLine($"GetLastReading: meterId={meterId}");
 
-                var lastReading = _context.MeterReading
+                decimal? lastReading = _context.MeterReading
                     .Where(r => r.MeterId == meterId)
                     .OrderByDescending(r => r.ReadingDate)
                     .Select(r => (decimal?)r.Value)
@@ -72,12 +68,12 @@ namespace EnergyMeteringSystem.Data.Repositories
                 var result = query.ToList();
                 System.Diagnostics.Debug.WriteLine($"GetForVerification: загружено {result.Count} записей");
 
-                var verificationList = new List<MeterReadingVerificationDto>();
+                List<MeterReadingVerificationDto> verificationList = [];
 
                 foreach (var item in result)
                 {
                     // Получаем предыдущее показание для этого счетчика
-                    var previous = _context.MeterReading
+                    MeterReading previous = _context.MeterReading
                         .Where(r => r.MeterId == item.MeterId && r.ReadingDate < item.ReadingDate)
                         .OrderByDescending(r => r.ReadingDate)
                         .FirstOrDefault();
@@ -103,7 +99,7 @@ namespace EnergyMeteringSystem.Data.Repositories
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Ошибка в GetForVerification: {ex.Message}");
-                return new List<MeterReadingVerificationDto>();
+                return [];
             }
         }
         public void UpdateStatus(int readingId, int newStatusId, int? rejectionReasonId = null, string comment = null)
@@ -112,14 +108,14 @@ namespace EnergyMeteringSystem.Data.Repositories
             {
                 System.Diagnostics.Debug.WriteLine($"UpdateStatus: readingId={readingId}, newStatusId={newStatusId}");
 
-                var reading = _context.MeterReading.Find(readingId);
+                MeterReading reading = _context.MeterReading.Find(readingId);
                 if (reading != null)
                 {
                     reading.ReadingStatusId = newStatusId;
                     reading.RejectionReasonId = rejectionReasonId;
                     reading.Comment = comment;
 
-                    _context.SaveChanges();
+                    _ = _context.SaveChanges();
                     System.Diagnostics.Debug.WriteLine("UpdateStatus: успешно");
                 }
             }
@@ -132,13 +128,13 @@ namespace EnergyMeteringSystem.Data.Repositories
 
         private string GetStatusName(int statusId)
         {
-            switch (statusId)
+            return statusId switch
             {
-                case 1: return "Введено";
-                case 2: return "Подтверждено";
-                case 3: return "Отклонено";
-                default: return "Неизвестно";
-            }
+                1 => "Введено",
+                2 => "Подтверждено",
+                3 => "Отклонено",
+                _ => "Неизвестно",
+            };
         }
 
         public void Add(MeterReadingInputDto dto)
@@ -148,7 +144,7 @@ namespace EnergyMeteringSystem.Data.Repositories
                 System.Diagnostics.Debug.WriteLine("=== MeterReadingRepository.Add ===");
 
                 // Проверяем, есть ли уже показания за эту дату
-                var existingReading = _context.MeterReading
+                MeterReading existingReading = _context.MeterReading
                     .FirstOrDefault(r => r.MeterId == dto.MeterId &&
                                          r.ReadingDate == dto.ReadingDate &&
                                          r.TariffZone == dto.TariffZone);
@@ -167,7 +163,7 @@ namespace EnergyMeteringSystem.Data.Repositories
 
                 System.Diagnostics.Debug.WriteLine($"Следующий ID: {nextId}");
 
-                var entity = new MeterReading
+                MeterReading entity = new()
                 {
                     Id = nextId,
                     MeterId = dto.MeterId,
@@ -181,8 +177,8 @@ namespace EnergyMeteringSystem.Data.Repositories
                     TariffZone = dto.TariffZone
                 };
 
-                _context.MeterReading.Add(entity);
-                _context.SaveChanges();
+                _ = _context.MeterReading.Add(entity);
+                _ = _context.SaveChanges();
 
                 System.Diagnostics.Debug.WriteLine("Сохранено успешно");
             }
@@ -201,36 +197,46 @@ namespace EnergyMeteringSystem.Data.Repositories
             {
                 System.Diagnostics.Debug.WriteLine($"GetReadingsForPeriod: objectId={objectId}, year={year}, month={month}");
 
-                DateTime startDate = new DateTime(year, month, 1);
+                DateTime startDate = new(year, month, 1);
                 DateTime endDate = startDate.AddMonths(1).AddDays(-1);
 
-                var readings = _context.MeterReading
+                // Простой запрос без сложных Include
+                List<MeterReading> readings = _context.MeterReading
                     .Where(r => r.Meter.ConsumptionObjectId == objectId &&
                                 r.ReadingDate >= startDate &&
                                 r.ReadingDate <= endDate)
-                    .Include("Meter")
-                    .Include("ReadingStatus")
-                    .OrderBy(r => r.ReadingDate)
-                    .Select(r => new MeterReadingDto
+                    .ToList();  // Сначала получаем данные
+
+                // Затем формируем DTO в памяти
+                List<MeterReadingDto> result = [];
+
+                foreach (MeterReading r in readings)
+                {
+                    // Загружаем связанные данные вручную при необходимости
+                    _context.Entry(r).Reference(x => x.Meter).Load();
+                    _context.Entry(r).Reference(x => x.ReadingStatus).Load();
+                    _context.Entry(r).Reference(x => x.User).Load();
+
+                    result.Add(new MeterReadingDto
                     {
                         Id = r.Id,
                         MeterId = r.MeterId,
                         ReadingDate = r.ReadingDate,
                         Value = r.Value,
                         ReadingStatusId = r.ReadingStatusId,
-                        StatusName = r.ReadingStatus.Name,
-                        EnteredBy = r.User.FullName,
+                        StatusName = r.ReadingStatus?.Name,
+                        EnteredBy = r.User?.FullName,
                         EnteredAt = r.EnteredAt
-                    })
-                    .ToList();
+                    });
+                }
 
-                System.Diagnostics.Debug.WriteLine($"GetReadingsForPeriod: найдено {readings.Count} показаний");
-                return readings;
+                System.Diagnostics.Debug.WriteLine($"GetReadingsForPeriod: найдено {result.Count} показаний");
+                return result.OrderBy(r => r.ReadingDate).ToList();
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Ошибка в GetReadingsForPeriod: {ex.Message}");
-                return new List<MeterReadingDto>();
+                return [];
             }
         }
         public List<MeterReadingHistoryDto> GetHistoryByMeterId(int meterId)
@@ -254,7 +260,7 @@ namespace EnergyMeteringSystem.Data.Repositories
                     })
                     .ToList();
 
-                var result = new List<MeterReadingHistoryDto>();
+                List<MeterReadingHistoryDto> result = [];
 
                 for (int i = 0; i < readings.Count; i++)
                 {
@@ -284,7 +290,7 @@ namespace EnergyMeteringSystem.Data.Repositories
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Ошибка в GetHistoryByMeterId: {ex.Message}");
-                return new List<MeterReadingHistoryDto>();
+                return [];
             }
         }
         public List<MeterReadingHistoryDto> GetHistoryByObjectId(int objectId)
@@ -293,28 +299,28 @@ namespace EnergyMeteringSystem.Data.Repositories
             {
                 System.Diagnostics.Debug.WriteLine($"GetHistoryByObjectId: objectId={objectId}");
 
-                var query = from r in _context.MeterReading
-                            join m in _context.Meter on r.MeterId equals m.Id
-                            where m.ConsumptionObjectId == objectId
-                            orderby r.ReadingDate descending
-                            select new MeterReadingHistoryDto
-                            {
-                                Id = r.Id,
-                                ReadingDate = r.ReadingDate,
-                                Value = r.Value,
-                                StatusName = r.ReadingStatus.Name,
-                                EnteredBy = r.User.FullName,
-                                EnteredAt = r.EnteredAt
-                            };
+                IQueryable<MeterReadingHistoryDto> query = from r in _context.MeterReading
+                                                           join m in _context.Meter on r.MeterId equals m.Id
+                                                           where m.ConsumptionObjectId == objectId
+                                                           orderby r.ReadingDate descending
+                                                           select new MeterReadingHistoryDto
+                                                           {
+                                                               Id = r.Id,
+                                                               ReadingDate = r.ReadingDate,
+                                                               Value = r.Value,
+                                                               StatusName = r.ReadingStatus.Name,
+                                                               EnteredBy = r.User.FullName,
+                                                               EnteredAt = r.EnteredAt
+                                                           };
 
-                var result = query.ToList();
+                List<MeterReadingHistoryDto> result = query.ToList();
                 System.Diagnostics.Debug.WriteLine($"GetHistoryByObjectId: загружено {result.Count} записей");
                 return result;
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Ошибка в GetHistoryByObjectId: {ex.Message}");
-                return new List<MeterReadingHistoryDto>();
+                return [];
             }
         }
 
@@ -324,17 +330,17 @@ namespace EnergyMeteringSystem.Data.Repositories
             {
                 System.Diagnostics.Debug.WriteLine($"GetMetersByObjectId: objectId={objectId}");
 
-                var meters = _context.Meter
+                List<Meter> meters = _context.Meter
                     .Where(m => m.ConsumptionObjectId == objectId)
                     .ToList();
 
                 System.Diagnostics.Debug.WriteLine($"GetMetersByObjectId: найдено {meters.Count} счетчиков");
 
-                var result = new List<MeterForReadingDto>();
+                List<MeterForReadingDto> result = [];
 
-                foreach (var m in meters)
+                foreach (Meter m in meters)
                 {
-                    var lastReading = _context.MeterReading
+                    MeterReading lastReading = _context.MeterReading
                         .Where(r => r.MeterId == m.Id)
                         .OrderByDescending(r => r.ReadingDate)
                         .FirstOrDefault();
@@ -356,7 +362,7 @@ namespace EnergyMeteringSystem.Data.Repositories
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Ошибка в GetMetersByObjectId: {ex.Message}");
-                return new List<MeterForReadingDto>();
+                return [];
             }
         }
     }

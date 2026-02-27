@@ -19,20 +19,14 @@ namespace EnergyMeteringSystem.Core.Models.DTO
         public bool IsAccountant => RoleId == 3;
         public bool IsAdmin => RoleId == 4;
 
-        public string RoleText
+        public string RoleText => RoleId switch
         {
-            get
-            {
-                switch (RoleId)
-                {
-                    case 1: return "Оператор";
-                    case 2: return "Инспектор";
-                    case 3: return "Бухгалтер";
-                    case 4: return "Администратор";
-                    default: return "Неизвестно";
-                }
-            }
-        }
+            1 => "Оператор",
+            2 => "Инспектор",
+            3 => "Бухгалтер",
+            4 => "Администратор",
+            _ => "Неизвестно",
+        };
 
         public string StatusText => IsActive ? "Активен" : "Заблокирован";
         public string StatusColor => IsActive ? "Green" : "Red";

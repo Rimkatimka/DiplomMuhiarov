@@ -2,13 +2,11 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Windows;
 using EnergyMeteringSystem.App.Commands;
 using EnergyMeteringSystem.App.ViewModels.Base;
 using EnergyMeteringSystem.Core.Models.DTO;
 using EnergyMeteringSystem.Data.Repositories;
-using EnergyMeteringSystem.Services.Auth;
 
 namespace EnergyMeteringSystem.App.ViewModels.Billing
 {
@@ -17,6 +15,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Billing
         private readonly PaymentRepository _paymentRepository;
         private readonly ConsumptionObjectRepository _objectRepository;
         private readonly PaymentMethodRepository _methodRepository;
+        private readonly UserDto _currentUser;
 
         private int _selectedYear;
         private int _selectedMonth;
@@ -37,7 +36,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Billing
             get => _selectedMonthName;
             set
             {
-                SetProperty(ref _selectedMonthName, value);
+                _ = SetProperty(ref _selectedMonthName, value);
                 SelectedMonth = Array.IndexOf(Months.ToArray(), value) + 1;
             }
         }
@@ -46,7 +45,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Billing
             get => _selectedYear;
             set
             {
-                SetProperty(ref _selectedYear, value);
+                _ = SetProperty(ref _selectedYear, value);
                 LoadPayments();
             }
         }
@@ -56,7 +55,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Billing
             get => _selectedMonth;
             set
             {
-                SetProperty(ref _selectedMonth, value);
+                _ = SetProperty(ref _selectedMonth, value);
                 LoadPayments();
             }
         }
@@ -91,20 +90,23 @@ namespace EnergyMeteringSystem.App.ViewModels.Billing
         public RelayCommand SaveCommand { get; }
         public RelayCommand PrintReceiptCommand { get; }
 
-        public PaymentViewModel()
+        public PaymentViewModel(UserDto currentUser)
         {
+            _currentUser = currentUser ?? throw new ArgumentNullException(nameof(currentUser));
             _paymentRepository = new PaymentRepository();
             _objectRepository = new ConsumptionObjectRepository();
             _methodRepository = new PaymentMethodRepository();
 
-            Years = new ObservableCollection<int>();
-            Months = new ObservableCollection<string>();
-            Objects = new ObservableCollection<ConsumptionObjectDto>();
-            PaymentMethods = new ObservableCollection<PaymentMethodDto>();
-            Payments = new ObservableCollection<PaymentDto>();
+            Years = [];
+            Months = [];
+            Objects = [];
+            PaymentMethods = [];
+            Payments = [];
+
+            // ✅ Команда должна быть инициализирована
+            SaveCommand = new RelayCommand(_ => SavePayment(), _ => CanSave());
 
             RefreshCommand = new RelayCommand(_ => LoadData());
-            SaveCommand = new RelayCommand(_ => SavePayment(), _ => CanSave());
             PrintReceiptCommand = new RelayCommand(_ => PrintReceipt(), _ => SelectedObject != null);
 
             InitializeData();
@@ -113,7 +115,9 @@ namespace EnergyMeteringSystem.App.ViewModels.Billing
         private void InitializeData()
         {
             for (int i = 2020; i <= DateTime.Today.Year; i++)
+            {
                 Years.Add(i);
+            }
 
             Months.Add("Январь"); Months.Add("Февраль"); Months.Add("Март");
             Months.Add("Апрель"); Months.Add("Май"); Months.Add("Июнь");
@@ -131,29 +135,35 @@ namespace EnergyMeteringSystem.App.ViewModels.Billing
         private void LoadObjects()
         {
             Objects.Clear();
-            var list = _objectRepository.GetAll();
-            foreach (var obj in list)
+            List<ConsumptionObjectDto> list = _objectRepository.GetAll();
+            foreach (ConsumptionObjectDto obj in list)
+            {
                 Objects.Add(obj);
+            }
         }
 
         private void LoadPaymentMethods()
         {
             PaymentMethods.Clear();
-            var list = _methodRepository.GetAll();
-            foreach (var method in list)
+            List<DirectoryDto> list = _methodRepository.GetAll();
+            foreach (DirectoryDto method in list)
+            {
                 PaymentMethods.Add(new PaymentMethodDto
                 {
                     Id = method.Id,
                     Name = method.Name
                 });
+            }
         }
 
         private void LoadPayments()
         {
             Payments.Clear();
-            var list = _paymentRepository.GetByPeriod(_selectedYear, _selectedMonth);
-            foreach (var payment in list)
+            List<PaymentDto> list = _paymentRepository.GetByPeriod(_selectedYear, _selectedMonth);
+            foreach (PaymentDto payment in list)
+            {
                 Payments.Add(payment);
+            }
 
             OnPropertyChanged(nameof(TotalPayments));
         }
@@ -167,25 +177,35 @@ namespace EnergyMeteringSystem.App.ViewModels.Billing
 
         private bool CanSave()
         {
-            return SelectedObject != null &&
-                   SelectedMethod != null &&
-                   Amount > 0;
+            bool can = SelectedObject != null &&
+               SelectedMethod != null &&
+               Amount > 0;
+
+            System.Diagnostics.Debug.WriteLine($"CanSave: {can}, SelectedObject={SelectedObject?.Id}, SelectedMethod={SelectedMethod?.Id}, Amount={Amount}");
+            return can;
         }
 
         private void SavePayment()
         {
-            var authService = new AuthService();
-            var currentUser = authService.GetCurrentUser();
-            if (currentUser == null) return;
+            System.Diagnostics.Debug.WriteLine("SavePayment: метод вызван");
 
-            var dto = new PaymentRegistrationDto
+            // Используем _currentUser вместо создания нового AuthService
+            if (_currentUser == null)
+            {
+                System.Diagnostics.Debug.WriteLine("SavePayment: пользователь не авторизован");
+                _ = MessageBox.Show("Ошибка: пользователь не авторизован", "Ошибка",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            PaymentRegistrationDto dto = new()
             {
                 ConsumptionObjectId = SelectedObject.Id,
                 Amount = Amount,
                 PaymentMethodId = SelectedMethod.Id,
                 PeriodMonth = _selectedMonth,
                 PeriodYear = _selectedYear,
-                ReceivedByUserId = currentUser.Id,
+                ReceivedByUserId = _currentUser.Id,  // ← используем _currentUser
                 ReceiptNumber = string.IsNullOrWhiteSpace(ReceiptNumber)
                     ? GenerateReceiptNumber()
                     : ReceiptNumber
@@ -200,7 +220,11 @@ namespace EnergyMeteringSystem.App.ViewModels.Billing
             ReceiptNumber = string.Empty;
 
             LoadPayments();
+
+            _ = MessageBox.Show("Платеж успешно зарегистрирован", "Успех",
+                MessageBoxButton.OK, MessageBoxImage.Information);
         }
+
 
         private string GenerateReceiptNumber()
         {
@@ -209,10 +233,13 @@ namespace EnergyMeteringSystem.App.ViewModels.Billing
 
         private void PrintReceipt()
         {
-            if (SelectedObject == null) return;
+            if (SelectedObject == null)
+            {
+                return;
+            }
 
             // Заглушка для печати
-            System.Windows.MessageBox.Show(
+            _ = System.Windows.MessageBox.Show(
                 $"Печать квитанции для объекта: {SelectedObject.Address}\nСумма: {Amount}",
                 "Печать",
                 System.Windows.MessageBoxButton.OK,

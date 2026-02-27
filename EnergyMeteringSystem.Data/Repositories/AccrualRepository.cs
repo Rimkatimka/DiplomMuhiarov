@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using EnergyMeteringSystem.Core.Interfaces.Repositories;
 using EnergyMeteringSystem.Core.Models.DTO;
 using EnergyMeteringSystem.Data.Database;
@@ -61,28 +58,28 @@ namespace EnergyMeteringSystem.Data.Repositories
 
         public AccrualDto GetByObjectAndPeriod(int objectId, int year, int month)
         {
-            var accrual = _context.Accrual
+            Accrual accrual = _context.Accrual
                 .FirstOrDefault(a => a.ConsumptionObjectId == objectId &&
                                      a.PeriodYear == year &&
                                      a.PeriodMonth == month);
 
-            if (accrual == null) return null;
-
-            return new AccrualDto
-            {
-                Id = accrual.Id,
-                ConsumptionObjectId = accrual.ConsumptionObjectId,
-                PeriodMonth = accrual.PeriodMonth,
-                PeriodYear = accrual.PeriodYear,
-                ConsumptionValue = accrual.ConsumptionValue,
-                Amount = accrual.Amount,
-                IsPaid = accrual.IsPaid
-            };
+            return accrual == null
+                ? null
+                : new AccrualDto
+                {
+                    Id = accrual.Id,
+                    ConsumptionObjectId = accrual.ConsumptionObjectId,
+                    PeriodMonth = accrual.PeriodMonth,
+                    PeriodYear = accrual.PeriodYear,
+                    ConsumptionValue = accrual.ConsumptionValue,
+                    Amount = accrual.Amount,
+                    IsPaid = accrual.IsPaid
+                };
         }
 
         public void Add(AccrualDto dto)
         {
-            var entity = new Accrual
+            Accrual entity = new()
             {
                 ConsumptionObjectId = dto.ConsumptionObjectId,
                 PeriodMonth = dto.PeriodMonth,
@@ -93,17 +90,17 @@ namespace EnergyMeteringSystem.Data.Repositories
                 TariffId = 1 // По умолчанию, потом доработаем
             };
 
-            _context.Accrual.Add(entity);
-            _context.SaveChanges();
+            _ = _context.Accrual.Add(entity);
+            _ = _context.SaveChanges();
         }
 
         public void Update(AccrualDto dto)
         {
-            var entity = _context.Accrual.Find(dto.Id);
+            Accrual entity = _context.Accrual.Find(dto.Id);
             if (entity != null)
             {
                 entity.IsPaid = dto.IsPaid;
-                _context.SaveChanges();
+                _ = _context.SaveChanges();
             }
         }
 

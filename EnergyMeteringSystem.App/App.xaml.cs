@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Configuration;
-using System.Data;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Windows;
+﻿using System.Windows;
 
 namespace EnergyMeteringSystem.App
 {
@@ -17,7 +11,7 @@ namespace EnergyMeteringSystem.App
         {
             base.OnStartup(e);
 
-            var loginView = new Views.Auth.LoginView();
+            Views.Auth.LoginView loginView = new();
             loginView.Show();
         }
     }

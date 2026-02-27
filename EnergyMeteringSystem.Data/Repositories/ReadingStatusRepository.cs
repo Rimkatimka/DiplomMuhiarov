@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using EnergyMeteringSystem.Core.Interfaces.Repositories;
 using EnergyMeteringSystem.Core.Models.DTO;
 using EnergyMeteringSystem.Data.Database;
@@ -33,49 +30,49 @@ namespace EnergyMeteringSystem.Data.Repositories
 
         public DirectoryDto GetById(int id)
         {
-            var entity = _context.ReadingStatus.Find(id);
-            if (entity == null) return null;
-
-            return new DirectoryDto
-            {
-                Id = entity.Id,
-                Name = entity.Name,
-                Description = entity.Description,
-                IsActive = true
-            };
+            ReadingStatus entity = _context.ReadingStatus.Find(id);
+            return entity == null
+                ? null
+                : new DirectoryDto
+                {
+                    Id = entity.Id,
+                    Name = entity.Name,
+                    Description = entity.Description,
+                    IsActive = true
+                };
         }
 
         public void Add(DirectoryDto dto)
         {
-            var entity = new ReadingStatus
+            ReadingStatus entity = new()
             {
                 Name = dto.Name,
                 Description = dto.Description,
                 Code = dto.Name.ToUpper(),
                 ColorHex = "#808080"
             };
-            _context.ReadingStatus.Add(entity);
-            _context.SaveChanges();
+            _ = _context.ReadingStatus.Add(entity);
+            _ = _context.SaveChanges();
         }
 
         public void Update(DirectoryDto dto)
         {
-            var entity = _context.ReadingStatus.Find(dto.Id);
+            ReadingStatus entity = _context.ReadingStatus.Find(dto.Id);
             if (entity != null)
             {
                 entity.Name = dto.Name;
                 entity.Description = dto.Description;
-                _context.SaveChanges();
+                _ = _context.SaveChanges();
             }
         }
 
         public void Delete(int id)
         {
-            var entity = _context.ReadingStatus.Find(id);
+            ReadingStatus entity = _context.ReadingStatus.Find(id);
             if (entity != null)
             {
-                _context.ReadingStatus.Remove(entity);
-                _context.SaveChanges();
+                _ = _context.ReadingStatus.Remove(entity);
+                _ = _context.SaveChanges();
             }
         }
     }

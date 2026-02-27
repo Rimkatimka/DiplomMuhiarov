@@ -1,8 +1,7 @@
-﻿using EnergyMeteringSystem.Core.Interfaces.Services;
-using EnergyMeteringSystem.Core.Interfaces.Repositories;
+﻿using EnergyMeteringSystem.Core.Interfaces.Repositories;
+using EnergyMeteringSystem.Core.Interfaces.Services;
 using EnergyMeteringSystem.Core.Models.DTO;
 using EnergyMeteringSystem.Data.Repositories;
-using System;
 
 namespace EnergyMeteringSystem.Services.Auth
 {
@@ -21,7 +20,7 @@ namespace EnergyMeteringSystem.Services.Auth
         {
             System.Diagnostics.Debug.WriteLine($"AuthService.Login: попытка входа для '{username}'");
 
-            var user = _userRepository.GetByUsername(username);
+            UserDto user = _userRepository.GetByUsername(username);
 
             if (user == null)
             {
@@ -58,23 +57,17 @@ namespace EnergyMeteringSystem.Services.Auth
 
         public bool HasPermission(string permission)
         {
-            if (_currentUser == null) return false;
-            if (_currentUser.RoleId == 4) return true;
-            return false;
+            return _currentUser != null && _currentUser.RoleId == 4;
         }
 
         public bool HasAnyPermission(params string[] permissions)
         {
-            if (_currentUser == null) return false;
-            if (_currentUser.RoleId == 4) return true;
-            return false;
+            return _currentUser != null && _currentUser.RoleId == 4;
         }
 
         public bool HasAllPermissions(params string[] permissions)
         {
-            if (_currentUser == null) return false;
-            if (_currentUser.RoleId == 4) return true;
-            return false;
+            return _currentUser != null && _currentUser.RoleId == 4;
         }
     }
 }

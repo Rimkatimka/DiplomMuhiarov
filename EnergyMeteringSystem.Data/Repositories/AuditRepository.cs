@@ -39,7 +39,7 @@ namespace EnergyMeteringSystem.Data.Repositories
         {
             try
             {
-                var logs = _context.AuditLog
+                List<AuditLog> logs = _context.AuditLog
                     .Where(a => a.ActionTime >= from && a.ActionTime <= to)
                     .OrderByDescending(a => a.ActionTime)
                     .ToList();
@@ -61,7 +61,7 @@ namespace EnergyMeteringSystem.Data.Repositories
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"ERROR in AuditRepository.GetByDate: {ex.Message}");
-                return new List<AuditLogDto>();
+                return [];
             }
         }
 
@@ -105,7 +105,7 @@ namespace EnergyMeteringSystem.Data.Repositories
 
         public void Log(AuditLogDto dto)
         {
-            var entity = new AuditLog
+            AuditLog entity = new()
             {
                 UserId = dto.UserId,
                 ActionTime = DateTime.Now,
@@ -116,19 +116,15 @@ namespace EnergyMeteringSystem.Data.Repositories
                 NewValuesJson = dto.Details
             };
 
-            _context.AuditLog.Add(entity);
-            _context.SaveChanges();
+            _ = _context.AuditLog.Add(entity);
+            _ = _context.SaveChanges();
         }
 
         private string GetDetails(AuditLog log)
         {
-            if (!string.IsNullOrEmpty(log.OldValuesJson) && !string.IsNullOrEmpty(log.NewValuesJson))
-                return $"Было: {log.OldValuesJson}, Стало: {log.NewValuesJson}";
-
-            if (!string.IsNullOrEmpty(log.NewValuesJson))
-                return log.NewValuesJson;
-
-            return log.ActionType;
+            return !string.IsNullOrEmpty(log.OldValuesJson) && !string.IsNullOrEmpty(log.NewValuesJson)
+                ? $"Было: {log.OldValuesJson}, Стало: {log.NewValuesJson}"
+                : !string.IsNullOrEmpty(log.NewValuesJson) ? log.NewValuesJson : log.ActionType;
         }
     }
 }

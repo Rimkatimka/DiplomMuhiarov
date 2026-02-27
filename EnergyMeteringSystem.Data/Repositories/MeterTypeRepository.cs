@@ -1,12 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
+using EnergyMeteringSystem.Core.Interfaces.Repositories;
 using EnergyMeteringSystem.Core.Models.DTO;
 using EnergyMeteringSystem.Data.Database;
 
 namespace EnergyMeteringSystem.Data.Repositories
 {
-    public class MeterTypeRepository
+    public class MeterTypeRepository : IDirectoryRepository<DirectoryDto>  // ← реализуем интерфейс
     {
         private readonly EnergyMeteringSystemEntities _context;
 
@@ -15,52 +15,67 @@ namespace EnergyMeteringSystem.Data.Repositories
             _context = new EnergyMeteringSystemEntities();
         }
 
-        public List<MeterTypeDto> GetAll()
+        public List<DirectoryDto> GetAll()
         {
-            try
-            {
-                var types = _context.MeterType.ToList();
+            var data = _context.MeterType
+                .Select(m => new { m.Id, m.Name, m.Voltage, m.MaxCurrent, m.AccuracyClass })
+                .ToList();
 
-                return types.Select(t => new MeterTypeDto
-                {
-                    Id = t.Id,
-                    Name = t.Name,
-                    Voltage = t.Voltage,
-                    MaxCurrent = t.MaxCurrent,
-                    AccuracyClass = t.AccuracyClass,
-                    DigitCount = t.DigitCount,
-                    DecimalPlaces = t.DecimalPlaces
-                }).ToList();
-            }
-            catch (Exception ex)
+            return data.Select(m => new DirectoryDto
             {
-                System.Diagnostics.Debug.WriteLine($"Ошибка в MeterTypeRepository.GetAll: {ex.Message}");
-                return new List<MeterTypeDto>();
+                Id = m.Id,
+                Name = m.Name,
+                Description = $"{m.Voltage}В, {m.MaxCurrent}А, класс {m.AccuracyClass}",
+                IsActive = true
+            }).ToList();
+        }
+
+        public DirectoryDto GetById(int id)
+        {
+            MeterType m = _context.MeterType.Find(id);
+            return m == null
+                ? null
+                : new DirectoryDto
+                {
+                    Id = m.Id,
+                    Name = m.Name,
+                    Description = $"{m.Voltage}В, {m.MaxCurrent}А, класс {m.AccuracyClass}",
+                    IsActive = true
+                };
+        }
+
+        public void Add(DirectoryDto dto)
+        {
+            MeterType entity = new()
+            {
+                Name = dto.Name,
+                Voltage = 220,
+                MaxCurrent = 40,
+                AccuracyClass = "1.0",
+                DigitCount = 6,
+                DecimalPlaces = 0
+            };
+            _ = _context.MeterType.Add(entity);
+            _ = _context.SaveChanges();
+        }
+
+        public void Update(DirectoryDto dto)
+        {
+            MeterType entity = _context.MeterType.Find(dto.Id);
+            if (entity != null)
+            {
+                entity.Name = dto.Name;
+                _ = _context.SaveChanges();
             }
         }
 
-        public MeterTypeDto GetById(int id)
+        public void Delete(int id)
         {
-            try
+            MeterType entity = _context.MeterType.Find(id);
+            if (entity != null)
             {
-                var t = _context.MeterType.Find(id);
-                if (t == null) return null;
-
-                return new MeterTypeDto
-                {
-                    Id = t.Id,
-                    Name = t.Name,
-                    Voltage = t.Voltage,
-                    MaxCurrent = t.MaxCurrent,
-                    AccuracyClass = t.AccuracyClass,
-                    DigitCount = t.DigitCount,
-                    DecimalPlaces = t.DecimalPlaces
-                };
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Ошибка в MeterTypeRepository.GetById: {ex.Message}");
-                return null;
+                _ = _context.MeterType.Remove(entity);
+                _ = _context.SaveChanges();
             }
         }
     }

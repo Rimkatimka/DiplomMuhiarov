@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using EnergyMeteringSystem.App.Commands;
 using EnergyMeteringSystem.App.ViewModels.Base;
 using EnergyMeteringSystem.Core.Models.DTO;
@@ -31,7 +29,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Billing
             get => _selectedYear;
             set
             {
-                SetProperty(ref _selectedYear, value);
+                _ = SetProperty(ref _selectedYear, value);
                 LoadData();
             }
         }
@@ -41,7 +39,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Billing
             get => _selectedMonth;
             set
             {
-                SetProperty(ref _selectedMonth, value);
+                _ = SetProperty(ref _selectedMonth, value);
                 LoadData();
             }
         }
@@ -63,10 +61,10 @@ namespace EnergyMeteringSystem.App.ViewModels.Billing
             _accrualRepository = new AccrualRepository();
             _calculationService = new CalculationService();
 
-            Years = new ObservableCollection<int>();
-            Months = new ObservableCollection<string>();
-            Calculations = new ObservableCollection<AccrualCalculationDto>();
-            ExistingAccruals = new ObservableCollection<AccrualDto>();
+            Years = [];
+            Months = [];
+            Calculations = [];
+            ExistingAccruals = [];
 
             CalculateCommand = new RelayCommand(_ => Calculate(), _ => CanCalculate());
             SaveCommand = new RelayCommand(_ => SaveSelected(), _ => CanSave());
@@ -78,7 +76,9 @@ namespace EnergyMeteringSystem.App.ViewModels.Billing
         private void InitializeYearsAndMonths()
         {
             for (int i = 2020; i <= DateTime.Today.Year; i++)
+            {
                 Years.Add(i);
+            }
 
             Months.Add("Январь"); Months.Add("Февраль"); Months.Add("Март");
             Months.Add("Апрель"); Months.Add("Май"); Months.Add("Июнь");
@@ -96,10 +96,12 @@ namespace EnergyMeteringSystem.App.ViewModels.Billing
 
         private void Calculate()
         {
-            var results = _calculationService.CalculateForPeriod(_selectedYear, _selectedMonth);
+            List<AccrualCalculationDto> results = _calculationService.CalculateForPeriod(_selectedYear, _selectedMonth);
             Calculations.Clear();
-            foreach (var item in results)
+            foreach (AccrualCalculationDto item in results)
+            {
                 Calculations.Add(item);
+            }
 
             OnPropertyChanged(nameof(TotalAmount));
         }
@@ -111,9 +113,12 @@ namespace EnergyMeteringSystem.App.ViewModels.Billing
 
         private void SaveSelected()
         {
-            if (SelectedItem == null) return;
+            if (SelectedItem == null)
+            {
+                return;
+            }
 
-            var dto = new AccrualDto
+            AccrualDto dto = new()
             {
                 ConsumptionObjectId = SelectedItem.ConsumptionObjectId,
                 PeriodYear = _selectedYear,
@@ -136,9 +141,11 @@ namespace EnergyMeteringSystem.App.ViewModels.Billing
         private void LoadExistingAccruals()
         {
             ExistingAccruals.Clear();
-            var list = _accrualRepository.GetByPeriod(_selectedYear, _selectedMonth);
-            foreach (var item in list)
+            List<AccrualDto> list = _accrualRepository.GetByPeriod(_selectedYear, _selectedMonth);
+            foreach (AccrualDto item in list)
+            {
                 ExistingAccruals.Add(item);
+            }
         }
     }
 }

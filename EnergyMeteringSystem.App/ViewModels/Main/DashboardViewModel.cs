@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using EnergyMeteringSystem.App.Commands;
 using EnergyMeteringSystem.App.ViewModels.Base;
 using EnergyMeteringSystem.Core.Models.DTO;
@@ -15,8 +14,8 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
         public DashboardViewModel()
         {
             _dashboardRepository = new DashboardRepository();
-            TopDebtors = new ObservableCollection<DebtDto>();
-            ChartData = new ObservableCollection<ChartPoint>();
+            TopDebtors = [];
+            ChartData = [];
 
             RefreshCommand = new RelayCommand(_ => LoadData());
             LoadData();
@@ -55,15 +54,19 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
             TopDebtors.Clear();
             if (_data?.TopDebtors != null)
             {
-                foreach (var debtor in _data.TopDebtors)
+                foreach (DebtDto debtor in _data.TopDebtors)
+                {
                     TopDebtors.Add(debtor);
+                }
             }
 
             ChartData.Clear();
             if (_data?.ConsumptionChart != null)
             {
-                foreach (var point in _data.ConsumptionChart)
+                foreach (ChartPoint point in _data.ConsumptionChart)
+                {
                     ChartData.Add(point);
+                }
             }
         }
     }

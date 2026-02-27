@@ -1,8 +1,8 @@
-﻿using EnergyMeteringSystem.App.Commands;
+﻿using System.Linq;
+using System.Windows;
+using EnergyMeteringSystem.App.Commands;
 using EnergyMeteringSystem.App.ViewModels.Base;
 using EnergyMeteringSystem.Services.Auth;
-using System.Windows;
-using System.Linq;
 
 namespace EnergyMeteringSystem.App.ViewModels.Auth
 {
@@ -19,7 +19,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Auth
             get => _username;
             set
             {
-                SetProperty(ref _username, value);
+                _ = SetProperty(ref _username, value);
                 LoginCommand?.RaiseCanExecuteChanged();
             }
         }
@@ -29,7 +29,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Auth
             get => _password;
             set
             {
-                SetProperty(ref _password, value);
+                _ = SetProperty(ref _password, value);
                 LoginCommand?.RaiseCanExecuteChanged();
             }
         }
@@ -56,13 +56,13 @@ namespace EnergyMeteringSystem.App.ViewModels.Auth
 
         private void ExecuteLogin(object parameter)
         {
-            var user = _authService.Login(Username, Password);
+            Core.Models.DTO.UserDto user = _authService.Login(Username, Password);
 
             if (user != null)
             {
-                var loginWindow = Application.Current.Windows.OfType<Views.Auth.LoginView>().FirstOrDefault();
+                Views.Auth.LoginView loginWindow = Application.Current.Windows.OfType<Views.Auth.LoginView>().FirstOrDefault();
 
-                var shellView = new Views.Main.ShellView(user);  // ← передаем пользователя
+                Views.Main.ShellView shellView = new(user);  // ← передаем пользователя
                 shellView.Show();
                 Application.Current.MainWindow = shellView;
 

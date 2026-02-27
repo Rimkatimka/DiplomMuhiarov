@@ -2,8 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Windows;
 using EnergyMeteringSystem.App.Commands;
 using EnergyMeteringSystem.App.ViewModels.Base;
 using EnergyMeteringSystem.Core.Interfaces.Repositories;
@@ -25,7 +24,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Directories
             get => _selectedItem;
             set
             {
-                SetProperty(ref _selectedItem, value);
+                _ = SetProperty(ref _selectedItem, value);
                 EditCommand.RaiseCanExecuteChanged();
                 DeleteCommand.RaiseCanExecuteChanged();
             }
@@ -36,7 +35,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Directories
             get => _searchText;
             set
             {
-                SetProperty(ref _searchText, value);
+                _ = SetProperty(ref _searchText, value);
                 ApplyFilter();
             }
         }
@@ -50,9 +49,15 @@ namespace EnergyMeteringSystem.App.ViewModels.Directories
         {
             System.Diagnostics.Debug.WriteLine("DirectoryListViewModel constructor START");
 
+            if (repository == null)
+            {
+                System.Diagnostics.Debug.WriteLine("ОШИБКА: repository = null");
+                throw new ArgumentNullException(nameof(repository), "Репозиторий не может быть null");
+            }
+
             _repository = repository;
-            Items = new ObservableCollection<DirectoryDto>();
-            FilteredItems = new ObservableCollection<DirectoryDto>();
+            Items = [];
+            FilteredItems = [];
 
             RefreshCommand = new RelayCommand(_ => LoadData());
             AddCommand = new RelayCommand(_ => AddItem());
@@ -67,11 +72,13 @@ namespace EnergyMeteringSystem.App.ViewModels.Directories
         private void LoadData()
         {
             Items.Clear();
-            var list = _repository.GetAll();
+            List<DirectoryDto> list = _repository.GetAll();
             System.Diagnostics.Debug.WriteLine($"LoadData: got {list.Count} items");
 
-            foreach (var item in list)
+            foreach (DirectoryDto item in list)
+            {
                 Items.Add(item);
+            }
 
             ApplyFilter();
         }
@@ -80,33 +87,67 @@ namespace EnergyMeteringSystem.App.ViewModels.Directories
         {
             FilteredItems.Clear();
 
-            var filtered = string.IsNullOrWhiteSpace(SearchText)
+            ObservableCollection<DirectoryDto> filtered = string.IsNullOrWhiteSpace(SearchText)
                 ? Items
-                : new ObservableCollection<DirectoryDto>(
-                    Items.Where(i =>
+                : [.. Items.Where(i =>
                         i.Name.Contains(SearchText) ||
-                        (i.Description?.Contains(SearchText) ?? false)));
+                        (i.Description?.Contains(SearchText) ?? false))];
 
-            foreach (var item in filtered)
+            foreach (DirectoryDto item in filtered)
+            {
                 FilteredItems.Add(item);
+            }
         }
 
         private void AddItem()
         {
-            // Открыть окно добавления
+            DirectoryEditViewModel editViewModel = new();
+            Views.Directories.DirectoryEditView editView = new(editViewModel);
+
+            editViewModel.OnDirectorySaved += (s, e) =>
+            {
+                // Здесь нужно добавить сохранение через репозиторий
+                DirectoryDto dto = new()
+                {
+                    Name = editViewModel.Name,
+                    Description = editViewModel.Description,
+                    IsActive = true
+                };
+                _repository.Add(dto);
+
+                LoadData();
+            };
+
+            _ = editView.ShowDialog();
         }
 
         private void EditItem()
         {
-            if (SelectedItem != null)
+            if (SelectedItem == null)
             {
-                // Открыть окно редактирования
+                return;
             }
+
+            DirectoryEditViewModel editViewModel = new(SelectedItem);
+            Views.Directories.DirectoryEditView editView = new(editViewModel);
+
+            editViewModel.OnDirectorySaved += (s, e) =>
+            {
+                SelectedItem.Name = editViewModel.Name;
+                SelectedItem.Description = editViewModel.Description;
+                _repository.Update(SelectedItem);
+
+                LoadData();
+            };
+
+            _ = editView.ShowDialog();
         }
 
         private void DeleteItem()
         {
-            if (SelectedItem != null)
+            MessageBoxResult result = MessageBox.Show("Удалить запись?", "Подтверждение",
+    MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (SelectedItem != null && result == MessageBoxResult.Yes)
             {
                 _repository.Delete(SelectedItem.Id);
                 LoadData();

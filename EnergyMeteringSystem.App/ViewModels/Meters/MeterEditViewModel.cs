@@ -55,14 +55,16 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
 
         public MeterEditViewModel(MeterDto existingMeter = null)
         {
+            System.Diagnostics.Debug.WriteLine("MeterEditViewModel constructor");
+
             _meterRepository = new MeterRepository();
             _typeRepository = new MeterTypeRepository();
             _objectRepository = new ConsumptionObjectRepository();
             _statusRepository = new MeterStatusRepository();
 
-            MeterTypes = new ObservableCollection<MeterTypeDto>();
-            Objects = new ObservableCollection<ConsumptionObjectDto>();
-            Statuses = new ObservableCollection<MeterStatusDto>();
+            MeterTypes = [];
+            Objects = [];
+            Statuses = [];
 
             SaveCommand = new RelayCommand(_ => Save(), _ => CanSave());
             CancelCommand = new RelayCommand(_ => Cancel());
@@ -76,30 +78,46 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
                 IsEditMode = true;
                 LoadMeter(existingMeter);
             }
+
+            System.Diagnostics.Debug.WriteLine("MeterEditViewModel constructor end");
         }
 
         private void LoadData()
         {
-            // Загрузка типов счетчиков
-            var types = _typeRepository.GetAll();
-            foreach (var type in types)
-                MeterTypes.Add(type);
+            // Загрузка типов счетчиков - преобразуем DirectoryDto в MeterTypeDto
+            System.Collections.Generic.List<DirectoryDto> types = _typeRepository.GetAll(); // это List<DirectoryDto>
+            foreach (DirectoryDto item in types)
+            {
+                MeterTypes.Add(new MeterTypeDto
+                {
+                    Id = item.Id,
+                    Name = item.Name,
+                    // Заполните остальные поля значениями по умолчанию
+                    Voltage = 220,
+                    MaxCurrent = 40,
+                    AccuracyClass = "1.0",
+                    DigitCount = 6,
+                    DecimalPlaces = 0
+                });
+            }
 
             // Загрузка объектов
-            var objects = _objectRepository.GetAll();
-            foreach (var obj in objects)
+            System.Collections.Generic.List<ConsumptionObjectDto> objects = _objectRepository.GetAll();
+            foreach (ConsumptionObjectDto obj in objects)
+            {
                 Objects.Add(obj);
+            }
 
-            // Загрузка статусов - ПРЕОБРАЗУЕМ DirectoryDto в MeterStatusDto
-            var statuses = _statusRepository.GetAll(); // это List<DirectoryDto>
-            foreach (var item in statuses)
+            // Загрузка статусов
+            System.Collections.Generic.List<DirectoryDto> statuses = _statusRepository.GetAll();
+            foreach (DirectoryDto item in statuses)
             {
                 Statuses.Add(new MeterStatusDto
                 {
                     Id = item.Id,
                     Name = item.Name,
                     Description = item.Description,
-                    CanAcceptReadings = true // значение по умолчанию
+                    CanAcceptReadings = true
                 });
             }
         }
@@ -119,22 +137,40 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
 
         private MeterTypeDto FindMeterType(int id)
         {
-            foreach (var type in MeterTypes)
-                if (type.Id == id) return type;
+            foreach (MeterTypeDto type in MeterTypes)
+            {
+                if (type.Id == id)
+                {
+                    return type;
+                }
+            }
+
             return null;
         }
 
         private ConsumptionObjectDto FindObject(int id)
         {
-            foreach (var obj in Objects)
-                if (obj.Id == id) return obj;
+            foreach (ConsumptionObjectDto obj in Objects)
+            {
+                if (obj.Id == id)
+                {
+                    return obj;
+                }
+            }
+
             return null;
         }
 
         private MeterStatusDto FindStatus(int id)
         {
-            foreach (var status in Statuses)
-                if (status.Id == id) return status;
+            foreach (MeterStatusDto status in Statuses)
+            {
+                if (status.Id == id)
+                {
+                    return status;
+                }
+            }
+
             return null;
         }
 
@@ -148,7 +184,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
 
         private void Save()
         {
-            var dto = new MeterDto
+            MeterDto dto = new()
             {
                 Id = _meter?.Id ?? 0,
                 SerialNumber = SerialNumber,
@@ -161,9 +197,13 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
             };
 
             if (IsEditMode)
+            {
                 _meterRepository.Update(dto);
+            }
             else
+            {
                 _meterRepository.Add(dto);
+            }
 
             OnMeterSaved?.Invoke(this, EventArgs.Empty);
         }

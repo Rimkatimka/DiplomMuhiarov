@@ -11,7 +11,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
     public class ObjectMetersViewModel : ViewModelBase
     {
         private readonly MeterRepository _meterRepository;
-        private ConsumptionObjectDto _object;
+        private readonly ConsumptionObjectDto _object;
 
         public ObservableCollection<MeterDto> Meters { get; set; }
         public RelayCommand CloseCommand { get; }
@@ -24,7 +24,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
 
             _object = selectedObject;
             _meterRepository = new MeterRepository();
-            Meters = new ObservableCollection<MeterDto>();
+            Meters = [];
 
             CloseCommand = new RelayCommand(_ =>
             {
@@ -60,11 +60,11 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
                 System.Diagnostics.Debug.WriteLine($"LoadMeters: загружаем счетчики для объекта ID={_object.Id}, адрес={_object.Address}");
 
                 Meters.Clear();
-                var list = _meterRepository.GetByObjectId(_object.Id);
+                System.Collections.Generic.List<MeterDto> list = _meterRepository.GetByObjectId(_object.Id);
 
                 System.Diagnostics.Debug.WriteLine($"LoadMeters: получено {list.Count} счетчиков из репозитория");
 
-                foreach (var meter in list)
+                foreach (MeterDto meter in list)
                 {
                     Meters.Add(meter);
                     System.Diagnostics.Debug.WriteLine($"  - Добавлен счетчик: {meter.SerialNumber}, тип: {meter.MeterTypeName}");
@@ -78,7 +78,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Ошибка в LoadMeters: {ex.Message}");
-                MessageBox.Show($"Ошибка загрузки счетчиков: {ex.Message}", "Ошибка",
+                _ = MessageBox.Show($"Ошибка загрузки счетчиков: {ex.Message}", "Ошибка",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }

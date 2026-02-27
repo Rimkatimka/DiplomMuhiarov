@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using EnergyMeteringSystem.App.Commands;
 using EnergyMeteringSystem.App.ViewModels.Base;
 using EnergyMeteringSystem.Core.Models.DTO;
@@ -29,9 +26,9 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
             get => _selectedReading;
             set
             {
-                SetProperty(ref _selectedReading, value);
-                ((RelayCommand)VerifyCommand).RaiseCanExecuteChanged();
-                ((RelayCommand)RejectCommand).RaiseCanExecuteChanged();
+                _ = SetProperty(ref _selectedReading, value);
+                VerifyCommand.RaiseCanExecuteChanged();
+                RejectCommand.RaiseCanExecuteChanged();
             }
         }
 
@@ -40,8 +37,8 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
             get => _selectedReason;
             set
             {
-                SetProperty(ref _selectedReason, value);
-                ((RelayCommand)ConfirmRejectCommand).RaiseCanExecuteChanged();
+                _ = SetProperty(ref _selectedReason, value);
+                ConfirmRejectCommand.RaiseCanExecuteChanged();
             }
         }
 
@@ -50,8 +47,8 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
             get => _rejectionComment;
             set
             {
-                SetProperty(ref _rejectionComment, value);
-                ((RelayCommand)ConfirmRejectCommand).RaiseCanExecuteChanged();
+                _ = SetProperty(ref _rejectionComment, value);
+                ConfirmRejectCommand.RaiseCanExecuteChanged();
             }
         }
 
@@ -82,8 +79,8 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
             _readingRepository = new MeterReadingRepository();
             _reasonRepository = new RejectionReasonRepository();
 
-            Readings = new ObservableCollection<MeterReadingVerificationDto>();
-            RejectionReasons = new ObservableCollection<RejectionReasonDto>();
+            Readings = [];
+            RejectionReasons = [];
 
             RefreshCommand = new RelayCommand(_ => LoadData());
             VerifyCommand = new RelayCommand(_ => Verify(), _ => CanVerify());
@@ -100,17 +97,19 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
         private void LoadData()
         {
             Readings.Clear();
-            var list = _readingRepository.GetForVerification();
-            foreach (var item in list)
+            List<MeterReadingVerificationDto> list = _readingRepository.GetForVerification();
+            foreach (MeterReadingVerificationDto item in list)
+            {
                 Readings.Add(item);
+            }
         }
 
         private void LoadRejectionReasons()
         {
             RejectionReasons.Clear();
-            var list = _reasonRepository.GetAll(); // это List<DirectoryDto>
+            List<DirectoryDto> list = _reasonRepository.GetAll(); // это List<DirectoryDto>
 
-            foreach (var item in list)
+            foreach (DirectoryDto item in list)
             {
                 RejectionReasons.Add(new RejectionReasonDto
                 {
@@ -123,17 +122,15 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
 
         private bool CanVerify()
         {
-            if (IsBatchMode)
-                return HasSelectedAny;
-            return SelectedReading != null;
+            return IsBatchMode ? HasSelectedAny : SelectedReading != null;
         }
 
         private void Verify()
         {
             if (IsBatchMode)
             {
-                var selected = Readings.Where(r => r.IsSelected).ToList();
-                foreach (var item in selected)
+                List<MeterReadingVerificationDto> selected = Readings.Where(r => r.IsSelected).ToList();
+                foreach (MeterReadingVerificationDto item in selected)
                 {
                     _readingRepository.UpdateStatus(item.Id, 2); // "Подтверждено"
                 }
@@ -149,9 +146,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
 
         private bool CanReject()
         {
-            if (IsBatchMode)
-                return HasSelectedAny;
-            return SelectedReading != null;
+            return IsBatchMode ? HasSelectedAny : SelectedReading != null;
         }
 
         private void StartReject()
@@ -163,10 +158,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
 
         private bool CanConfirmReject()
         {
-            if (SelectedReason == null) return false;
-            if (SelectedReason.RequiresComment && string.IsNullOrWhiteSpace(RejectionComment))
-                return false;
-            return true;
+            return SelectedReason != null && (!SelectedReason.RequiresComment || !string.IsNullOrWhiteSpace(RejectionComment));
         }
 
         private void ConfirmReject()
@@ -175,8 +167,8 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
 
             if (IsBatchMode)
             {
-                var selected = Readings.Where(r => r.IsSelected).ToList();
-                foreach (var item in selected)
+                List<MeterReadingVerificationDto> selected = Readings.Where(r => r.IsSelected).ToList();
+                foreach (MeterReadingVerificationDto item in selected)
                 {
                     _readingRepository.UpdateStatus(item.Id, newStatusId, SelectedReason?.Id, RejectionComment);
                 }
@@ -200,16 +192,20 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
             IsBatchMode = !IsBatchMode;
             if (!IsBatchMode)
             {
-                foreach (var item in Readings)
+                foreach (MeterReadingVerificationDto item in Readings)
+                {
                     item.IsSelected = false;
+                }
             }
         }
 
         private void SelectAll()
         {
             bool allSelected = Readings.All(r => r.IsSelected);
-            foreach (var item in Readings)
+            foreach (MeterReadingVerificationDto item in Readings)
+            {
                 item.IsSelected = !allSelected;
+            }
         }
     }
 }

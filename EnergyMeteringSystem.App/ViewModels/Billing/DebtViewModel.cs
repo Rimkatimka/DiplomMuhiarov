@@ -1,10 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
 using EnergyMeteringSystem.App.Commands;
 using EnergyMeteringSystem.App.ViewModels.Base;
 using EnergyMeteringSystem.Core.Models.DTO;
@@ -26,7 +22,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Billing
             get => _searchText;
             set
             {
-                SetProperty(ref _searchText, value);
+                _ = SetProperty(ref _searchText, value);
                 ApplyFilter();
             }
         }
@@ -45,56 +41,87 @@ namespace EnergyMeteringSystem.App.ViewModels.Billing
 
         public DebtViewModel()
         {
+            System.Diagnostics.Debug.WriteLine("DebtViewModel: конструктор начат");
+
             _paymentRepository = new PaymentRepository();
 
-            Debts = new ObservableCollection<DebtDto>();
-            FilteredDebts = new ObservableCollection<DebtDto>();
+            Debts = [];
+            FilteredDebts = [];
 
             RefreshCommand = new RelayCommand(_ => LoadData());
             MarkAsPaidCommand = new RelayCommand(_ => MarkAsPaid(), _ => SelectedDebt != null);
 
             LoadData();
+
+            System.Diagnostics.Debug.WriteLine("DebtViewModel: конструктор завершен");
         }
 
         private void LoadData()
         {
-            Debts.Clear();
-            var list = _paymentRepository.GetDebtors();
-            System.Diagnostics.Debug.WriteLine($"LoadData: got {list.Count} debtors");
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("=== DebtViewModel.LoadData: начало ===");
 
-            foreach (var debt in list)
-                Debts.Add(debt);
+                Debts.Clear();
+                System.Collections.Generic.List<DebtDto> list = _paymentRepository.GetDebtors();
 
-            ApplyFilter();
+                System.Diagnostics.Debug.WriteLine($"Загружено {list.Count} должников из репозитория");
+
+                foreach (DebtDto debt in list)
+                {
+                    Debts.Add(debt);
+                    System.Diagnostics.Debug.WriteLine($"  - {debt.Address}: {debt.DebtAmount} ₽");
+                }
+
+                ApplyFilter();
+
+                System.Diagnostics.Debug.WriteLine($"После ApplyFilter: {FilteredDebts.Count} должников");
+                System.Diagnostics.Debug.WriteLine("=== DebtViewModel.LoadData: конец ===");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Ошибка в LoadData: {ex.Message}");
+            }
         }
 
         private void ApplyFilter()
         {
-            FilteredDebts.Clear();
+            try
+            {
+                FilteredDebts.Clear();
 
-            var filtered = string.IsNullOrWhiteSpace(SearchText)
-                ? Debts
-                : new ObservableCollection<DebtDto>(
-                    Debts.Where(d => d.Address.Contains(SearchText)));
+                ObservableCollection<DebtDto> filtered = string.IsNullOrWhiteSpace(SearchText)
+                    ? Debts
+                    : [.. Debts.Where(d => d.Address.Contains(SearchText))];
 
-            foreach (var debt in filtered)
-                FilteredDebts.Add(debt);
+                foreach (DebtDto debt in filtered)
+                {
+                    FilteredDebts.Add(debt);
+                }
 
-            OnPropertyChanged(nameof(TotalDebt));
-            OnPropertyChanged(nameof(DebtorsCount));
+                OnPropertyChanged(nameof(TotalDebt));
+                OnPropertyChanged(nameof(DebtorsCount));
 
-            System.Diagnostics.Debug.WriteLine($"ApplyFilter: {FilteredDebts.Count} debtors");
+                System.Diagnostics.Debug.WriteLine($"ApplyFilter: {FilteredDebts.Count} должников после фильтра");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Ошибка в ApplyFilter: {ex.Message}");
+            }
         }
 
         private void MarkAsPaid()
         {
-            if (SelectedDebt == null) return;
+            if (SelectedDebt == null)
+            {
+                return;
+            }
 
-            MessageBox.Show(
+            _ = System.Windows.MessageBox.Show(
                 $"Отметить оплату для объекта: {SelectedDebt.Address}\nСумма долга: {SelectedDebt.DebtAmount:F2} ₽",
                 "Оплата долга",
-                MessageBoxButton.OK,
-                MessageBoxImage.Information);
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Information);
         }
     }
 }

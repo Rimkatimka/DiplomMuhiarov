@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Input;
 
 namespace EnergyMeteringSystem.App.Commands
@@ -24,8 +20,15 @@ namespace EnergyMeteringSystem.App.Commands
             remove => CommandManager.RequerySuggested -= value;
         }
 
-        public bool CanExecute(object parameter) => _canExecute == null || _canExecute(parameter);
-        public void Execute(object parameter) => _execute(parameter);
+        public bool CanExecute(object parameter)
+        {
+            return _canExecute == null || _canExecute(parameter);
+        }
+
+        public void Execute(object parameter)
+        {
+            _execute(parameter);
+        }
 
         public void RaiseCanExecuteChanged()
         {
@@ -52,13 +55,9 @@ namespace EnergyMeteringSystem.App.Commands
 
         public bool CanExecute(object parameter)
         {
-            if (parameter == null && typeof(T).IsValueType)
-                return _canExecute == null || _canExecute(default);
-
-            if (parameter is T t)
-                return _canExecute == null || _canExecute(t);
-
-            return false;
+            return parameter == null && typeof(T).IsValueType
+                ? _canExecute == null || _canExecute(default)
+                : parameter is T t && (_canExecute == null || _canExecute(t));
         }
 
         public void Execute(object parameter)
@@ -66,9 +65,13 @@ namespace EnergyMeteringSystem.App.Commands
             if (parameter == null)
             {
                 if (typeof(T).IsValueType)
+                {
                     _execute(default);
+                }
                 else
+                {
                     _execute(default);
+                }
             }
             else if (parameter is T t)
             {

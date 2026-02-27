@@ -1,12 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace EnergyMeteringSystem.Core.Interfaces.Services
+﻿namespace EnergyMeteringSystem.Core.Interfaces.Services
 {
-    class IReadingService
+    internal class IReadingService
     {
     }
 }

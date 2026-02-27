@@ -73,8 +73,8 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
             _streetRepository = new StreetRepository();
             _typeRepository = new ObjectTypeRepository();
 
-            Streets = new ObservableCollection<StreetDto>();
-            ObjectTypes = new ObservableCollection<ObjectTypeDto>();
+            Streets = [];
+            ObjectTypes = [];
 
             SaveCommand = new RelayCommand(_ => Save(), _ => CanSave());
             CancelCommand = new RelayCommand(_ => Cancel());
@@ -91,13 +91,15 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
         private void LoadData()
         {
             // Загрузка улиц
-            var streets = _streetRepository.GetAll();
-            foreach (var street in streets)
+            System.Collections.Generic.List<StreetDto> streets = _streetRepository.GetAll();
+            foreach (StreetDto street in streets)
+            {
                 Streets.Add(street);
+            }
 
             // Загрузка типов объектов - преобразуем DirectoryDto в ObjectTypeDto
-            var types = _typeRepository.GetAll(); // это List<DirectoryDto>
-            foreach (var type in types)
+            System.Collections.Generic.List<DirectoryDto> types = _typeRepository.GetAll(); // это List<DirectoryDto>
+            foreach (DirectoryDto type in types)
             {
                 ObjectTypes.Add(new ObjectTypeDto
                 {
@@ -121,15 +123,27 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
 
         private StreetDto FindStreet(int id)
         {
-            foreach (var street in Streets)
-                if (street.Id == id) return street;
+            foreach (StreetDto street in Streets)
+            {
+                if (street.Id == id)
+                {
+                    return street;
+                }
+            }
+
             return null;
         }
 
         private ObjectTypeDto FindObjectType(int id)
         {
-            foreach (var type in ObjectTypes)
-                if (type.Id == id) return type;
+            foreach (ObjectTypeDto type in ObjectTypes)
+            {
+                if (type.Id == id)
+                {
+                    return type;
+                }
+            }
+
             return null;
         }
 
@@ -142,7 +156,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
 
         private void Save()
         {
-            var dto = new ConsumptionObjectDto
+            ConsumptionObjectDto dto = new()
             {
                 Id = _object?.Id ?? 0,
                 StreetId = SelectedStreet.Id,
@@ -154,9 +168,13 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
             };
 
             if (IsEditMode)
+            {
                 _objectRepository.Update(dto);
+            }
             else
+            {
                 _objectRepository.Add(dto);
+            }
 
             OnObjectSaved?.Invoke(this, EventArgs.Empty);
         }

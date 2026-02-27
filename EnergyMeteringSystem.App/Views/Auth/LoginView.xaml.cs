@@ -1,16 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 using EnergyMeteringSystem.App.ViewModels.Auth;
 
 namespace EnergyMeteringSystem.App.Views.Auth
@@ -24,7 +13,7 @@ namespace EnergyMeteringSystem.App.Views.Auth
         {
             InitializeComponent();
 
-            var viewModel = new LoginViewModel();
+            LoginViewModel viewModel = new();
             DataContext = viewModel;
 
             // Привязка пароля
@@ -42,7 +31,7 @@ namespace EnergyMeteringSystem.App.Views.Auth
         {
             base.OnStartup(e);
 
-            var loginView = new LoginView();
+            LoginView loginView = new();
             loginView.Show();
         }
     }

@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.ObjectModel;
 using EnergyMeteringSystem.App.Commands;
 
 namespace EnergyMeteringSystem.App.ViewModels.Main
@@ -16,7 +11,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
 
         public MenuItemViewModel()
         {
-            Children = new ObservableCollection<MenuItemViewModel>();
+            Children = [];
         }
     }
 }

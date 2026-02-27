@@ -28,7 +28,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Contracts
             get => _searchText;
             set
             {
-                SetProperty(ref _searchText, value);
+                _ = SetProperty(ref _searchText, value);
                 ApplyFilter();
             }
         }
@@ -38,7 +38,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Contracts
             get => _selectedContract;
             set
             {
-                SetProperty(ref _selectedContract, value);
+                _ = SetProperty(ref _selectedContract, value);
                 EditCommand.RaiseCanExecuteChanged();
                 TerminateCommand.RaiseCanExecuteChanged();
             }
@@ -49,7 +49,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Contracts
             get => _showOnlyActive;
             set
             {
-                SetProperty(ref _showOnlyActive, value);
+                _ = SetProperty(ref _showOnlyActive, value);
                 ApplyFilter();
             }
         }
@@ -66,8 +66,8 @@ namespace EnergyMeteringSystem.App.ViewModels.Contracts
             _tariffRepository = new TariffRepository();
             _statusRepository = new ContractStatusRepository();
 
-            Contracts = new ObservableCollection<ContractDto>();
-            FilteredContracts = new ObservableCollection<ContractDto>();
+            Contracts = [];
+            FilteredContracts = [];
 
             RefreshCommand = new RelayCommand(_ => LoadData());
             AddCommand = new RelayCommand(_ => AddContract());
@@ -80,9 +80,11 @@ namespace EnergyMeteringSystem.App.ViewModels.Contracts
         private void LoadData()
         {
             Contracts.Clear();
-            var list = _contractRepository.GetAll();
-            foreach (var contract in list)
+            System.Collections.Generic.List<ContractDto> list = _contractRepository.GetAll();
+            foreach (ContractDto contract in list)
+            {
                 Contracts.Add(contract);
+            }
 
             ApplyFilter();
         }
@@ -91,7 +93,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Contracts
         {
             FilteredContracts.Clear();
 
-            var filtered = Contracts.AsEnumerable();
+            System.Collections.Generic.IEnumerable<ContractDto> filtered = Contracts.AsEnumerable();
 
             // Фильтр по тексту
             if (!string.IsNullOrWhiteSpace(SearchText))
@@ -107,8 +109,10 @@ namespace EnergyMeteringSystem.App.ViewModels.Contracts
                 filtered = filtered.Where(c => c.IsActive);
             }
 
-            foreach (var contract in filtered)
+            foreach (ContractDto contract in filtered)
+            {
                 FilteredContracts.Add(contract);
+            }
         }
 
         private bool CanTerminate()
@@ -118,13 +122,13 @@ namespace EnergyMeteringSystem.App.ViewModels.Contracts
 
         private void AddContract()
         {
-            var editViewModel = new ContractEditViewModel(_objectRepository, _tariffRepository, _statusRepository);
-            var editView = new Views.Contracts.ContractEditView
+            ContractEditViewModel editViewModel = new(_objectRepository, _tariffRepository, _statusRepository);
+            Views.Contracts.ContractEditView editView = new()
             {
                 DataContext = editViewModel
             };
 
-            var window = new Window
+            Window window = new()
             {
                 Title = "Новый договор",
                 Content = editView,
@@ -139,20 +143,23 @@ namespace EnergyMeteringSystem.App.ViewModels.Contracts
                 window.Close();
             };
 
-            window.ShowDialog();
+            _ = window.ShowDialog();
         }
 
         private void EditContract()
         {
-            if (SelectedContract == null) return;
+            if (SelectedContract == null)
+            {
+                return;
+            }
 
-            var editViewModel = new ContractEditViewModel(_objectRepository, _tariffRepository, _statusRepository, SelectedContract);
-            var editView = new Views.Contracts.ContractEditView
+            ContractEditViewModel editViewModel = new(_objectRepository, _tariffRepository, _statusRepository, SelectedContract);
+            Views.Contracts.ContractEditView editView = new()
             {
                 DataContext = editViewModel
             };
 
-            var window = new Window
+            Window window = new()
             {
                 Title = "Редактирование договора",
                 Content = editView,
@@ -167,14 +174,17 @@ namespace EnergyMeteringSystem.App.ViewModels.Contracts
                 window.Close();
             };
 
-            window.ShowDialog();
+            _ = window.ShowDialog();
         }
 
         private void TerminateContract()
         {
-            if (SelectedContract == null) return;
+            if (SelectedContract == null)
+            {
+                return;
+            }
 
-            var result = MessageBox.Show(
+            MessageBoxResult result = MessageBox.Show(
                 $"Расторгнуть договор {SelectedContract.ContractNumber}?",
                 "Подтверждение",
                 MessageBoxButton.YesNo,

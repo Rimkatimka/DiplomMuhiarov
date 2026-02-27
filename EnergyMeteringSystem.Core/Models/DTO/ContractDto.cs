@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace EnergyMeteringSystem.Core.Models.DTO
 {
@@ -21,6 +17,6 @@ namespace EnergyMeteringSystem.Core.Models.DTO
         public string TariffName { get; set; }
         public bool IsActive => EndDate == null || EndDate > DateTime.Today;
         public string StatusText => IsActive ? "Активен" : "Расторгнут";
-        public string PeriodText => $"{StartDate:dd.MM.yyyy} - {(EndDate?.ToString("dd.MM.yyyy") ?? "н.в.")}";
+        public string PeriodText => $"{StartDate:dd.MM.yyyy} - {EndDate?.ToString("dd.MM.yyyy") ?? "н.в."}";
     }
 }
