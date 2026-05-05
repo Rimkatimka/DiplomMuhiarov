@@ -21,27 +21,86 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
         private DateTime _startDate;
         private DateTime _endDate;
         private int _selectedReportType;
+        private object _reportData;
 
+        public ReportViewModel()
+        {
+            _reportRepository = new ReportRepository();
+            _exportService = new ExportService();
+
+            Years = new ObservableCollection<int>();
+            Months = new ObservableCollection<string>();
+            ConsumptionData = new ObservableCollection<ConsumptionReportDto>();
+            AccrualData = new ObservableCollection<AccrualReportDto>();
+            DebtData = new ObservableCollection<DebtDto>();
+
+            RefreshCommand = new RelayCommand(_ => LoadReport());
+            ExportCommand = new RelayCommand(_ => ExportReport());
+            SetReportTypeCommand = new RelayCommand<int>(type => SelectedReportType = type);
+
+            InitializeData();
+        }
+
+        // ===== КОЛЛЕКЦИИ =====
         public ObservableCollection<int> Years { get; set; }
         public ObservableCollection<string> Months { get; set; }
         public ObservableCollection<ConsumptionReportDto> ConsumptionData { get; set; }
         public ObservableCollection<AccrualReportDto> AccrualData { get; set; }
         public ObservableCollection<DebtDto> DebtData { get; set; }
 
-        // ===== СВОЙСТВА ДЛЯ ВИДИМОСТИ =====
-        public bool IsConsumptionReport => _selectedReportType == 0;
-        public bool IsAccrualReport => _selectedReportType == 1;
-        public bool IsDebtReport => _selectedReportType == 2;
+        // ===== ВЫБРАННЫЙ ОТЧЁТ =====
+        public int SelectedReportType
+        {
+            get => _selectedReportType;
+            set
+            {
+                if (SetProperty(ref _selectedReportType, value))
+                {
+                    OnPropertyChanged(nameof(IsConsumptionReport));
+                    OnPropertyChanged(nameof(IsAccrualReport));
+                    OnPropertyChanged(nameof(IsDebtReport));
+                    OnPropertyChanged(nameof(ConsumptionVisibility));
+                    OnPropertyChanged(nameof(AccrualVisibility));
+                    OnPropertyChanged(nameof(DebtVisibility));
+                    LoadReport();
+                }
+            }
+        }
 
-        // ===== СВОЙСТВА ДЛЯ ВЫБОРА =====
+        // ===== ДЛЯ RADIOBUTTON =====
+        public bool IsConsumptionReport
+        {
+            get => _selectedReportType == 0;
+            set { if (value) SelectedReportType = 0; }
+        }
+        public bool IsAccrualReport
+        {
+            get => _selectedReportType == 1;
+            set { if (value) SelectedReportType = 1; }
+        }
+        public bool IsDebtReport
+        {
+            get => _selectedReportType == 2;
+            set { if (value) SelectedReportType = 2; }
+        }
+
+        // ===== ВИДИМОСТЬ ПАНЕЛЕЙ =====
+        public Visibility ConsumptionVisibility => IsConsumptionReport ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility AccrualVisibility => IsAccrualReport ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility DebtVisibility => IsDebtReport ? Visibility.Visible : Visibility.Collapsed;
+
+        // ===== ДАННЫЕ ДЛЯ ТАБЛИЦЫ =====
+        public object ReportData
+        {
+            get => _reportData;
+            set => SetProperty(ref _reportData, value);
+        }
+
+        // ===== ПАРАМЕТРЫ ОТЧЁТОВ =====
         public int SelectedYear
         {
             get => _selectedYear;
-            set
-            {
-                SetProperty(ref _selectedYear, value);
-                LoadReport();
-            }
+            set { SetProperty(ref _selectedYear, value); LoadReport(); }
         }
 
         public int SelectedMonth
@@ -77,35 +136,13 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
         public DateTime StartDate
         {
             get => _startDate;
-            set
-            {
-                SetProperty(ref _startDate, value);
-                LoadReport();
-            }
+            set { SetProperty(ref _startDate, value); LoadReport(); }
         }
 
         public DateTime EndDate
         {
             get => _endDate;
-            set
-            {
-                SetProperty(ref _endDate, value);
-                LoadReport();
-            }
-        }
-
-        public int SelectedReportType
-        {
-            get => _selectedReportType;
-            set
-            {
-                SetProperty(ref _selectedReportType, value);
-                // Уведомляем об изменении свойств видимости
-                OnPropertyChanged(nameof(IsConsumptionReport));
-                OnPropertyChanged(nameof(IsAccrualReport));
-                OnPropertyChanged(nameof(IsDebtReport));
-                LoadReport();
-            }
+            set { SetProperty(ref _endDate, value); LoadReport(); }
         }
 
         // ===== ИТОГОВЫЕ СВОЙСТВА =====
@@ -115,37 +152,19 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
         public decimal TotalDebtSum => AccrualData?.Sum(a => a.DebtAmount) ?? 0;
         public decimal TotalDebtAll => DebtData?.Sum(d => d.DebtAmount) ?? 0;
         public int DebtorsCount => DebtData?.Count ?? 0;
-
-        // ===== ЦВЕТ ДЛЯ ДОЛГА (без конвертера) =====
         public string TotalDebtColor => TotalDebtSum > 0 ? "Red" : "Black";
 
+        // ===== КОМАНДЫ =====
+        public RelayCommand<int> SetReportTypeCommand { get; }
         public RelayCommand RefreshCommand { get; }
         public RelayCommand ExportCommand { get; }
 
-        public ReportViewModel()
-        {
-            _reportRepository = new ReportRepository();
-            _exportService = new ExportService();
-
-            Years = new ObservableCollection<int>();
-            Months = new ObservableCollection<string>();
-            ConsumptionData = new ObservableCollection<ConsumptionReportDto>();
-            AccrualData = new ObservableCollection<AccrualReportDto>();
-            DebtData = new ObservableCollection<DebtDto>();
-
-            RefreshCommand = new RelayCommand(_ => LoadReport());
-            ExportCommand = new RelayCommand(_ => ExportReport());
-
-            InitializeData();
-        }
-
+        // ===== ИНИЦИАЛИЗАЦИЯ =====
         private void InitializeData()
         {
-            // Годы
             for (int i = 2020; i <= DateTime.Today.Year + 1; i++)
                 Years.Add(i);
 
-            // Месяцы
             Months.Add("Январь"); Months.Add("Февраль"); Months.Add("Март");
             Months.Add("Апрель"); Months.Add("Май"); Months.Add("Июнь");
             Months.Add("Июль"); Months.Add("Август"); Months.Add("Сентябрь");
@@ -161,39 +180,24 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
             LoadReport();
         }
 
+        // ===== ЗАГРУЗКА ДАННЫХ =====
         private void LoadReport()
         {
             try
             {
-                ConsumptionData.Clear();
-                AccrualData.Clear();
-                DebtData.Clear();
-
                 switch (_selectedReportType)
                 {
                     case 0:
-                        var consumption = _reportRepository.GetConsumptionReport(_startDate, _endDate);
-                        System.Diagnostics.Debug.WriteLine($"Loaded {consumption.Count} consumption records");
-                        foreach (var item in consumption)
-                            ConsumptionData.Add(item);
+                        ReportData = _reportRepository.GetConsumptionReport(_startDate, _endDate);
                         break;
-
                     case 1:
-                        var accrual = _reportRepository.GetAccrualReport(_selectedYear, _selectedMonth);
-                        System.Diagnostics.Debug.WriteLine($"Loaded {accrual.Count} accrual records");
-                        foreach (var item in accrual)
-                            AccrualData.Add(item);
+                        ReportData = _reportRepository.GetAccrualReport(_selectedYear, _selectedMonth);
                         break;
-
                     case 2:
-                        var debt = _reportRepository.GetDebtReport();
-                        System.Diagnostics.Debug.WriteLine($"Loaded {debt.Count} debt records");
-                        foreach (var item in debt)
-                            DebtData.Add(item);
+                        ReportData = _reportRepository.GetDebtReport();
                         break;
                 }
 
-                // Уведомляем об изменении итоговых свойств
                 OnPropertyChanged(nameof(TotalConsumption));
                 OnPropertyChanged(nameof(TotalAccrual));
                 OnPropertyChanged(nameof(TotalPaid));
@@ -210,6 +214,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
             }
         }
 
+        // ===== ЭКСПОРТ =====
         private void ExportReport()
         {
             try
@@ -219,25 +224,14 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
                     case 0:
                         if (ConsumptionData.Any())
                             _exportService.ExportConsumptionReport(ConsumptionData.ToList(), _startDate, _endDate);
-                        else
-                            MessageBox.Show("Нет данных для экспорта", "Информация",
-                                MessageBoxButton.OK, MessageBoxImage.Information);
                         break;
-
                     case 1:
                         if (AccrualData.Any())
                             _exportService.ExportAccrualReport(AccrualData.ToList(), _selectedYear, _selectedMonth);
-                        else
-                            MessageBox.Show("Нет данных для экспорта", "Информация",
-                                MessageBoxButton.OK, MessageBoxImage.Information);
                         break;
-
                     case 2:
                         if (DebtData.Any())
                             _exportService.ExportDebtReport(DebtData.ToList());
-                        else
-                            MessageBox.Show("Нет данных для экспорта", "Информация",
-                                MessageBoxButton.OK, MessageBoxImage.Information);
                         break;
                 }
             }

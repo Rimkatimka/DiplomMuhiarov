@@ -12,7 +12,7 @@ namespace EnergyMeteringSystem.Core.Models.DTO
         public decimal StartValue { get; set; }
         public decimal EndValue { get; set; }
         public decimal Consumption { get; set; }
-        public string PeriodText => $"{StartDate:dd.MM} - {EndDate:dd.MM}";
+        public string PeriodText => $"{StartDate:dd.MM.yyyy} - {EndDate:dd.MM.yyyy}";
         public string ConsumptionText => $"{Consumption:F2} кВт";
     }
 }

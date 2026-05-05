@@ -18,7 +18,7 @@
 
             <TextBlock Text="Месяц:" VerticalAlignment="Center" Margin="15,0,0,0"/>
             <ComboBox ItemsSource="{Binding Months}" 
-                      SelectedIndex="{Binding SelectedMonth,Mode=OneTime}"
+                      SelectedIndex="{Binding SelectedMonth}"
                       Width="100" Margin="5"/>
 
             <Button Content="Рассчитать" 

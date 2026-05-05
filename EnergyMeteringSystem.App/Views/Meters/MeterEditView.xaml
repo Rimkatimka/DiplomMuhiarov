@@ -61,6 +61,12 @@
         <DatePicker Grid.Row="5" Grid.Column="1" 
                     SelectedDate="{Binding VerificationDate}"
                     Margin="5" Padding="5"/>
+        
+        <!-- Дата следующей поверки -->
+        <TextBlock Grid.Row="6" Grid.Column="0" Text="Следующая поверка:" Margin="5" VerticalAlignment="Center"/>
+        <DatePicker Grid.Row="6" Grid.Column="1" 
+            SelectedDate="{Binding NextVerificationDate}"
+            Margin="5" Padding="5"/>
 
         <!-- Статус счетчика -->
         <TextBlock Grid.Row="6" Grid.Column="0" Text="Статус:" Margin="5" VerticalAlignment="Center"/>

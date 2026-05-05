@@ -93,7 +93,7 @@
                                 <StackPanel Margin="10,0">
                                     <Border Background="#2196F3" 
                                             Width="40" 
-                                            Height="{Binding Value, Converter={StaticResource ValueToHeightConverter}}"
+                                            Height="100"
                                             CornerRadius="5,5,0,0"
                                             VerticalAlignment="Bottom"/>
                                     <TextBlock Text="{Binding Label}" HorizontalAlignment="Center" Margin="0,5,0,0"/>

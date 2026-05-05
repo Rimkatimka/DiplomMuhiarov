@@ -43,6 +43,24 @@ namespace EnergyMeteringSystem.App.ViewModels.Billing
                 LoadData();
             }
         }
+        private string _selectedMonthName;
+        public string SelectedMonthName
+        {
+            get => _selectedMonthName;
+            set
+            {
+                if (SetProperty(ref _selectedMonthName, value))
+                {
+                    // Конвертируем название месяца в номер (1-12)
+                    int monthIndex = Months.IndexOf(value) + 1;
+                    if (monthIndex != _selectedMonth)
+                    {
+                        _selectedMonth = monthIndex;
+                        LoadData();
+                    }
+                }
+            }
+        }
 
         public AccrualCalculationDto SelectedItem
         {
@@ -76,17 +94,17 @@ namespace EnergyMeteringSystem.App.ViewModels.Billing
         private void InitializeYearsAndMonths()
         {
             for (int i = 2020; i <= DateTime.Today.Year; i++)
-            {
                 Years.Add(i);
-            }
 
+            Months.Clear();
             Months.Add("Январь"); Months.Add("Февраль"); Months.Add("Март");
             Months.Add("Апрель"); Months.Add("Май"); Months.Add("Июнь");
             Months.Add("Июль"); Months.Add("Август"); Months.Add("Сентябрь");
             Months.Add("Октябрь"); Months.Add("Ноябрь"); Months.Add("Декабрь");
 
             _selectedYear = DateTime.Today.Year;
-            _selectedMonth = DateTime.Today.Month;
+            _selectedMonth = 1;                         // ← январь
+            _selectedMonthName = Months[0];             // ← "Январь"
         }
 
         private bool CanCalculate()
@@ -96,12 +114,13 @@ namespace EnergyMeteringSystem.App.ViewModels.Billing
 
         private void Calculate()
         {
-            List<AccrualCalculationDto> results = _calculationService.CalculateForPeriod(_selectedYear, _selectedMonth);
+            var results = _calculationService.CalculateForPeriod(_selectedYear, _selectedMonth);
+
+            System.Diagnostics.Debug.WriteLine($"CalculateForPeriod({_selectedYear}, {_selectedMonth}) -> {results.Count} записей");
+
             Calculations.Clear();
-            foreach (AccrualCalculationDto item in results)
-            {
+            foreach (var item in results)
                 Calculations.Add(item);
-            }
 
             OnPropertyChanged(nameof(TotalAmount));
         }
@@ -141,11 +160,12 @@ namespace EnergyMeteringSystem.App.ViewModels.Billing
         private void LoadExistingAccruals()
         {
             ExistingAccruals.Clear();
-            List<AccrualDto> list = _accrualRepository.GetByPeriod(_selectedYear, _selectedMonth);
-            foreach (AccrualDto item in list)
-            {
+            var list = _accrualRepository.GetByPeriod(_selectedYear, _selectedMonth);
+
+            System.Diagnostics.Debug.WriteLine($"GetByPeriod({_selectedYear}, {_selectedMonth}) -> {list.Count} записей");
+
+            foreach (var item in list)
                 ExistingAccruals.Add(item);
-            }
         }
     }
 }

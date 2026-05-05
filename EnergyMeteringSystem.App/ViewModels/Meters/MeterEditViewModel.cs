@@ -28,8 +28,21 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
         public string SerialNumber { get; set; }
         public DateTime InstallationDate { get; set; }
         public decimal InitialReading { get; set; }
-        public DateTime? VerificationDate { get; set; }
-
+        private DateTime? _verificationDate;
+        public DateTime? VerificationDate
+        {
+            get => _verificationDate;
+            set
+            {
+                SetProperty(ref _verificationDate, value);
+                if (value.HasValue && SelectedMeterType != null)
+                {
+                    // Взять интервал поверки из БД по типу счётчика
+                    int years = GetVerificationIntervalYears(SelectedMeterType.Id);
+                    NextVerificationDate = value.Value.AddYears(years);
+                }
+            }
+        }
         public MeterTypeDto SelectedMeterType
         {
             get => _selectedMeterType;

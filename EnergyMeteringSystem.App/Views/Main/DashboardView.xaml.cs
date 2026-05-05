@@ -1,4 +1,5 @@
-﻿using System.Windows.Controls;
+﻿using EnergyMeteringSystem.App.ViewModels.Main;
+using System.Windows.Controls;
 
 namespace EnergyMeteringSystem.App.Views.Main
 {
@@ -10,6 +11,7 @@ namespace EnergyMeteringSystem.App.Views.Main
         public DashboardView()
         {
             InitializeComponent();
+            DataContext = new DashboardViewModel();
         }
     }
 }

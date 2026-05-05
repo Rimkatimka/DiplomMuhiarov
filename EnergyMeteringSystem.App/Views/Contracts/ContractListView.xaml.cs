@@ -1,4 +1,5 @@
-﻿using System.Windows.Controls;
+﻿using EnergyMeteringSystem.App.ViewModels.Contracts;
+using System.Windows.Controls;
 
 namespace EnergyMeteringSystem.App.Views.Contracts
 {
@@ -10,6 +11,7 @@ namespace EnergyMeteringSystem.App.Views.Contracts
         public ContractListView()
         {
             InitializeComponent();
+            DataContext = new ContractListViewModel();
         }
     }
 }
