@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.ObjectModel;
-using System.Windows;
+using System.Text.RegularExpressions;
 using EnergyMeteringSystem.App.Commands;
 using EnergyMeteringSystem.App.ViewModels.Base;
 using EnergyMeteringSystem.Core.Models.DTO;
@@ -16,10 +16,55 @@ namespace EnergyMeteringSystem.App.ViewModels.Admin
         public event EventHandler OnUserSaved;
 
         public ObservableCollection<UserRoleDto> Roles { get; set; }
-        public bool IsUsernameReadOnly => IsEditMode;
-        public string Username { get; set; }
-        public string FullName { get; set; }
-        public string Email { get; set; }
+
+        private string _username;
+        public string Username
+        {
+            get => _username;
+            set
+            {
+                SetProperty(ref _username, value);
+                SaveCommand.RaiseCanExecuteChanged();
+            }
+        }
+
+        private string _fullName;
+        public string FullName
+        {
+            get => _fullName;
+            set
+            {
+                SetProperty(ref _fullName, value);
+                SaveCommand.RaiseCanExecuteChanged();
+            }
+        }
+
+        private string _email;
+        public string Email
+        {
+            get => _email;
+            set
+            {
+                SetProperty(ref _email, value);
+                // Не проверяем здесь, чтобы не раздражать пользователя
+                SaveCommand.RaiseCanExecuteChanged();
+            }
+        }
+
+        private string _emailError;
+        public string EmailError
+        {
+            get => _emailError;
+            set => SetProperty(ref _emailError, value);
+        }
+
+        private bool _showEmailError;
+        public bool ShowEmailError
+        {
+            get => _showEmailError;
+            set => SetProperty(ref _showEmailError, value);
+        }
+
         public UserRoleDto SelectedRole { get; set; }
 
         public bool IsEditMode { get; private set; }
@@ -29,8 +74,8 @@ namespace EnergyMeteringSystem.App.ViewModels.Admin
 
         public UserEditViewModel(ObservableCollection<UserRoleDto> roles, UserDto existingUser = null)
         {
-            _userRepository = new UserRepository();  // добавьте это поле
-            Roles = roles ?? [];
+            _userRepository = new UserRepository();
+            Roles = roles;
 
             SaveCommand = new RelayCommand(_ => Save(), _ => CanSave());
             CancelCommand = new RelayCommand(_ => Cancel());
@@ -40,12 +85,21 @@ namespace EnergyMeteringSystem.App.ViewModels.Admin
                 IsEditMode = true;
                 LoadUser(existingUser);
             }
+            else
+            {
+                IsEditMode = false;
+                Username = string.Empty;
+                FullName = string.Empty;
+                Email = string.Empty;
+            }
+
+            ShowEmailError = false;
+            EmailError = string.Empty;
         }
 
         private void LoadUser(UserDto user)
         {
             _user = user;
-
             Username = user.Username;
             FullName = user.FullName;
             Email = user.Email;
@@ -54,43 +108,77 @@ namespace EnergyMeteringSystem.App.ViewModels.Admin
 
         private UserRoleDto FindRole(int id)
         {
-            foreach (UserRoleDto role in Roles)
+            foreach (var role in Roles)
+                if (role.Id == id) return role;
+            return null;
+        }
+
+        /// <summary>
+        /// Проверка email - вызывается при потере фокуса
+        /// </summary>
+        public void ValidateEmail()
+        {
+            if (string.IsNullOrWhiteSpace(Email))
             {
-                if (role.Id == id)
-                {
-                    return role;
-                }
+                EmailError = "Email обязателен для заполнения";
+                ShowEmailError = true;
+                return;
             }
 
-            return null;
+            // Проверка формата email
+            string emailPattern = @"^[^@\s]+@[^@\s]+\.[^@\s]+$";
+            bool isValid = Regex.IsMatch(Email, emailPattern);
+
+            if (!isValid)
+            {
+                ShowEmailError = true;
+            }
+            else
+            {
+                EmailError = string.Empty;
+                ShowEmailError = false;
+            }
+
+            SaveCommand.RaiseCanExecuteChanged();
+        }
+
+        /// <summary>
+        /// Скрыть сообщение об ошибке (при фокусе)
+        /// </summary>
+        public void HideEmailError()
+        {
+            ShowEmailError = false;
         }
 
         private bool CanSave()
         {
-            return !string.IsNullOrWhiteSpace(Username) &&
-                   !string.IsNullOrWhiteSpace(FullName) &&
-                   SelectedRole != null;
+            // Базовая проверка на заполненность
+            bool hasRequiredFields = !string.IsNullOrWhiteSpace(Username) &&
+                                     !string.IsNullOrWhiteSpace(FullName) &&
+                                     !string.IsNullOrWhiteSpace(Email) &&
+                                     SelectedRole != null;
+
+            if (!hasRequiredFields)
+                return false;
+
+            // Проверка формата email (без показа ошибки)
+            string emailPattern = @"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$";
+            return Regex.IsMatch(Email, emailPattern);
         }
 
         private void Save()
         {
-            if (_userRepository == null)
+            // Финальная проверка перед сохранением
+            ValidateEmail();
+
+            if (ShowEmailError)
             {
-                System.Diagnostics.Debug.WriteLine("ОШИБКА: _userRepository = null");
-                _ = MessageBox.Show("Ошибка инициализации репозитория", "Ошибка",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                System.Windows.MessageBox.Show("Исправьте ошибки в форме", "Ошибка",
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
                 return;
             }
 
-            // Проверка на существующий логин
-            if (_userRepository.IsUsernameExists(Username, IsEditMode ? _user?.Id : null))
-            {
-                _ = MessageBox.Show("Пользователь с таким логином уже существует", "Ошибка",
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
-            UserDto dto = new()
+            var dto = new UserDto
             {
                 Id = _user?.Id ?? 0,
                 Username = Username,
@@ -100,13 +188,9 @@ namespace EnergyMeteringSystem.App.ViewModels.Admin
             };
 
             if (IsEditMode)
-            {
                 _userRepository.Update(dto);
-            }
             else
-            {
                 _userRepository.Add(dto);
-            }
 
             OnUserSaved?.Invoke(this, EventArgs.Empty);
         }

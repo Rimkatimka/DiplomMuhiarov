@@ -1,4 +1,5 @@
 ﻿using System.Windows.Controls;
+using EnergyMeteringSystem.App.ViewModels.Reports;
 
 namespace EnergyMeteringSystem.App.Views.Reports
 {
@@ -10,6 +11,7 @@ namespace EnergyMeteringSystem.App.Views.Reports
         public ReportView()
         {
             InitializeComponent();
+            DataContext = new ReportViewModel();
         }
     }
 }

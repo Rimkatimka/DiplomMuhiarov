@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace EnergyMeteringSystem.Services
+namespace EnergyMeteringSystem.App.Controls
 {
-    class Class1
+    class EmailMaskedTextBox
     {
     }
 }

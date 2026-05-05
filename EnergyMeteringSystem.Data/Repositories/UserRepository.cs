@@ -113,7 +113,7 @@ namespace EnergyMeteringSystem.Data.Repositories
             {
                 Id = IdHelper.GetNextUserId(_context),  // ← используем хелпер
                 Username = dto.Username,
-                PasswordHash = PasswordHelper.HashPassword("12345"),
+                PasswordHash = "12345",
                 FullName = dto.FullName,
                 Email = dto.Email,
                 RoleId = dto.RoleId,
