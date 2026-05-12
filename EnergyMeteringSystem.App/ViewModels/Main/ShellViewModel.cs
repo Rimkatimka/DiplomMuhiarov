@@ -144,12 +144,6 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
 
                 dirMenu.Children.Add(new MenuItemViewModel
                 {
-                    Title = "Типы счетчиков",
-                    Command = new RelayCommand(_ => OpenDirectory(DirectoryFactory.CreateMeterTypeViewModel(), "Типы счетчиков"))
-                });
-
-                dirMenu.Children.Add(new MenuItemViewModel
-                {
                     Title = "Статусы показаний",
                     Command = new RelayCommand(_ => OpenDirectory(DirectoryFactory.CreateReadingStatusViewModel(), "Статусы показаний"))
                 });

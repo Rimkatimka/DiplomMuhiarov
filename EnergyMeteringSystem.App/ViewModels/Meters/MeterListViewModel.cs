@@ -1,10 +1,11 @@
-﻿using System;
-using System.Collections.ObjectModel;
-using System.Linq;
-using EnergyMeteringSystem.App.Commands;
+﻿using EnergyMeteringSystem.App.Commands;
 using EnergyMeteringSystem.App.ViewModels.Base;
 using EnergyMeteringSystem.Core.Models.DTO;
 using EnergyMeteringSystem.Data.Repositories;
+using System;
+using System.Collections.ObjectModel;
+using System.Linq;
+using System.Windows;
 
 namespace EnergyMeteringSystem.App.ViewModels.Meters
 {
@@ -117,19 +118,18 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
             {
                 System.Diagnostics.Debug.WriteLine("AddMeter: начало");
 
-                MeterEditViewModel editViewModel = new();
-                Views.Meters.MeterEditView editView = new(editViewModel);
-                _ = editView.ShowDialog();
-
-                LoadData(); // обновить список после закрытия
+                var editViewModel = new MeterEditViewModel();  // ← теперь работает!
+                var editView = new Views.Meters.MeterEditView(editViewModel);
+                editView.ShowDialog();
+                LoadData();
 
                 System.Diagnostics.Debug.WriteLine("AddMeter: конец");
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Ошибка в AddMeter: {ex.Message}");
-                _ = System.Windows.MessageBox.Show($"Ошибка: {ex.Message}", "Ошибка",
-                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                MessageBox.Show($"Ошибка: {ex.Message}", "Ошибка",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 

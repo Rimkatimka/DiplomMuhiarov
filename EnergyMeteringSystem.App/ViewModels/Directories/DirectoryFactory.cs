@@ -3,17 +3,7 @@
 namespace EnergyMeteringSystem.App.ViewModels.Directories
 {
     public static class DirectoryFactory
-    {
-        public static DirectoryListViewModel CreateMeterTypeViewModel()
-        {
-            MeterTypeRepository repo = new();
-            if (repo == null)
-            {
-                System.Diagnostics.Debug.WriteLine("ОШИБКА: repo = null");
-            }
-
-            return new DirectoryListViewModel(repo);
-        }
+    {    
 
         public static DirectoryListViewModel CreateReadingStatusViewModel()
         {

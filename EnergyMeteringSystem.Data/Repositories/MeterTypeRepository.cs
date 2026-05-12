@@ -6,76 +6,50 @@ using EnergyMeteringSystem.Data.Database;
 
 namespace EnergyMeteringSystem.Data.Repositories
 {
-    public class MeterTypeRepository : IDirectoryRepository<DirectoryDto>  // ← реализуем интерфейс
+    namespace EnergyMeteringSystem.Data.Repositories
     {
-        private readonly EnergyMeteringSystemEntities _context;
-
-        public MeterTypeRepository()
+        public class MeterTypeRepository : IMeterTypeRepository
         {
-            _context = new EnergyMeteringSystemEntities();
-        }
+            private readonly EnergyMeteringSystemEntities _context;
 
-        public List<DirectoryDto> GetAll()
-        {
-            var data = _context.MeterType
-                .Select(m => new { m.Id, m.Name, m.Voltage, m.MaxCurrent, m.AccuracyClass })
-                .ToList();
-
-            return data.Select(m => new DirectoryDto
+            public MeterTypeRepository()
             {
-                Id = m.Id,
-                Name = m.Name,
-                Description = $"{m.Voltage}В, {m.MaxCurrent}А, класс {m.AccuracyClass}",
-                IsActive = true
-            }).ToList();
-        }
+                _context = new EnergyMeteringSystemEntities();
+            }
 
-        public DirectoryDto GetById(int id)
-        {
-            MeterType m = _context.MeterType.Find(id);
-            return m == null
-                ? null
-                : new DirectoryDto
+            public List<MeterTypeDto> GetAll()
+            {
+                return _context.MeterType
+                    .Select(m => new MeterTypeDto
+                    {
+                        Id = m.Id,
+                        Name = m.Name,
+                        ServiceLifeYears = m.ServiceLifeYears,
+                        Voltage = m.Voltage,
+                        MaxCurrent = m.MaxCurrent,
+                        AccuracyClass = m.AccuracyClass,
+                        DigitCount = m.DigitCount,
+                        DecimalPlaces = m.DecimalPlaces
+                    })
+                    .ToList();
+            }
+
+            public MeterTypeDto GetById(int id)
+            {
+                var m = _context.MeterType.Find(id);
+                if (m == null) return null;
+
+                return new MeterTypeDto
                 {
                     Id = m.Id,
                     Name = m.Name,
-                    Description = $"{m.Voltage}В, {m.MaxCurrent}А, класс {m.AccuracyClass}",
-                    IsActive = true
+                    ServiceLifeYears = m.ServiceLifeYears,
+                    Voltage = m.Voltage,
+                    MaxCurrent = m.MaxCurrent,
+                    AccuracyClass = m.AccuracyClass,
+                    DigitCount = m.DigitCount,
+                    DecimalPlaces = m.DecimalPlaces
                 };
-        }
-
-        public void Add(DirectoryDto dto)
-        {
-            MeterType entity = new()
-            {
-                Name = dto.Name,
-                Voltage = 220,
-                MaxCurrent = 40,
-                AccuracyClass = "1.0",
-                DigitCount = 6,
-                DecimalPlaces = 0
-            };
-            _ = _context.MeterType.Add(entity);
-            _ = _context.SaveChanges();
-        }
-
-        public void Update(DirectoryDto dto)
-        {
-            MeterType entity = _context.MeterType.Find(dto.Id);
-            if (entity != null)
-            {
-                entity.Name = dto.Name;
-                _ = _context.SaveChanges();
-            }
-        }
-
-        public void Delete(int id)
-        {
-            MeterType entity = _context.MeterType.Find(id);
-            if (entity != null)
-            {
-                _ = _context.MeterType.Remove(entity);
-                _ = _context.SaveChanges();
             }
         }
     }

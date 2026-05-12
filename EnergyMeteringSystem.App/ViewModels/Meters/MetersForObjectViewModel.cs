@@ -70,7 +70,16 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
 
         private void AddMeter()
         {
-            var editViewModel = new MeterEditViewModel(_currentObject, null);
+            System.Diagnostics.Debug.WriteLine($"AddMeter: _currentObject = {_currentObject?.Id}");
+
+            if (_currentObject == null)
+            {
+                System.Diagnostics.Debug.WriteLine("ОШИБКА: _currentObject = null, нельзя добавить счётчик");
+                return;
+            }
+
+            // ✅ Передаём объект!
+            var editViewModel = new MeterEditViewModel(_currentObject);
             var editView = new Views.Meters.MeterEditView(editViewModel);
             editView.Owner = Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive);
 
@@ -87,7 +96,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
         {
             if (SelectedMeter == null) return;
 
-            var editViewModel = new MeterEditViewModel(_currentObject, SelectedMeter);
+            var editViewModel = new MeterEditViewModel(SelectedMeter);
             var editView = new Views.Meters.MeterEditView(editViewModel);
             editView.Owner = Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive);
 

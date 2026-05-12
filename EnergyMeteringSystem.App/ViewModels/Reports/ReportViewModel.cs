@@ -1,12 +1,13 @@
-﻿using System;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Windows;
-using EnergyMeteringSystem.App.Commands;
+﻿using EnergyMeteringSystem.App.Commands;
 using EnergyMeteringSystem.App.ViewModels.Base;
 using EnergyMeteringSystem.Core.Models.DTO;
 using EnergyMeteringSystem.Data.Repositories;
+using EnergyMeteringSystem.Services;
 using EnergyMeteringSystem.Services.Export;
+using System;
+using System.Collections.ObjectModel;
+using System.Linq;
+using System.Windows;
 
 namespace EnergyMeteringSystem.App.ViewModels.Reports
 {
@@ -20,37 +21,9 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
         private string _selectedMonthName;
         private int _selectedReportType;
         private object _reportData;
-
+        private string _dateError;
         private DateTime _startDate;
         private DateTime _endDate;
-
-        public DateTime StartDate
-        {
-            get => _startDate;
-            set
-            {
-                if (SetProperty(ref _startDate, value))
-                {
-                    if (_startDate > _endDate)
-                        EndDate = _startDate;
-                    LoadReport();
-                }
-            }
-        }
-
-        public DateTime EndDate
-        {
-            get => _endDate;
-            set
-            {
-                if (SetProperty(ref _endDate, value))
-                {
-                    if (_endDate < _startDate)
-                        StartDate = _endDate;
-                    LoadReport();
-                }
-            }
-        }
 
         public ReportViewModel()
         {
@@ -162,6 +135,51 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
             }
         }
 
+
+        public DateTime StartDate
+        {
+            get => _startDate;
+            set
+            {
+                if (SetProperty(ref _startDate, value))
+                {
+                    ValidateDates();
+                    LoadReport();
+                }
+            }
+        }
+
+        public DateTime EndDate
+        {
+            get => _endDate;
+            set
+            {
+                if (SetProperty(ref _endDate, value))
+                {
+                    ValidateDates();
+                    LoadReport();
+                }
+            }
+        }
+
+        public string DateError
+        {
+            get => _dateError;
+            set => SetProperty(ref _dateError, value);
+        }
+
+        private void ValidateDates()
+        {
+            if (StartDate > EndDate)
+            {
+                DateError = "Дата начала не может быть позже даты окончания";
+                ToastNotificationService.ShowNear(null, DateError, 2000);
+            }
+            else
+            {
+                DateError = string.Empty;
+            }
+        }
 
         // ===== ИТОГОВЫЕ СВОЙСТВА =====
         public decimal TotalConsumption => ConsumptionData?.Sum(c => c.Consumption) ?? 0;

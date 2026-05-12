@@ -103,6 +103,7 @@
     <Compile Include="Interfaces\Repositories\IDirectoryRepository.cs" />
     <Compile Include="Interfaces\Repositories\IMeterReadingRepository.cs" />
     <Compile Include="Interfaces\Repositories\IMeterRepository.cs" />
+    <Compile Include="Interfaces\Repositories\IMeterTypeRepository.cs" />
     <Compile Include="Interfaces\Repositories\IPaymentRepository.cs" />
     <Compile Include="Interfaces\Repositories\IRejectionReasonRepository.cs" />
     <Compile Include="Interfaces\Repositories\IReportRepository.cs" />

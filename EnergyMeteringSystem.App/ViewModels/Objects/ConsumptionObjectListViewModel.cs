@@ -96,6 +96,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
             var editView = new ConsumptionObjectEditView(editViewModel);
             editView.Owner = Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive);
 
+
             editViewModel.OnObjectSaved += (s, e) =>
             {
                 System.Diagnostics.Debug.WriteLine("OnObjectSaved сработал");

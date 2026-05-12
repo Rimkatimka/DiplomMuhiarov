@@ -51,7 +51,7 @@
           Margin="5" Padding="5"/>
 
         <!-- Дата установки -->
-        <TextBlock Grid.Row="3" Grid.Column="0" Text="Дата установки:" Margin="5" VerticalAlignment="Center"/>
+        <TextBlock Grid.Row="3" x:Name="InstallationDatePicker" Grid.Column="0" Text="Дата установки:" Margin="5" VerticalAlignment="Center"/>
         <DatePicker Grid.Row="3" Grid.Column="1" 
                     SelectedDate="{Binding InstallationDate}"
                     Margin="5" Padding="5"/>
@@ -65,13 +65,13 @@
                  PreviewKeyDown="TextBox_PreviewKeyDown_BlockSpace"/>
 
         <!-- Дата последней поверки -->
-        <TextBlock Grid.Row="5" Grid.Column="0" Text="Дата поверки:" Margin="5" VerticalAlignment="Center"/>
+        <TextBlock Grid.Row="5" x:Name="VerificationDatePicker" Grid.Column="0" Text="Дата поверки:" Margin="5" VerticalAlignment="Center"/>
         <DatePicker Grid.Row="5" Grid.Column="1" 
                     SelectedDate="{Binding VerificationDate}"
                     Margin="5" Padding="5"/>
 
         <!-- Дата следующей поверки -->
-        <TextBlock Grid.Row="6" Grid.Column="0" Text="Следующая поверка:" Margin="5" VerticalAlignment="Center"/>
+        <TextBlock Grid.Row="6"  x:Name="NextVerificationDatePicker" Grid.Column="0" Text="Следующая поверка:" Margin="5" VerticalAlignment="Center"/>
         <DatePicker Grid.Row="6" Grid.Column="1" 
                     SelectedDate="{Binding NextVerificationDate}"
                     Margin="5" Padding="5"/>
