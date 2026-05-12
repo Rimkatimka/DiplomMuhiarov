@@ -34,8 +34,13 @@
         </ComboBox>
 
         <!-- Цена -->
-        <TextBlock Grid.Row="2" Grid.Column="0" Text="Цена (за кВт):" Margin="5" VerticalAlignment="Center"/>
-        <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding PricePerUnit}" Margin="5" Padding="5"/>
+        <TextBox Grid.Row="2" Grid.Column="1" 
+         Text="{Binding PricePerUnit}" 
+         Margin="5" Padding="5"
+         MaxLength="10"
+         PreviewTextInput="TextBox_PreviewTextInput_Decimal"
+         PreviewKeyDown="TextBox_PreviewKeyDown_BlockSpace"
+         ToolTip="Только цифры, точка или запятая"/>
 
         <!-- Дата начала -->
         <TextBlock Grid.Row="3" Grid.Column="0" Text="Начало действия:" Margin="5" VerticalAlignment="Center"/>
@@ -45,6 +50,14 @@
         <TextBlock Grid.Row="4" Grid.Column="0" Text="Окончание:" Margin="5" VerticalAlignment="Center"/>
         <DatePicker Grid.Row="4" Grid.Column="1" SelectedDate="{Binding EndDate}" Margin="5"/>
 
+        <TextBlock Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2" 
+           Text="{Binding DateError}"
+           Foreground="Red"
+           FontSize="12"
+           Margin="5"
+           HorizontalAlignment="Center"
+           Visibility="{Binding DateErrorVisibility}"/>
+        
         <!-- Кнопки -->
         <StackPanel Grid.Row="5" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
             <Button Content="Сохранить" 

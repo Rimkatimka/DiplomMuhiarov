@@ -15,22 +15,33 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Поиск объекта -->
+        <!-- Поиск по адресу -->
         <GroupBox Grid.Row="0" Header="Поиск объекта" Margin="0,0,0,10">
-            <StackPanel>
-                <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" 
-         Margin="5" Padding="5"
-         ToolTip="Введите адрес для поиска"/>
-                <ListBox ItemsSource="{Binding FoundObjects}" 
-                         SelectedItem="{Binding SelectedObject}"
-                         DisplayMemberPath="Address"
-                         Height="100" Margin="5"
-                         ToolTip="Выберите объект из списка"/>
-            </StackPanel>
+            <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" 
+                     Margin="5" Padding="5"
+                     MaxLength="50"
+                     ToolTip="Введите адрес для поиска"/>
         </GroupBox>
 
-        <!-- Счетчики объекта (появляются после выбора объекта) -->
-        <GroupBox Grid.Row="1" Header="Счетчики" Margin="0,0,0,10"
+        <!-- Таблица объектов (выбор по клику) -->
+        <DataGrid Grid.Row="1" 
+                  ItemsSource="{Binding FilteredObjects}"
+                  SelectedItem="{Binding SelectedObject}"
+                  AutoGenerateColumns="False"
+                  IsReadOnly="True"
+                  MaxHeight="200"
+                  Margin="0,0,0,10"
+                  SelectionMode="Single">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Адрес" Binding="{Binding Address}" Width="*" MinWidth="200"/>
+                <DataGridTextColumn Header="Тип" Binding="{Binding ObjectTypeName}" Width="Auto" MinWidth="80"/>
+                <DataGridTextColumn Header="Площадь" Binding="{Binding TotalArea, StringFormat={}{0:F1} м²}" Width="Auto" MinWidth="80"/>
+                <DataGridTextColumn Header="Жильцы" Binding="{Binding ResidentCount}" Width="Auto" MinWidth="80"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <!-- Счетчики выбранного объекта -->
+        <GroupBox Grid.Row="2" Header="Счетчики" Margin="0,0,0,10"
                   Visibility="{Binding HasSelectedObject, Converter={StaticResource BooleanToVisibilityConverter}}">
             <ListBox ItemsSource="{Binding Meters}" 
                      SelectedItem="{Binding SelectedMeter}"
@@ -48,8 +59,8 @@
             </ListBox>
         </GroupBox>
 
-        <!-- Ввод показаний (появляется после выбора счетчика) -->
-        <GroupBox Grid.Row="2" Header="Ввод показаний" Margin="0,0,0,10"
+        <!-- Ввод показаний -->
+        <GroupBox Grid.Row="3" Header="Ввод показаний" Margin="0,0,0,10"
                   Visibility="{Binding HasSelectedMeter, Converter={StaticResource BooleanToVisibilityConverter}}">
             <Grid Margin="5">
                 <Grid.RowDefinitions>
@@ -69,18 +80,22 @@
                 <TextBlock Grid.Row="1" Grid.Column="0" Text="Показание:" Margin="5" VerticalAlignment="Center"/>
                 <TextBox Grid.Row="1" Grid.Column="1" 
                          Text="{Binding ReadingValue}" 
-                         Margin="5" Padding="5"/>
+                         Margin="5" Padding="5"
+                         MaxLength="15"
+                         PreviewTextInput="TextBox_PreviewTextInput_Decimal"
+                         PreviewKeyDown="TextBox_PreviewKeyDown_BlockSpace"
+                         ToolTip="Только цифры, точка или запятая"/>
             </Grid>
         </GroupBox>
 
-        <!-- Предупреждение об аномалии -->
-        <TextBlock Grid.Row="3" Text="{Binding WarningMessage}" 
+        <!-- Предупреждение -->
+        <TextBlock Grid.Row="4" Text="{Binding WarningMessage}" 
                    Foreground="Red" FontWeight="Bold"
                    Margin="5" HorizontalAlignment="Center"
                    Visibility="{Binding HasWarning, Converter={StaticResource BooleanToVisibilityConverter}}"/>
 
         <!-- Кнопки -->
-        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Center" Margin="5">
+        <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Center" Margin="5">
             <Button Content="Сохранить" 
                     Command="{Binding SaveCommand}" 
                     Padding="20,5" Margin="5" Width="100"

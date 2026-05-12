@@ -80,7 +80,6 @@ namespace EnergyMeteringSystem.Data.Repositories
 
                     verificationList.Add(new MeterReadingVerificationDto
                     {
-                        Id = item.Id,
                         Address = item.Address,
                         SerialNumber = item.SerialNumber,
                         ReadingDate = item.ReadingDate,
@@ -155,17 +154,8 @@ namespace EnergyMeteringSystem.Data.Repositories
                     throw new InvalidOperationException("Показания за эту дату уже были введены. Для корректировки используйте редактирование.");
                 }
 
-                int nextId = 1;
-                if (_context.MeterReading.Any())
-                {
-                    nextId = _context.MeterReading.Max(r => r.Id) + 1;
-                }
-
-                System.Diagnostics.Debug.WriteLine($"Следующий ID: {nextId}");
-
                 MeterReading entity = new()
                 {
-                    Id = nextId,
                     MeterId = dto.MeterId,
                     ReadingDate = dto.ReadingDate,
                     Value = dto.Value,
@@ -292,6 +282,25 @@ namespace EnergyMeteringSystem.Data.Repositories
                 System.Diagnostics.Debug.WriteLine($"Ошибка в GetHistoryByMeterId: {ex.Message}");
                 return [];
             }
+        }
+        public MeterReadingDto GetByMeterAndDate(int meterId, DateTime readingDate, int tariffZone = 1)
+        {
+            var reading = _context.MeterReading
+                .FirstOrDefault(r => r.MeterId == meterId &&
+                                      r.ReadingDate == readingDate &&
+                                      r.TariffZone == tariffZone);
+
+            if (reading == null) return null;
+
+            return new MeterReadingDto
+            {
+                Id = reading.Id,
+                MeterId = reading.MeterId,
+                ReadingDate = reading.ReadingDate,
+                Value = reading.Value,
+                ReadingStatusId = reading.ReadingStatusId,
+                EnteredAt = reading.EnteredAt
+            };
         }
         public List<MeterReadingHistoryDto> GetHistoryByObjectId(int objectId)
         {

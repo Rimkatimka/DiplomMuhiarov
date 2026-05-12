@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.ObjectModel;
 
 namespace EnergyMeteringSystem.Core.Models.DTO
 {
@@ -15,6 +16,12 @@ namespace EnergyMeteringSystem.Core.Models.DTO
         public DateTime? NextVerificationDate { get; set; }
         public decimal InitialReading { get; set; }
         public int StatusId { get; set; }
+        public int? ServiceLifeYears { get; set; }
+        public DateTime? RemovalDate { get; set; }
+
+        // Вычисляемые свойства
+        public string ServiceLifeText => ServiceLifeYears.HasValue ? $"{ServiceLifeYears} лет" : "Не указан";
+        public string RemovalDateText => RemovalDate?.ToString("dd.MM.yyyy") ?? "Не изъят";
 
         public string VerificationStatusText => !NextVerificationDate.HasValue
                     ? "Не указана"

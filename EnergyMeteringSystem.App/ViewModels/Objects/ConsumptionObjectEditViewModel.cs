@@ -1,9 +1,10 @@
-﻿using System;
-using System.Collections.ObjectModel;
-using EnergyMeteringSystem.App.Commands;
+﻿using EnergyMeteringSystem.App.Commands;
 using EnergyMeteringSystem.App.ViewModels.Base;
 using EnergyMeteringSystem.Core.Models.DTO;
 using EnergyMeteringSystem.Data.Repositories;
+using System;
+using System.Collections.ObjectModel;
+using System.Linq;
 
 namespace EnergyMeteringSystem.App.ViewModels.Objects
 {
@@ -32,6 +33,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
             set => SetProperty(ref _selectedStreet, value);
         }
 
+
         public ObjectTypeDto SelectedObjectType
         {
             get => _selectedObjectType;
@@ -41,7 +43,11 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
         public string HouseNumber
         {
             get => _houseNumber;
-            set => SetProperty(ref _houseNumber, value);
+            set
+            {
+                SetProperty(ref _houseNumber, value);
+                System.Diagnostics.Debug.WriteLine($"HouseNumber изменён на: '{value}'");
+            }
         }
 
         public string ApartmentNumber
@@ -90,16 +96,15 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
 
         private void LoadData()
         {
-            // Загрузка улиц
-            System.Collections.Generic.List<StreetDto> streets = _streetRepository.GetAll();
-            foreach (StreetDto street in streets)
-            {
-                Streets.Add(street);
-            }
+            var streets = _streetRepository.GetAll();
+            System.Diagnostics.Debug.WriteLine($"Загружено улиц: {streets.Count}");
+            Streets.Clear();
+            foreach (var street in streets) Streets.Add(street);
 
-            // Загрузка типов объектов - преобразуем DirectoryDto в ObjectTypeDto
-            System.Collections.Generic.List<DirectoryDto> types = _typeRepository.GetAll(); // это List<DirectoryDto>
-            foreach (DirectoryDto type in types)
+            var types = _typeRepository.GetAll();
+            System.Diagnostics.Debug.WriteLine($"Загружено типов: {types.Count}");
+            ObjectTypes.Clear();
+            foreach (var type in types)
             {
                 ObjectTypes.Add(new ObjectTypeDto
                 {
@@ -113,10 +118,11 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
         private void LoadObject(ConsumptionObjectDto obj)
         {
             _object = obj;
-            SelectedStreet = FindStreet(obj.StreetId);
+            System.Diagnostics.Debug.WriteLine($"LoadObject: obj.Id = {obj.Id}");
+            SelectedStreet = Streets.FirstOrDefault(s => s.Id == obj.StreetId);
+            SelectedObjectType = ObjectTypes.FirstOrDefault(t => t.Id == obj.ObjectTypeId);
             HouseNumber = obj.HouseNumber;
             ApartmentNumber = obj.ApartmentNumber;
-            SelectedObjectType = FindObjectType(obj.ObjectTypeId);
             TotalArea = obj.TotalArea ?? 0;
             ResidentCount = obj.ResidentCount ?? 0;
         }
@@ -156,6 +162,8 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
 
         private void Save()
         {
+            System.Diagnostics.Debug.WriteLine($"HouseNumber из формы: {HouseNumber}");
+            System.Diagnostics.Debug.WriteLine($"_object?.Id = {_object?.Id}");
             ConsumptionObjectDto dto = new()
             {
                 Id = _object?.Id ?? 0,
@@ -169,10 +177,12 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
 
             if (IsEditMode)
             {
+                System.Diagnostics.Debug.WriteLine("Вызов Update");
                 _objectRepository.Update(dto);
             }
             else
             {
+                System.Diagnostics.Debug.WriteLine("Вызов Add");
                 _objectRepository.Add(dto);
             }
 

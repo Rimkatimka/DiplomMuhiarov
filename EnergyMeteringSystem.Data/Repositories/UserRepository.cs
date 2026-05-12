@@ -6,7 +6,6 @@ using EnergyMeteringSystem.Core.Helpers;
 using EnergyMeteringSystem.Core.Interfaces.Repositories;
 using EnergyMeteringSystem.Core.Models.DTO;
 using EnergyMeteringSystem.Data.Database;
-using EnergyMeteringSystem.Data.Helpers;
 
 namespace EnergyMeteringSystem.Data.Repositories
 {
@@ -111,7 +110,6 @@ namespace EnergyMeteringSystem.Data.Repositories
         {
             User entity = new()
             {
-                Id = IdHelper.GetNextUserId(_context),  // ← используем хелпер
                 Username = dto.Username,
                 PasswordHash = "12345",
                 FullName = dto.FullName,

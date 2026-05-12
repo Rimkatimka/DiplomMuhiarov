@@ -166,6 +166,7 @@
     <Compile Include="Converters\ActiveStatusConverter.cs" />
     <Compile Include="Converters\InverseBooleanConverter.cs" />
     <Compile Include="Converters\MonthIndexConverter.cs" />
+    <Compile Include="Helpers\InputValidator.cs" />
     <Compile Include="ViewModels\Admin\AuditLogViewModel.cs" />
     <Compile Include="ViewModels\Admin\BackupViewModel.cs" />
     <Compile Include="ViewModels\Admin\UserEditViewModel.cs" />
@@ -185,6 +186,7 @@
     <Compile Include="ViewModels\Main\ShellViewModel.cs" />
     <Compile Include="ViewModels\Meters\MeterEditViewModel.cs" />
     <Compile Include="ViewModels\Meters\MeterListViewModel.cs" />
+    <Compile Include="ViewModels\Meters\MetersForObjectViewModel.cs" />
     <Compile Include="ViewModels\Objects\ConsumptionObjectEditViewModel.cs" />
     <Compile Include="ViewModels\Objects\ConsumptionObjectListViewModel.cs" />
     <Compile Include="ViewModels\Objects\ObjectMetersViewModel.cs" />
@@ -247,6 +249,9 @@
     </Compile>
     <Compile Include="Views\Objects\ConsumptionObjectListView.xaml.cs">
       <DependentUpon>ConsumptionObjectListView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Meters\MetersForObjectView.xaml.cs">
+      <DependentUpon>MetersForObjectView.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\Objects\ObjectMetersView.xaml.cs">
       <DependentUpon>ObjectMetersView.xaml</DependentUpon>
@@ -350,6 +355,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Views\Objects\ConsumptionObjectListView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\Meters\MetersForObjectView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

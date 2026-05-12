@@ -24,120 +24,57 @@
         </StackPanel>
 
         <!-- Таблица объектов -->
-        <DataGrid Grid.Row="1" 
-                  ItemsSource="{Binding FilteredObjects}"
-                  SelectedItem="{Binding SelectedObject}"
-                  AutoGenerateColumns="False"
-                  IsReadOnly="True"
-                  SelectionMode="Single"
-                  AlternatingRowBackground="#F5F5F5"
-                  AlternationCount="2"
-                  BorderBrush="LightGray"
-                  BorderThickness="1"
-                  RowHeaderWidth="0"
-                  CanUserAddRows="False"
-                  CanUserDeleteRows="False"
-                  CanUserReorderColumns="False"
-                  CanUserResizeColumns="True"
-                  CanUserSortColumns="True"
-                  GridLinesVisibility="Horizontal"
-                  HorizontalScrollBarVisibility="Auto"
-                  VerticalScrollBarVisibility="Auto">
+        <DataGrid Grid.Row="1"
+          ItemsSource="{Binding FilteredObjects}"
+          SelectedItem="{Binding SelectedObject}"
+          AutoGenerateColumns="False"
+          IsReadOnly="True"
+          SelectionMode="Single">
 
             <DataGrid.Resources>
-                <Style TargetType="DataGridColumnHeader">
-                    <Setter Property="Background" Value="#2D3F5E"/>
-                    <Setter Property="Foreground" Value="White"/>
-                    <Setter Property="FontWeight" Value="Bold"/>
-                    <Setter Property="Height" Value="35"/>
-                    <Setter Property="HorizontalContentAlignment" Value="Center"/>
-                </Style>
-                <Style TargetType="DataGridCell">
-                    <Setter Property="VerticalAlignment" Value="Center"/>
-                    <Setter Property="Padding" Value="5"/>
-                    <Setter Property="Height" Value="35"/>
-                </Style>
+                <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource DataGridColumnHeaderStyle}"/>
+                <Style TargetType="DataGridCell" BasedOn="{StaticResource DataGridCellStyle}"/>
             </DataGrid.Resources>
 
             <DataGrid.Columns>
-                <!-- Колонка Адрес -->
-                <DataGridTextColumn Header="Адрес" 
-                                    Binding="{Binding Address}" 
-                                    Width="2*">
+                <!-- Адрес -->
+                <DataGridTextColumn Header="Адрес" Binding="{Binding Address}" Width="1*">
                     <DataGridTextColumn.HeaderStyle>
-                        <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource {x:Type DataGridColumnHeader}}">
+                        <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource DataGridColumnHeaderStyle}">
                             <Setter Property="ToolTip" Value="Полный адрес объекта"/>
                         </Style>
                     </DataGridTextColumn.HeaderStyle>
                 </DataGridTextColumn>
 
-                <!-- Колонка Тип объекта -->
-                <DataGridTextColumn Header="Тип" 
-                                    Binding="{Binding ObjectTypeName}" 
-                                    Width="1*"
-                                    >
-                    <DataGridTextColumn.HeaderStyle>
-                        <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource {x:Type DataGridColumnHeader}}">
-                            <Setter Property="ToolTip" Value="Тип объекта (квартира, дом, офис)"/>
-                        </Style>
-                    </DataGridTextColumn.HeaderStyle>
-                </DataGridTextColumn>
+                <!-- Тип объекта -->
+                <DataGridTextColumn Header="Тип" Binding="{Binding ObjectTypeName}" Width="Auto" MinWidth="100"/>
 
-                <!-- Колонка Площадь -->
-                <DataGridTextColumn Header="Площадь" 
-                                    Binding="{Binding TotalArea, StringFormat={}{0:F1} м²}" 
-                                    Width="Auto"
-                                    >
-                    <DataGridTextColumn.HeaderStyle>
-                        <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource {x:Type DataGridColumnHeader}}">
-                            <Setter Property="ToolTip" Value="Общая площадь в м²"/>
-                        </Style>
-                    </DataGridTextColumn.HeaderStyle>
-                </DataGridTextColumn>
+                <!-- Площадь -->
+                <DataGridTextColumn Header="Площадь" Binding="{Binding TotalArea, StringFormat={}{0:F1} м²}" Width="Auto" MinWidth="100"/>
 
-                <!-- Колонка Жильцы -->
-                <DataGridTextColumn Header="Жильцы" 
-                                    Binding="{Binding ResidentCount}" 
-                                    Width="Auto"
-                                    >
-                    <DataGridTextColumn.HeaderStyle>
-                        <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource {x:Type DataGridColumnHeader}}">
-                            <Setter Property="ToolTip" Value="Количество проживающих"/>
-                        </Style>
-                    </DataGridTextColumn.HeaderStyle>
-                </DataGridTextColumn>
+                <!-- Жильцы -->
+                <DataGridTextColumn Header="Жильцы" Binding="{Binding ResidentCount}" Width="Auto" MinWidth="80"/>
 
-                <!-- Колонка с кнопкой Счетчики -->
-                <DataGridTemplateColumn Header="Счетчики" 
-                                        Width="Auto"
-                                        CanUserSort="False"
-                                        CanUserResize="False">
-                    <DataGridTemplateColumn.HeaderStyle>
-                        <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource {x:Type DataGridColumnHeader}}">
-                            <Setter Property="ToolTip" Value="Просмотр счетчиков объекта"/>
-                        </Style>
-                    </DataGridTemplateColumn.HeaderStyle>
+                <!-- Кнопка Счетчики -->
+                <DataGridTemplateColumn Header="Счетчики" Width="100" CanUserSort="False">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <Button Content="Просмотр"
-                                    Command="{Binding DataContext.ShowMetersCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                    CommandParameter="{Binding}"
-                                    Padding="10,3"
-                                    Margin="2"
-                                    Background="#2196F3"
-                                    Foreground="White"
-                                    BorderThickness="0"
-                                    FontSize="12"
-                                    ToolTip="Показать счетчики объекта"
-                                    Cursor="Hand">
+                            Command="{Binding DataContext.ShowMetersCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                            CommandParameter="{Binding}"
+                            Padding="8,3"
+                            Background="#2196F3"
+                            Foreground="White"
+                            BorderThickness="0"
+                            Cursor="Hand">
                                 <Button.Resources>
                                     <Style TargetType="Button">
                                         <Setter Property="Template">
                                             <Setter.Value>
                                                 <ControlTemplate TargetType="Button">
                                                     <Border Background="{TemplateBinding Background}"
-                                                            CornerRadius="3"
-                                                            Padding="{TemplateBinding Padding}">
+                                                    CornerRadius="3"
+                                                    Padding="{TemplateBinding Padding}">
                                                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                                     </Border>
                                                 </ControlTemplate>
@@ -151,7 +88,7 @@
                 </DataGridTemplateColumn>
             </DataGrid.Columns>
         </DataGrid>
-
+        
         <!-- Кнопки управления -->
         <StackPanel Grid.Row="2" 
                     Orientation="Horizontal" 

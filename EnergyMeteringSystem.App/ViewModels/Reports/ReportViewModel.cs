@@ -18,10 +18,39 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
         private int _selectedYear;
         private int _selectedMonth;
         private string _selectedMonthName;
-        private DateTime _startDate;
-        private DateTime _endDate;
         private int _selectedReportType;
         private object _reportData;
+
+        private DateTime _startDate;
+        private DateTime _endDate;
+
+        public DateTime StartDate
+        {
+            get => _startDate;
+            set
+            {
+                if (SetProperty(ref _startDate, value))
+                {
+                    if (_startDate > _endDate)
+                        EndDate = _startDate;
+                    LoadReport();
+                }
+            }
+        }
+
+        public DateTime EndDate
+        {
+            get => _endDate;
+            set
+            {
+                if (SetProperty(ref _endDate, value))
+                {
+                    if (_endDate < _startDate)
+                        StartDate = _endDate;
+                    LoadReport();
+                }
+            }
+        }
 
         public ReportViewModel()
         {
@@ -133,17 +162,6 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
             }
         }
 
-        public DateTime StartDate
-        {
-            get => _startDate;
-            set { SetProperty(ref _startDate, value); LoadReport(); }
-        }
-
-        public DateTime EndDate
-        {
-            get => _endDate;
-            set { SetProperty(ref _endDate, value); LoadReport(); }
-        }
 
         // ===== ИТОГОВЫЕ СВОЙСТВА =====
         public decimal TotalConsumption => ConsumptionData?.Sum(c => c.Consumption) ?? 0;

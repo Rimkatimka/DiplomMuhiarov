@@ -1,9 +1,10 @@
-﻿using System;
-using System.Collections.ObjectModel;
-using EnergyMeteringSystem.App.Commands;
+﻿using EnergyMeteringSystem.App.Commands;
 using EnergyMeteringSystem.App.ViewModels.Base;
 using EnergyMeteringSystem.Core.Models.DTO;
 using EnergyMeteringSystem.Data.Repositories;
+using System;
+using System.Collections.ObjectModel;
+using System.Windows;
 
 namespace EnergyMeteringSystem.App.ViewModels.Tariffs
 {
@@ -20,8 +21,62 @@ namespace EnergyMeteringSystem.App.ViewModels.Tariffs
         public int ZoneNumber { get; set; }
         public string ZoneName => ZoneNumber == 1 ? "День" : "Ночь";
         public decimal PricePerUnit { get; set; }
-        public DateTime StartDate { get; set; }
-        public DateTime? EndDate { get; set; }
+
+        private DateTime? _startDate;
+        public DateTime? StartDate
+        {
+            get => _startDate;
+            set
+            {
+                SetProperty(ref _startDate, value);
+                ValidateDates();
+                SaveCommand.RaiseCanExecuteChanged();
+            }
+        }
+
+        private DateTime? _endDate;
+        public DateTime? EndDate
+        {
+            get => _endDate;
+            set
+            {
+                SetProperty(ref _endDate, value);
+                ValidateDates();
+                SaveCommand.RaiseCanExecuteChanged();
+            }
+        }
+
+        private string _dateError;
+        public string DateError
+        {
+            get => _dateError;
+            set
+            {
+                if (SetProperty(ref _dateError, value))
+                {
+                    OnPropertyChanged(nameof(DateErrorVisibility));
+                }
+            }
+        }
+
+        public Visibility DateErrorVisibility => string.IsNullOrEmpty(DateError) ? Visibility.Collapsed : Visibility.Visible;
+
+        private void ValidateDates()
+        {
+            if (!StartDate.HasValue)
+            {
+                DateError = "Дата начала обязательна";
+                return;
+            }
+
+            if (EndDate.HasValue && EndDate < StartDate)
+            {
+                DateError = "Дата окончания не может быть раньше даты начала";
+                return;
+            }
+
+            DateError = string.Empty;
+        }
 
         public bool IsEditMode { get; private set; }
 
@@ -87,7 +142,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Tariffs
                 TariffTypeId = SelectedTariffType.Id,
                 ZoneNumber = ZoneNumber,
                 PricePerUnit = PricePerUnit,
-                StartDate = StartDate,
+                StartDate = (DateTime)StartDate,
                 EndDate = EndDate
             };
 

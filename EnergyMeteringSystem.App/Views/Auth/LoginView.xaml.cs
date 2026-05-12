@@ -1,6 +1,8 @@
-﻿using System.Windows;
-using System.Windows.Controls;
+﻿using EnergyMeteringSystem.App.Helpers;
 using EnergyMeteringSystem.App.ViewModels.Auth;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
 
 namespace EnergyMeteringSystem.App.Views.Auth
 {
@@ -22,7 +24,20 @@ namespace EnergyMeteringSystem.App.Views.Auth
                 viewModel.Password = PasswordBox.Password;
                 System.Diagnostics.Debug.WriteLine($"Password set to: '{viewModel.Password}'");
             };
+        }
+        private void LoginTextBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        {
+            InputValidator.RestrictLoginInput(sender, e);
+        }
 
+        private void LoginTextBox_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            InputValidator.BlockSpace(sender, e);
+        }
+
+        private void PasswordBox_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            InputValidator.BlockSpace(sender, e);
         }
     }
     public partial class App : Application

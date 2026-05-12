@@ -21,9 +21,11 @@
         <!-- Название -->
         <TextBlock Grid.Row="0" Grid.Column="0" Text="Название:" Margin="5" VerticalAlignment="Center"/>
         <TextBox Grid.Row="0" Grid.Column="1" 
-                 Text="{Binding Name}" 
-                 Margin="5" Padding="5"
-                 MaxLength="100"/>
+         Text="{Binding Name}" 
+         Margin="5" Padding="5"
+         MaxLength="100"
+         PreviewTextInput="TextBox_PreviewTextInput_General"
+         PreviewKeyDown="TextBox_PreviewKeyDown_BlockSpace"/>
 
         <!-- Описание -->
         <TextBlock Grid.Row="1" Grid.Column="0" Text="Описание:" Margin="5" VerticalAlignment="Center"/>

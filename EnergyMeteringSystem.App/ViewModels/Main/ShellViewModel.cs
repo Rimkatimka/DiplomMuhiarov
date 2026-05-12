@@ -10,7 +10,6 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
 {
     public class ShellViewModel : ViewModelBase
     {
-        private readonly AuthService _authService;
 
         public UserDto CurrentUser { get; }
         public ObservableCollection<MenuItemViewModel> MenuItems { get; set; }
@@ -62,11 +61,11 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
                 Command = new RelayCommand(_ => OpenDashboard())
             });
 
-            MenuItems.Add(new MenuItemViewModel
-            {
-                Title = "Счетчики",
-                Command = new RelayCommand(_ => OpenMeterList())  // ← вызов здесь
-            });
+            //MenuItems.Add(new MenuItemViewModel
+            //{
+            //    Title = "Счетчики",
+            //    Command = new RelayCommand(_ => OpenMeterList())  // ← вызов здесь
+            //});
 
             // Объекты - всем
             MenuItems.Add(new MenuItemViewModel

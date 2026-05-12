@@ -56,8 +56,12 @@
 
                 <TextBlock Grid.Row="2" Grid.Column="0" Text="Сумма:" Margin="5" VerticalAlignment="Center"/>
                 <TextBox Grid.Row="2" Grid.Column="1" 
-                         Text="{Binding Amount}"
-                         Margin="5" Padding="5"/>
+                 Text="{Binding Amount}"
+                 Margin="5" Padding="5"
+                 MaxLength="15"
+                 PreviewTextInput="TextBox_PreviewTextInput_Decimal"
+                 PreviewKeyDown="TextBox_PreviewKeyDown_BlockSpace"
+                 ToolTip="Только цифры, точка или запятая"/>
 
                 <Button Grid.Row="0" Grid.Column="2" 
                         Content="Печать квитанции"

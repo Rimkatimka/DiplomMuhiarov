@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.ObjectModel;
+using System.Linq;
 using EnergyMeteringSystem.App.Commands;
 using EnergyMeteringSystem.App.ViewModels.Base;
 using EnergyMeteringSystem.Core.Models.DTO;
@@ -18,6 +19,10 @@ namespace EnergyMeteringSystem.App.ViewModels.Contracts
         private ConsumptionObjectDto _selectedObject;
         private TariffDto _selectedTariff;
         private ContractStatusDto _selectedStatus;
+        private DateTime _contractDate;
+        private DateTime _startDate;
+        private DateTime? _endDate;
+        private string _dateError;
 
         public event EventHandler OnContractSaved;
 
@@ -26,9 +31,45 @@ namespace EnergyMeteringSystem.App.ViewModels.Contracts
         public ObservableCollection<ContractStatusDto> Statuses { get; set; }
 
         public string ContractNumber { get; set; }
-        public DateTime ContractDate { get; set; }
-        public DateTime StartDate { get; set; }
-        public DateTime? EndDate { get; set; }
+
+        public DateTime ContractDate
+        {
+            get => _contractDate;
+            set
+            {
+                SetProperty(ref _contractDate, value);
+                ValidateDates();
+                SaveCommand.RaiseCanExecuteChanged();
+            }
+        }
+
+        public DateTime StartDate
+        {
+            get => _startDate;
+            set
+            {
+                SetProperty(ref _startDate, value);
+                ValidateDates();
+                SaveCommand.RaiseCanExecuteChanged();
+            }
+        }
+
+        public DateTime? EndDate
+        {
+            get => _endDate;
+            set
+            {
+                SetProperty(ref _endDate, value);
+                ValidateDates();
+                SaveCommand.RaiseCanExecuteChanged();
+            }
+        }
+
+        public string DateError
+        {
+            get => _dateError;
+            set => SetProperty(ref _dateError, value);
+        }
 
         public ConsumptionObjectDto SelectedObject
         {
@@ -64,9 +105,9 @@ namespace EnergyMeteringSystem.App.ViewModels.Contracts
             _tariffRepository = tariffRepo;
             _statusRepository = statusRepo;
 
-            Objects = [];
-            Tariffs = [];
-            Statuses = [];
+            Objects = new ObservableCollection<ConsumptionObjectDto>();
+            Tariffs = new ObservableCollection<TariffDto>();
+            Statuses = new ObservableCollection<ContractStatusDto>();
 
             SaveCommand = new RelayCommand(_ => Save(), _ => CanSave());
             CancelCommand = new RelayCommand(_ => Cancel());
@@ -86,25 +127,41 @@ namespace EnergyMeteringSystem.App.ViewModels.Contracts
             }
         }
 
+        private void ValidateDates()
+        {
+            if (ContractDate > DateTime.Today)
+            {
+                DateError = "Дата договора не может быть позже сегодняшнего дня";
+                return;
+            }
+
+            if (StartDate < ContractDate)
+            {
+                DateError = "Дата начала не может быть раньше даты договора";
+                return;
+            }
+
+            if (EndDate.HasValue && EndDate < StartDate)
+            {
+                DateError = "Дата окончания не может быть раньше даты начала";
+                return;
+            }
+
+            DateError = string.Empty;
+        }
+
         private void LoadData()
         {
-            // Загрузка объектов
-            System.Collections.Generic.List<ConsumptionObjectDto> objects = _objectRepository.GetAll();
-            foreach (ConsumptionObjectDto obj in objects)
-            {
+            var objects = _objectRepository.GetAll();
+            foreach (var obj in objects)
                 Objects.Add(obj);
-            }
 
-            // Загрузка тарифов
-            System.Collections.Generic.List<TariffDto> tariffs = _tariffRepository.GetAll();
-            foreach (TariffDto tariff in tariffs)
-            {
+            var tariffs = _tariffRepository.GetAll();
+            foreach (var tariff in tariffs)
                 Tariffs.Add(tariff);
-            }
 
-            // Загрузка статусов — преобразуем DirectoryDto в ContractStatusDto
-            System.Collections.Generic.List<DirectoryDto> statuses = _statusRepository.GetAll();
-            foreach (DirectoryDto status in statuses)
+            var statuses = _statusRepository.GetAll();
+            foreach (var status in statuses)
             {
                 Statuses.Add(new ContractStatusDto
                 {
@@ -131,41 +188,17 @@ namespace EnergyMeteringSystem.App.ViewModels.Contracts
 
         private ConsumptionObjectDto FindObject(int id)
         {
-            foreach (ConsumptionObjectDto obj in Objects)
-            {
-                if (obj.Id == id)
-                {
-                    return obj;
-                }
-            }
-
-            return null;
+            return Objects.FirstOrDefault(o => o.Id == id);
         }
 
         private TariffDto FindTariff(int id)
         {
-            foreach (TariffDto tariff in Tariffs)
-            {
-                if (tariff.Id == id)
-                {
-                    return tariff;
-                }
-            }
-
-            return null;
+            return Tariffs.FirstOrDefault(t => t.Id == id);
         }
 
         private ContractStatusDto FindStatus(int id)
         {
-            foreach (ContractStatusDto status in Statuses)
-            {
-                if (status.Id == id)
-                {
-                    return status;
-                }
-            }
-
-            return null;
+            return Statuses.FirstOrDefault(s => s.Id == id);
         }
 
         private bool CanSave()
@@ -173,12 +206,13 @@ namespace EnergyMeteringSystem.App.ViewModels.Contracts
             return !string.IsNullOrWhiteSpace(ContractNumber) &&
                    SelectedObject != null &&
                    SelectedTariff != null &&
-                   SelectedStatus != null;
+                   SelectedStatus != null &&
+                   string.IsNullOrEmpty(DateError);
         }
 
         private void Save()
         {
-            ContractDto dto = new()
+            var dto = new ContractDto
             {
                 Id = _contract?.Id ?? 0,
                 ContractNumber = ContractNumber,
@@ -191,13 +225,9 @@ namespace EnergyMeteringSystem.App.ViewModels.Contracts
             };
 
             if (IsEditMode)
-            {
                 _contractRepository.Update(dto);
-            }
             else
-            {
                 _contractRepository.Add(dto);
-            }
 
             OnContractSaved?.Invoke(this, EventArgs.Empty);
         }

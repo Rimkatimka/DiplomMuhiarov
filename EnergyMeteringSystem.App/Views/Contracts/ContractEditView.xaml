@@ -20,7 +20,13 @@
 
         <!-- Номер договора -->
         <TextBlock Grid.Row="0" Grid.Column="0" Text="Номер договора:" Margin="5" VerticalAlignment="Center"/>
-        <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding ContractNumber}" Margin="5" Padding="5"/>
+        <TextBlock Grid.Row="7" Grid.Column="0" Grid.ColumnSpan="2" 
+           Text="{Binding DateError}"
+           Foreground="Red"
+           FontSize="12"
+           Margin="5"
+           HorizontalAlignment="Center"
+           Visibility="{Binding DateError}"/>
 
         <!-- Объект -->
         <TextBlock Grid.Row="1" Grid.Column="0" Text="Объект:" Margin="5" VerticalAlignment="Center"/>

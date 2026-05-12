@@ -87,7 +87,7 @@ namespace EnergyMeteringSystem.Data.Repositories
                 ConsumptionValue = dto.ConsumptionValue,
                 Amount = dto.Amount,
                 IsPaid = dto.IsPaid,
-                TariffId = 1 // По умолчанию, потом доработаем
+                TariffId = 1
             };
 
             _ = _context.Accrual.Add(entity);

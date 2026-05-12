@@ -92,7 +92,6 @@ namespace EnergyMeteringSystem.Data.Repositories
 
                 Payment entity = new()
                 {
-                    // Id не указываем - автоинкремент
                     ConsumptionObjectId = dto.ConsumptionObjectId,
                     PaymentDate = DateTime.Now,
                     Amount = dto.Amount,

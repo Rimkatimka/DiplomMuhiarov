@@ -4,12 +4,12 @@
   <edmx:Runtime>
     <!-- SSDL content -->
     <edmx:StorageModels>
-      <Schema Namespace="Хранилище EnergyMeteringSystemModel" Provider="System.Data.SqlClient" ProviderManifestToken="2008" Alias="Self" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm/ssdl">
+    <Schema Namespace="Хранилище EnergyMeteringSystemModel" Provider="System.Data.SqlClient" ProviderManifestToken="2012" Alias="Self" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm/ssdl">
         <EntityType Name="Accrual">
           <Key>
             <PropertyRef Name="Id" />
           </Key>
-          <Property Name="Id" Type="int" Nullable="false" />
+          <Property Name="Id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
           <Property Name="ConsumptionObjectId" Type="int" Nullable="false" />
           <Property Name="PeriodMonth" Type="int" Nullable="false" />
           <Property Name="PeriodYear" Type="int" Nullable="false" />
@@ -22,7 +22,7 @@
           <Key>
             <PropertyRef Name="Id" />
           </Key>
-          <Property Name="Id" Type="int" Nullable="false" />
+          <Property Name="Id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
           <Property Name="UserId" Type="int" />
           <Property Name="ActionTime" Type="datetime" Nullable="false" />
           <Property Name="ActionType" Type="nvarchar" MaxLength="50" Nullable="false" />
@@ -36,7 +36,7 @@
           <Key>
             <PropertyRef Name="Id" />
           </Key>
-          <Property Name="Id" Type="int" Nullable="false" />
+          <Property Name="Id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
           <Property Name="Name" Type="nvarchar" MaxLength="100" Nullable="false" />
           <Property Name="RegionId" Type="int" Nullable="false" />
         </EntityType>
@@ -44,8 +44,7 @@
           <Key>
             <PropertyRef Name="Id" />
           </Key>
-          <Property Name="Id" Type="int" Nullable="false" />
-          <Property Name="Name" Type="nvarchar" MaxLength="200" Nullable="false" />
+          <Property Name="Id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
           <Property Name="ObjectTypeId" Type="int" Nullable="false" />
           <Property Name="StreetId" Type="int" Nullable="false" />
           <Property Name="HouseNumber" Type="nvarchar" MaxLength="10" Nullable="false" />
@@ -57,7 +56,7 @@
           <Key>
             <PropertyRef Name="Id" />
           </Key>
-          <Property Name="Id" Type="int" Nullable="false" />
+          <Property Name="Id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
           <Property Name="ContractNumber" Type="nvarchar" MaxLength="50" Nullable="false" />
           <Property Name="ConsumptionObjectId" Type="int" Nullable="false" />
           <Property Name="ContractDate" Type="date" Nullable="false" />
@@ -70,7 +69,7 @@
           <Key>
             <PropertyRef Name="Id" />
           </Key>
-          <Property Name="Id" Type="int" Nullable="false" />
+          <Property Name="Id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
           <Property Name="Name" Type="nvarchar" MaxLength="50" Nullable="false" />
           <Property Name="AllowsBilling" Type="bit" Nullable="false" />
         </EntityType>
@@ -78,7 +77,7 @@
           <Key>
             <PropertyRef Name="Id" />
           </Key>
-          <Property Name="Id" Type="int" Nullable="false" />
+          <Property Name="Id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
           <Property Name="Name" Type="nvarchar" MaxLength="100" Nullable="false" />
           <Property Name="Code" Type="nvarchar" MaxLength="20" Nullable="false" />
           <Property Name="CapacityMW" Type="decimal" Precision="10" Scale="2" />
@@ -87,7 +86,7 @@
           <Key>
             <PropertyRef Name="Id" />
           </Key>
-          <Property Name="Id" Type="int" Nullable="false" />
+          <Property Name="Id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
           <Property Name="SerialNumber" Type="nvarchar" MaxLength="50" Nullable="false" />
           <Property Name="MeterTypeId" Type="int" Nullable="false" />
           <Property Name="ConsumptionObjectId" Type="int" Nullable="false" />
@@ -96,12 +95,14 @@
           <Property Name="MeterStatusId" Type="int" Nullable="false" />
           <Property Name="VerificationDate" Type="date" />
           <Property Name="NextVerificationDate" Type="date" />
+          <Property Name="ServiceLifeYears" Type="int" />
+          <Property Name="RemovalDate" Type="date" StoreGeneratedPattern="Computed" />
         </EntityType>
         <EntityType Name="MeterReading">
           <Key>
             <PropertyRef Name="Id" />
           </Key>
-          <Property Name="Id" Type="int" Nullable="false" />
+          <Property Name="Id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
           <Property Name="MeterId" Type="int" Nullable="false" />
           <Property Name="ReadingDate" Type="date" Nullable="false" />
           <Property Name="Value" Type="decimal" Precision="15" Scale="4" Nullable="false" />
@@ -116,7 +117,7 @@
           <Key>
             <PropertyRef Name="Id" />
           </Key>
-          <Property Name="Id" Type="int" Nullable="false" />
+          <Property Name="Id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
           <Property Name="OldMeterId" Type="int" Nullable="false" />
           <Property Name="NewMeterId" Type="int" Nullable="false" />
           <Property Name="ConsumptionObjectId" Type="int" Nullable="false" />
@@ -129,7 +130,7 @@
           <Key>
             <PropertyRef Name="Id" />
           </Key>
-          <Property Name="Id" Type="int" Nullable="false" />
+          <Property Name="Id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
           <Property Name="Name" Type="nvarchar" MaxLength="50" Nullable="false" />
           <Property Name="CanAcceptReadings" Type="bit" Nullable="false" />
         </EntityType>
@@ -137,19 +138,20 @@
           <Key>
             <PropertyRef Name="Id" />
           </Key>
-          <Property Name="Id" Type="int" Nullable="false" />
+          <Property Name="Id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
           <Property Name="Name" Type="nvarchar" MaxLength="100" Nullable="false" />
           <Property Name="Voltage" Type="int" Nullable="false" />
           <Property Name="MaxCurrent" Type="int" Nullable="false" />
           <Property Name="AccuracyClass" Type="nvarchar" MaxLength="10" Nullable="false" />
           <Property Name="DigitCount" Type="int" Nullable="false" />
           <Property Name="DecimalPlaces" Type="int" Nullable="false" />
+          <Property Name="ServiceLifeYears" Type="int" />
         </EntityType>
         <EntityType Name="ObjectType">
           <Key>
             <PropertyRef Name="Id" />
           </Key>
-          <Property Name="Id" Type="int" Nullable="false" />
+          <Property Name="Id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
           <Property Name="Name" Type="nvarchar" MaxLength="50" Nullable="false" />
           <Property Name="NormConsumption" Type="decimal" Precision="10" Scale="2" />
         </EntityType>
@@ -157,7 +159,7 @@
           <Key>
             <PropertyRef Name="Id" />
           </Key>
-          <Property Name="Id" Type="int" Nullable="false" />
+          <Property Name="Id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
           <Property Name="ConsumptionObjectId" Type="int" Nullable="false" />
           <Property Name="PaymentDate" Type="datetime" Nullable="false" />
           <Property Name="Amount" Type="decimal" Precision="15" Scale="2" Nullable="false" />
@@ -171,7 +173,7 @@
           <Key>
             <PropertyRef Name="Id" />
           </Key>
-          <Property Name="Id" Type="int" Nullable="false" />
+          <Property Name="Id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
           <Property Name="Name" Type="nvarchar" MaxLength="50" Nullable="false" />
           <Property Name="RequiresCashier" Type="bit" Nullable="false" />
         </EntityType>
@@ -179,7 +181,7 @@
           <Key>
             <PropertyRef Name="Id" />
           </Key>
-          <Property Name="Id" Type="int" Nullable="false" />
+          <Property Name="Id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
           <Property Name="Code" Type="nvarchar" MaxLength="20" Nullable="false" />
           <Property Name="Name" Type="nvarchar" MaxLength="50" Nullable="false" />
           <Property Name="Description" Type="nvarchar" MaxLength="255" />
@@ -189,7 +191,7 @@
           <Key>
             <PropertyRef Name="Id" />
           </Key>
-          <Property Name="Id" Type="int" Nullable="false" />
+          <Property Name="Id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
           <Property Name="Name" Type="nvarchar" MaxLength="100" Nullable="false" />
           <Property Name="Code" Type="nvarchar" MaxLength="10" />
         </EntityType>
@@ -197,7 +199,7 @@
           <Key>
             <PropertyRef Name="Id" />
           </Key>
-          <Property Name="Id" Type="int" Nullable="false" />
+          <Property Name="Id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
           <Property Name="Name" Type="nvarchar" MaxLength="100" Nullable="false" />
           <Property Name="RequiresComment" Type="bit" Nullable="false" />
         </EntityType>
@@ -205,7 +207,7 @@
           <Key>
             <PropertyRef Name="Id" />
           </Key>
-          <Property Name="Id" Type="int" Nullable="false" />
+          <Property Name="Id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
           <Property Name="Name" Type="nvarchar" MaxLength="200" Nullable="false" />
           <Property Name="CityId" Type="int" Nullable="false" />
           <Property Name="PostalCode" Type="nvarchar" MaxLength="20" />
@@ -214,7 +216,7 @@
           <Key>
             <PropertyRef Name="Id" />
           </Key>
-          <Property Name="Id" Type="int" Nullable="false" />
+          <Property Name="Id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
           <Property Name="Name" Type="nvarchar" MaxLength="100" Nullable="false" />
           <Property Name="EnergySourceId" Type="int" Nullable="false" />
           <Property Name="VoltageLevel" Type="int" Nullable="false" />
@@ -230,21 +232,11 @@
           <Property Name="ConnectionDate" Type="date" Nullable="false" />
           <Property Name="DisconnectionDate" Type="date" />
         </EntityType>
-        <EntityType Name="sysdiagrams">
-          <Key>
-            <PropertyRef Name="diagram_id" />
-          </Key>
-          <Property Name="name" Type="nvarchar" MaxLength="128" Nullable="false" />
-          <Property Name="principal_id" Type="int" Nullable="false" />
-          <Property Name="diagram_id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
-          <Property Name="version" Type="int" />
-          <Property Name="definition" Type="varbinary(max)" />
-        </EntityType>
         <EntityType Name="Tariff">
           <Key>
             <PropertyRef Name="Id" />
           </Key>
-          <Property Name="Id" Type="int" Nullable="false" />
+          <Property Name="Id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
           <Property Name="TariffTypeId" Type="int" Nullable="false" />
           <Property Name="UnitId" Type="int" Nullable="false" />
           <Property Name="PricePerUnit" Type="decimal" Precision="10" Scale="4" Nullable="false" />
@@ -256,7 +248,7 @@
           <Key>
             <PropertyRef Name="Id" />
           </Key>
-          <Property Name="Id" Type="int" Nullable="false" />
+          <Property Name="Id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
           <Property Name="Name" Type="nvarchar" MaxLength="50" Nullable="false" />
           <Property Name="ZoneCount" Type="int" Nullable="false" />
           <Property Name="Description" Type="nvarchar" MaxLength="255" />
@@ -265,7 +257,7 @@
           <Key>
             <PropertyRef Name="Id" />
           </Key>
-          <Property Name="Id" Type="int" Nullable="false" />
+          <Property Name="Id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
           <Property Name="Name" Type="nvarchar" MaxLength="20" Nullable="false" />
           <Property Name="Symbol" Type="nvarchar" MaxLength="10" Nullable="false" />
           <Property Name="IsDefault" Type="bit" Nullable="false" />
@@ -274,7 +266,7 @@
           <Key>
             <PropertyRef Name="Id" />
           </Key>
-          <Property Name="Id" Type="int" Nullable="false" />
+          <Property Name="Id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
           <Property Name="Username" Type="nvarchar" MaxLength="50" Nullable="false" />
           <Property Name="PasswordHash" Type="nvarchar" MaxLength="256" Nullable="false" />
           <Property Name="FullName" Type="nvarchar" MaxLength="100" Nullable="false" />
@@ -287,7 +279,7 @@
           <Key>
             <PropertyRef Name="Id" />
           </Key>
-          <Property Name="Id" Type="int" Nullable="false" />
+          <Property Name="Id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
           <Property Name="Name" Type="nvarchar" MaxLength="50" Nullable="false" />
           <Property Name="Description" Type="nvarchar" MaxLength="255" />
           <Property Name="PermissionsJson" Type="nvarchar(max)" />
@@ -296,7 +288,7 @@
           <Key>
             <PropertyRef Name="Id" />
           </Key>
-          <Property Name="Id" Type="int" Nullable="false" />
+          <Property Name="Id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
           <Property Name="MeterTypeId" Type="int" Nullable="false" />
           <Property Name="Years" Type="int" Nullable="false" />
         </EntityType>
@@ -492,7 +484,7 @@
             </Dependent>
           </ReferentialConstraint>
         </Association>
-        <Association Name="FK_MeterReplacementHistory_ConsumptionObject">
+        <Association Name="FK_MRH_ConsumptionObject">
           <End Role="ConsumptionObject" Type="Self.ConsumptionObject" Multiplicity="1" />
           <End Role="MeterReplacementHistory" Type="Self.MeterReplacementHistory" Multiplicity="*" />
           <ReferentialConstraint>
@@ -504,7 +496,7 @@
             </Dependent>
           </ReferentialConstraint>
         </Association>
-        <Association Name="FK_MeterReplacementHistory_NewMeter">
+        <Association Name="FK_MRH_NewMeter">
           <End Role="Meter" Type="Self.Meter" Multiplicity="1" />
           <End Role="MeterReplacementHistory" Type="Self.MeterReplacementHistory" Multiplicity="*" />
           <ReferentialConstraint>
@@ -516,7 +508,7 @@
             </Dependent>
           </ReferentialConstraint>
         </Association>
-        <Association Name="FK_MeterReplacementHistory_OldMeter">
+        <Association Name="FK_MRH_OldMeter">
           <End Role="Meter" Type="Self.Meter" Multiplicity="1" />
           <End Role="MeterReplacementHistory" Type="Self.MeterReplacementHistory" Multiplicity="*" />
           <ReferentialConstraint>
@@ -564,6 +556,30 @@
             </Dependent>
           </ReferentialConstraint>
         </Association>
+        <Association Name="FK_SPCO_ConsumptionObject">
+          <End Role="ConsumptionObject" Type="Self.ConsumptionObject" Multiplicity="1" />
+          <End Role="SupplyPointConsumptionObject" Type="Self.SupplyPointConsumptionObject" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="ConsumptionObject">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="SupplyPointConsumptionObject">
+              <PropertyRef Name="ConsumptionObjectId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_SPCO_SupplyPoint">
+          <End Role="SupplyPoint" Type="Self.SupplyPoint" Multiplicity="1" />
+          <End Role="SupplyPointConsumptionObject" Type="Self.SupplyPointConsumptionObject" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="SupplyPoint">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="SupplyPointConsumptionObject">
+              <PropertyRef Name="SupplyPointId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
         <Association Name="FK_Street_City">
           <End Role="City" Type="Self.City" Multiplicity="1" />
           <End Role="Street" Type="Self.Street" Multiplicity="*" />
@@ -585,30 +601,6 @@
             </Principal>
             <Dependent Role="SupplyPoint">
               <PropertyRef Name="EnergySourceId" />
-            </Dependent>
-          </ReferentialConstraint>
-        </Association>
-        <Association Name="FK_SupplyPointConsumptionObject_ConsumptionObject">
-          <End Role="ConsumptionObject" Type="Self.ConsumptionObject" Multiplicity="1" />
-          <End Role="SupplyPointConsumptionObject" Type="Self.SupplyPointConsumptionObject" Multiplicity="*" />
-          <ReferentialConstraint>
-            <Principal Role="ConsumptionObject">
-              <PropertyRef Name="Id" />
-            </Principal>
-            <Dependent Role="SupplyPointConsumptionObject">
-              <PropertyRef Name="ConsumptionObjectId" />
-            </Dependent>
-          </ReferentialConstraint>
-        </Association>
-        <Association Name="FK_SupplyPointConsumptionObject_SupplyPoint">
-          <End Role="SupplyPoint" Type="Self.SupplyPoint" Multiplicity="1" />
-          <End Role="SupplyPointConsumptionObject" Type="Self.SupplyPointConsumptionObject" Multiplicity="*" />
-          <ReferentialConstraint>
-            <Principal Role="SupplyPoint">
-              <PropertyRef Name="Id" />
-            </Principal>
-            <Dependent Role="SupplyPointConsumptionObject">
-              <PropertyRef Name="SupplyPointId" />
             </Dependent>
           </ReferentialConstraint>
         </Association>
@@ -682,7 +674,6 @@
           <EntitySet Name="Street" EntityType="Self.Street" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="SupplyPoint" EntityType="Self.SupplyPoint" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="SupplyPointConsumptionObject" EntityType="Self.SupplyPointConsumptionObject" Schema="dbo" store:Type="Tables" />
-          <EntitySet Name="sysdiagrams" EntityType="Self.sysdiagrams" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="Tariff" EntityType="Self.Tariff" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="TariffType" EntityType="Self.TariffType" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="UnitOfMeasure" EntityType="Self.UnitOfMeasure" Schema="dbo" store:Type="Tables" />
@@ -753,15 +744,15 @@
             <End Role="User" EntitySet="User" />
             <End Role="MeterReading" EntitySet="MeterReading" />
           </AssociationSet>
-          <AssociationSet Name="FK_MeterReplacementHistory_ConsumptionObject" Association="Self.FK_MeterReplacementHistory_ConsumptionObject">
+          <AssociationSet Name="FK_MRH_ConsumptionObject" Association="Self.FK_MRH_ConsumptionObject">
             <End Role="ConsumptionObject" EntitySet="ConsumptionObject" />
             <End Role="MeterReplacementHistory" EntitySet="MeterReplacementHistory" />
           </AssociationSet>
-          <AssociationSet Name="FK_MeterReplacementHistory_NewMeter" Association="Self.FK_MeterReplacementHistory_NewMeter">
+          <AssociationSet Name="FK_MRH_NewMeter" Association="Self.FK_MRH_NewMeter">
             <End Role="Meter" EntitySet="Meter" />
             <End Role="MeterReplacementHistory" EntitySet="MeterReplacementHistory" />
           </AssociationSet>
-          <AssociationSet Name="FK_MeterReplacementHistory_OldMeter" Association="Self.FK_MeterReplacementHistory_OldMeter">
+          <AssociationSet Name="FK_MRH_OldMeter" Association="Self.FK_MRH_OldMeter">
             <End Role="Meter" EntitySet="Meter" />
             <End Role="MeterReplacementHistory" EntitySet="MeterReplacementHistory" />
           </AssociationSet>
@@ -777,6 +768,14 @@
             <End Role="User" EntitySet="User" />
             <End Role="Payment" EntitySet="Payment" />
           </AssociationSet>
+          <AssociationSet Name="FK_SPCO_ConsumptionObject" Association="Self.FK_SPCO_ConsumptionObject">
+            <End Role="ConsumptionObject" EntitySet="ConsumptionObject" />
+            <End Role="SupplyPointConsumptionObject" EntitySet="SupplyPointConsumptionObject" />
+          </AssociationSet>
+          <AssociationSet Name="FK_SPCO_SupplyPoint" Association="Self.FK_SPCO_SupplyPoint">
+            <End Role="SupplyPoint" EntitySet="SupplyPoint" />
+            <End Role="SupplyPointConsumptionObject" EntitySet="SupplyPointConsumptionObject" />
+          </AssociationSet>
           <AssociationSet Name="FK_Street_City" Association="Self.FK_Street_City">
             <End Role="City" EntitySet="City" />
             <End Role="Street" EntitySet="Street" />
@@ -784,14 +783,6 @@
           <AssociationSet Name="FK_SupplyPoint_EnergySource" Association="Self.FK_SupplyPoint_EnergySource">
             <End Role="EnergySource" EntitySet="EnergySource" />
             <End Role="SupplyPoint" EntitySet="SupplyPoint" />
-          </AssociationSet>
-          <AssociationSet Name="FK_SupplyPointConsumptionObject_ConsumptionObject" Association="Self.FK_SupplyPointConsumptionObject_ConsumptionObject">
-            <End Role="ConsumptionObject" EntitySet="ConsumptionObject" />
-            <End Role="SupplyPointConsumptionObject" EntitySet="SupplyPointConsumptionObject" />
-          </AssociationSet>
-          <AssociationSet Name="FK_SupplyPointConsumptionObject_SupplyPoint" Association="Self.FK_SupplyPointConsumptionObject_SupplyPoint">
-            <End Role="SupplyPoint" EntitySet="SupplyPoint" />
-            <End Role="SupplyPointConsumptionObject" EntitySet="SupplyPointConsumptionObject" />
           </AssociationSet>
           <AssociationSet Name="FK_Tariff_TariffType" Association="Self.FK_Tariff_TariffType">
             <End Role="TariffType" EntitySet="TariffType" />
@@ -810,8 +801,7 @@
             <End Role="VerificationInterval" EntitySet="VerificationInterval" />
           </AssociationSet>
         </EntityContainer>
-      </Schema>
-    </edmx:StorageModels>
+      </Schema></edmx:StorageModels>
     <!-- CSDL content -->
     <edmx:ConceptualModels>
       <Schema Namespace="EnergyMeteringSystemModel" Alias="Self" annotation:UseStrongSpatialTypes="false" xmlns:annotation="http://schemas.microsoft.com/ado/2009/02/edm/annotation" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm">
@@ -860,7 +850,6 @@
             <PropertyRef Name="Id" />
           </Key>
           <Property Name="Id" Type="Int32" Nullable="false" />
-          <Property Name="Name" Type="String" MaxLength="200" FixedLength="false" Unicode="true" Nullable="false" />
           <Property Name="ObjectTypeId" Type="Int32" Nullable="false" />
           <Property Name="StreetId" Type="Int32" Nullable="false" />
           <Property Name="HouseNumber" Type="String" MaxLength="10" FixedLength="false" Unicode="true" Nullable="false" />
@@ -930,6 +919,8 @@
           <NavigationProperty Name="MeterReading" Relationship="Self.FK_MeterReading_Meter" FromRole="Meter" ToRole="MeterReading" />
           <NavigationProperty Name="MeterReplacementHistory" Relationship="Self.FK_MeterReplacementHistory_NewMeter" FromRole="Meter" ToRole="MeterReplacementHistory" />
           <NavigationProperty Name="MeterReplacementHistory1" Relationship="Self.FK_MeterReplacementHistory_OldMeter" FromRole="Meter" ToRole="MeterReplacementHistory" />
+          <Property Name="ServiceLifeYears" Type="Int32" />
+          <Property Name="RemovalDate" Type="DateTime" annotation:StoreGeneratedPattern="Computed" Precision="0" />
         </EntityType>
         <EntityType Name="MeterReading">
           <Key>
@@ -988,6 +979,7 @@
           <Property Name="DecimalPlaces" Type="Int32" Nullable="false" />
           <NavigationProperty Name="Meter" Relationship="Self.FK_Meter_MeterType" FromRole="MeterType" ToRole="Meter" />
           <NavigationProperty Name="VerificationInterval" Relationship="Self.FK_VerificationInterval_MeterType" FromRole="MeterType" ToRole="VerificationInterval" />
+          <Property Name="ServiceLifeYears" Type="Int32" />
         </EntityType>
         <EntityType Name="ObjectType">
           <Key>
@@ -1087,16 +1079,6 @@
           <Property Name="DisconnectionDate" Type="DateTime" Precision="0" />
           <NavigationProperty Name="ConsumptionObject" Relationship="Self.FK_SupplyPointConsumptionObject_ConsumptionObject" FromRole="SupplyPointConsumptionObject" ToRole="ConsumptionObject" />
           <NavigationProperty Name="SupplyPoint" Relationship="Self.FK_SupplyPointConsumptionObject_SupplyPoint" FromRole="SupplyPointConsumptionObject" ToRole="SupplyPoint" />
-        </EntityType>
-        <EntityType Name="sysdiagrams">
-          <Key>
-            <PropertyRef Name="diagram_id" />
-          </Key>
-          <Property Name="name" Type="String" MaxLength="128" FixedLength="false" Unicode="true" Nullable="false" />
-          <Property Name="principal_id" Type="Int32" Nullable="false" />
-          <Property Name="diagram_id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
-          <Property Name="version" Type="Int32" />
-          <Property Name="definition" Type="Binary" MaxLength="Max" FixedLength="false" />
         </EntityType>
         <EntityType Name="Tariff">
           <Key>
@@ -1552,7 +1534,6 @@
           <EntitySet Name="Street" EntityType="Self.Street" />
           <EntitySet Name="SupplyPoint" EntityType="Self.SupplyPoint" />
           <EntitySet Name="SupplyPointConsumptionObject" EntityType="Self.SupplyPointConsumptionObject" />
-          <EntitySet Name="sysdiagrams" EntityType="Self.sysdiagrams" />
           <EntitySet Name="Tariff" EntityType="Self.Tariff" />
           <EntitySet Name="TariffType" EntityType="Self.TariffType" />
           <EntitySet Name="UnitOfMeasure" EntityType="Self.UnitOfMeasure" />
@@ -1728,7 +1709,6 @@
             <EntityTypeMapping TypeName="EnergyMeteringSystemModel.ConsumptionObject">
               <MappingFragment StoreEntitySet="ConsumptionObject">
                 <ScalarProperty Name="Id" ColumnName="Id" />
-                <ScalarProperty Name="Name" ColumnName="Name" />
                 <ScalarProperty Name="ObjectTypeId" ColumnName="ObjectTypeId" />
                 <ScalarProperty Name="StreetId" ColumnName="StreetId" />
                 <ScalarProperty Name="HouseNumber" ColumnName="HouseNumber" />
@@ -1774,6 +1754,8 @@
           <EntitySetMapping Name="Meter">
             <EntityTypeMapping TypeName="EnergyMeteringSystemModel.Meter">
               <MappingFragment StoreEntitySet="Meter">
+                <ScalarProperty Name="RemovalDate" ColumnName="RemovalDate" />
+                <ScalarProperty Name="ServiceLifeYears" ColumnName="ServiceLifeYears" />
                 <ScalarProperty Name="Id" ColumnName="Id" />
                 <ScalarProperty Name="SerialNumber" ColumnName="SerialNumber" />
                 <ScalarProperty Name="MeterTypeId" ColumnName="MeterTypeId" />
@@ -1828,6 +1810,7 @@
           <EntitySetMapping Name="MeterType">
             <EntityTypeMapping TypeName="EnergyMeteringSystemModel.MeterType">
               <MappingFragment StoreEntitySet="MeterType">
+                <ScalarProperty Name="ServiceLifeYears" ColumnName="ServiceLifeYears" />
                 <ScalarProperty Name="Id" ColumnName="Id" />
                 <ScalarProperty Name="Name" ColumnName="Name" />
                 <ScalarProperty Name="Voltage" ColumnName="Voltage" />
@@ -1931,17 +1914,6 @@
               </MappingFragment>
             </EntityTypeMapping>
           </EntitySetMapping>
-          <EntitySetMapping Name="sysdiagrams">
-            <EntityTypeMapping TypeName="EnergyMeteringSystemModel.sysdiagrams">
-              <MappingFragment StoreEntitySet="sysdiagrams">
-                <ScalarProperty Name="name" ColumnName="name" />
-                <ScalarProperty Name="principal_id" ColumnName="principal_id" />
-                <ScalarProperty Name="diagram_id" ColumnName="diagram_id" />
-                <ScalarProperty Name="version" ColumnName="version" />
-                <ScalarProperty Name="definition" ColumnName="definition" />
-              </MappingFragment>
-            </EntityTypeMapping>
-          </EntitySetMapping>
           <EntitySetMapping Name="Tariff">
             <EntityTypeMapping TypeName="EnergyMeteringSystemModel.Tariff">
               <MappingFragment StoreEntitySet="Tariff">
@@ -2024,7 +1996,7 @@
         <DesignerProperty Name="ValidateOnBuild" Value="true" />
         <DesignerProperty Name="EnablePluralization" Value="false" />
         <DesignerProperty Name="IncludeForeignKeysInModel" Value="true" />
-        <DesignerProperty Name="UseLegacyProvider" Value="true" />
+        <DesignerProperty Name="UseLegacyProvider" Value="false" />
         <DesignerProperty Name="CodeGenerationStrategy" Value="Нет" />
       </DesignerInfoPropertySet>
     </Options>

@@ -4,7 +4,7 @@
   <edmx:Designer xmlns="http://schemas.microsoft.com/ado/2009/11/edmx">
     <!-- Diagram content (shape and connector positions) -->
     <edmx:Diagrams>
-      <Diagram DiagramId="2458955575384af08572fe34b2cbca72" Name="Diagram1">
+      <Diagram DiagramId="c84d1ff181a84049a9f56a1ec90c06bf" Name="Diagram1" ZoomLevel="108">
         <EntityTypeShape EntityType="EnergyMeteringSystemModel.Accrual" Width="1.5" PointX="9.75" PointY="12.125" IsExpanded="true" />
         <EntityTypeShape EntityType="EnergyMeteringSystemModel.AuditLog" Width="1.5" PointX="12" PointY="23.25" IsExpanded="true" />
         <EntityTypeShape EntityType="EnergyMeteringSystemModel.City" Width="1.5" PointX="3" PointY="12.625" IsExpanded="true" />
@@ -26,7 +26,6 @@
         <EntityTypeShape EntityType="EnergyMeteringSystemModel.Street" Width="1.5" PointX="5.25" PointY="12.5" IsExpanded="true" />
         <EntityTypeShape EntityType="EnergyMeteringSystemModel.SupplyPoint" Width="1.5" PointX="10.5" PointY="27.5" IsExpanded="true" />
         <EntityTypeShape EntityType="EnergyMeteringSystemModel.SupplyPointConsumptionObject" Width="1.5" PointX="12.75" PointY="8.5" IsExpanded="true" />
-        <EntityTypeShape EntityType="EnergyMeteringSystemModel.sysdiagrams" Width="1.5" PointX="0.75" PointY="1.375" IsExpanded="true" />
         <EntityTypeShape EntityType="EnergyMeteringSystemModel.Tariff" Width="1.5" PointX="7.5" PointY="18.125" IsExpanded="true" />
         <EntityTypeShape EntityType="EnergyMeteringSystemModel.TariffType" Width="1.5" PointX="5.25" PointY="17.25" IsExpanded="true" />
         <EntityTypeShape EntityType="EnergyMeteringSystemModel.UnitOfMeasure" Width="1.5" PointX="5.25" PointY="20" IsExpanded="true" />

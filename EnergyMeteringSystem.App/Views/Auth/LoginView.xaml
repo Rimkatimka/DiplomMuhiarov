@@ -34,15 +34,25 @@
             <!-- Логин - TextBox, а не TextBlock! -->
             <StackPanel Grid.Row="1" Margin="0,0,0,15">
                 <TextBlock Text="Имя пользователя" Margin="0,0,0,5"/>
-                <TextBox Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}" 
-                         Padding="8" FontSize="14"/>
+                <TextBox x:Name="LoginTextBox"
+                         Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}" 
+                         Padding="8" 
+                         FontSize="14"
+                         MaxLength="50"
+                         PreviewTextInput="LoginTextBox_PreviewTextInput"
+                         PreviewKeyDown="LoginTextBox_PreviewKeyDown"
+                         ToolTip="Только латиница, цифры, . _ -"/>
             </StackPanel>
 
             <!-- Пароль -->
             <StackPanel Grid.Row="2" Margin="0,0,0,15">
                 <TextBlock Text="Пароль" Margin="0,0,0,5"/>
                 <PasswordBox x:Name="PasswordBox" 
-                            Padding="8" FontSize="14"/>
+                            Padding="8" 
+                            FontSize="14"
+                            MaxLength="256"
+                            PreviewKeyDown="PasswordBox_PreviewKeyDown"
+                            ToolTip="Пробел запрещён"/>
             </StackPanel>
 
             <!-- Ошибка -->
@@ -56,6 +66,7 @@
             <Button Grid.Row="4" 
                     Command="{Binding LoginCommand}"
                     Content="Войти"
+                    IsDefault ="True"
                     Height="40"
                     Background="#1976D2"
                     Foreground="White"

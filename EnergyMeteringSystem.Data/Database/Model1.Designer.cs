@@ -1,4 +1,4 @@
-﻿// Создание кода T4 для модели "C:\Users\Рим Мухияров\Desktop\DiplomMuhiarov\EnergyMeteringSystem.Data\Database\EnergyMeteringModel.edmx" включено. 
+﻿// Создание кода T4 для модели "C:\Users\рим мухияров\source\repos\DiplomMuhiarov\EnergyMeteringSystem.Data\Database\Model1.edmx" включено. 
 // Чтобы включить формирование кода прежних версий, измените значение свойства "Стратегия создания кода" конструктора
 // на "Legacy ObjectContext". Это свойство доступно в окне "Свойства", если модель
 // открыта в конструкторе.

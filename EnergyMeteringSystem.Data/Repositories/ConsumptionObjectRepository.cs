@@ -1,12 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
+using EnergyMeteringSystem.Core.Interfaces.Repositories;
 using EnergyMeteringSystem.Core.Models.DTO;
 using EnergyMeteringSystem.Data.Database;
 
 namespace EnergyMeteringSystem.Data.Repositories
 {
-    public class ConsumptionObjectRepository
+    public class ConsumptionObjectRepository : IConsumptionObjectRepository
     {
         private readonly EnergyMeteringSystemEntities _context;
 
@@ -17,103 +17,123 @@ namespace EnergyMeteringSystem.Data.Repositories
 
         public List<ConsumptionObjectDto> GetAll()
         {
-            try
+            System.Diagnostics.Debug.WriteLine("GetAll() — прямой запрос в БД");
+
+            var objects = _context.ConsumptionObject
+                .AsNoTracking()  // ← отключает кэш EF
+                .ToList();
+
+            var result = new List<ConsumptionObjectDto>();
+            foreach (var o in objects)
             {
-                System.Diagnostics.Debug.WriteLine("ConsumptionObjectRepository.GetAll() начат");
+                var streetName = _context.Street
+                    .AsNoTracking()
+                    .Where(s => s.Id == o.StreetId)
+                    .Select(s => s.Name)
+                    .FirstOrDefault() ?? "Неизвестно";
 
-                List<ConsumptionObject> objects = _context.ConsumptionObject
-                    .Include("Street")
-                    .ToList();
+                var typeName = _context.ObjectType
+                    .AsNoTracking()
+                    .Where(t => t.Id == o.ObjectTypeId)
+                    .Select(t => t.Name)
+                    .FirstOrDefault() ?? "Неизвестно";
 
-                System.Diagnostics.Debug.WriteLine($"Загружено {objects.Count} объектов из БД");
-
-                List<ConsumptionObjectDto> result = objects.Select(o => new ConsumptionObjectDto
+                result.Add(new ConsumptionObjectDto
                 {
                     Id = o.Id,
-                    Street = o.Street?.Name ?? "Неизвестно",
+                    Street = streetName,
+                    StreetId = o.StreetId,
                     HouseNumber = o.HouseNumber,
                     ApartmentNumber = o.ApartmentNumber,
-                    ObjectTypeName = o.ObjectType?.Name ?? "Неизвестно",
+                    ObjectTypeId = o.ObjectTypeId,
+                    ObjectTypeName = typeName,
                     TotalArea = o.TotalArea,
                     ResidentCount = o.ResidentCount
-                }).ToList();
+                });
+            }
 
-                System.Diagnostics.Debug.WriteLine($"Возвращаем {result.Count} объектов");
-                return result;
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Ошибка в GetAll: {ex.Message}");
-                return [];
-            }
+            return result;
         }
 
         public ConsumptionObjectDto GetById(int id)
         {
-            ConsumptionObject o = _context.ConsumptionObject
-                .Include("ObjectType")
-                .Include("Street")
-                .FirstOrDefault(x => x.Id == id);
+            var o = _context.ConsumptionObject.FirstOrDefault(x => x.Id == id);
+            if (o == null) return null;
 
-            return o == null
-                ? null
-                : new ConsumptionObjectDto
-                {
-                    Id = o.Id,
-                    Name = o.Name,
-                    Street = o.Street.Name,
-                    HouseNumber = o.HouseNumber,
-                    ApartmentNumber = o.ApartmentNumber,
-                    ObjectTypeName = o.ObjectType?.Name,
-                    TotalArea = o.TotalArea,
-                    ResidentCount = o.ResidentCount
-                };
+            var streetName = _context.Street
+                .Where(s => s.Id == o.StreetId)
+                .Select(s => s.Name)
+                .FirstOrDefault() ?? "Неизвестно";
+
+            var typeName = _context.ObjectType
+                .Where(t => t.Id == o.ObjectTypeId)
+                .Select(t => t.Name)
+                .FirstOrDefault() ?? "Неизвестно";
+
+            return new ConsumptionObjectDto
+            {
+                Id = o.Id,                         
+                Street = streetName,
+                StreetId = o.StreetId,
+                HouseNumber = o.HouseNumber,
+                ApartmentNumber = o.ApartmentNumber,
+                ObjectTypeId = o.ObjectTypeId,
+                ObjectTypeName = typeName,
+                TotalArea = o.TotalArea,
+                ResidentCount = o.ResidentCount
+            };
         }
 
-        // ✅ Добавьте этот метод
         public void Add(ConsumptionObjectDto dto)
         {
-            ConsumptionObject entity = new()
+            var entity = new ConsumptionObject
             {
-                Name = dto.Street + ", " + dto.HouseNumber,
-                ObjectTypeId = dto.ObjectTypeId,
                 StreetId = dto.StreetId,
                 HouseNumber = dto.HouseNumber,
                 ApartmentNumber = dto.ApartmentNumber,
+                ObjectTypeId = dto.ObjectTypeId,
                 TotalArea = dto.TotalArea,
                 ResidentCount = dto.ResidentCount
             };
 
-            _ = _context.ConsumptionObject.Add(entity);
-            _ = _context.SaveChanges();
+            _context.ConsumptionObject.Add(entity);
+            _context.SaveChanges();
         }
 
-        // ✅ Добавьте метод Update
         public void Update(ConsumptionObjectDto dto)
         {
-            ConsumptionObject entity = _context.ConsumptionObject.Find(dto.Id);
+            var entity = _context.ConsumptionObject.Find(dto.Id);
             if (entity != null)
             {
-                entity.Name = dto.Street + ", " + dto.HouseNumber;
-                entity.ObjectTypeId = dto.ObjectTypeId;
+                System.Diagnostics.Debug.WriteLine($"=== БЫЛО ===");
+                System.Diagnostics.Debug.WriteLine($"StreetId: {entity.StreetId}, HouseNumber: {entity.HouseNumber}");
+                System.Diagnostics.Debug.WriteLine($"ApartmentNumber: {entity.ApartmentNumber}, ObjectTypeId: {entity.ObjectTypeId}");
+                System.Diagnostics.Debug.WriteLine($"TotalArea: {entity.TotalArea}, ResidentCount: {entity.ResidentCount}");
+
+                System.Diagnostics.Debug.WriteLine($"=== СТАЛО ===");
+                System.Diagnostics.Debug.WriteLine($"StreetId: {dto.StreetId}, HouseNumber: {dto.HouseNumber}");
+                System.Diagnostics.Debug.WriteLine($"ApartmentNumber: {dto.ApartmentNumber}, ObjectTypeId: {dto.ObjectTypeId}");
+                System.Diagnostics.Debug.WriteLine($"TotalArea: {dto.TotalArea}, ResidentCount: {dto.ResidentCount}");
+
                 entity.StreetId = dto.StreetId;
                 entity.HouseNumber = dto.HouseNumber;
                 entity.ApartmentNumber = dto.ApartmentNumber;
+                entity.ObjectTypeId = dto.ObjectTypeId;
                 entity.TotalArea = dto.TotalArea;
                 entity.ResidentCount = dto.ResidentCount;
 
-                _ = _context.SaveChanges();
+                int result = _context.SaveChanges();
+                System.Diagnostics.Debug.WriteLine($"SaveChanges вернул: {result}");
             }
         }
 
-        // ✅ Добавьте метод Delete
         public void Delete(int id)
         {
-            ConsumptionObject entity = _context.ConsumptionObject.Find(id);
+            var entity = _context.ConsumptionObject.Find(id);
             if (entity != null)
             {
-                _ = _context.ConsumptionObject.Remove(entity);
-                _ = _context.SaveChanges();
+                _context.ConsumptionObject.Remove(entity);
+                _context.SaveChanges();
             }
         }
     }

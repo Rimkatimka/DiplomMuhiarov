@@ -1,11 +1,11 @@
-﻿using System;
-using System.Collections.ObjectModel;
-using System.Linq;
-using EnergyMeteringSystem.App.Commands;
+﻿using EnergyMeteringSystem.App.Commands;
 using EnergyMeteringSystem.App.ViewModels.Base;
 using EnergyMeteringSystem.Core.Models.DTO;
 using EnergyMeteringSystem.Data.Repositories;
 using EnergyMeteringSystem.Services.Auth;
+using System;
+using System.Collections.ObjectModel;
+using System.Linq;
 
 namespace EnergyMeteringSystem.App.ViewModels.Readings
 {
@@ -13,7 +13,8 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
     {
         private readonly ConsumptionObjectRepository _objectRepository;
         private readonly MeterReadingRepository _readingRepository;
-        private readonly AuthService _authService;
+        private readonly MeterRepository _meterRepository;
+        private readonly UserDto _currentUser;
 
         private string _searchText;
         private ConsumptionObjectDto _selectedObject;
@@ -21,9 +22,11 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
         private decimal _readingValue;
         private DateTime _readingDate;
         private string _warningMessage;
-        private readonly UserDto _currentUser;
 
-        public ObservableCollection<ConsumptionObjectDto> FoundObjects { get; set; }
+
+
+        public ObservableCollection<ConsumptionObjectDto> Objects { get; set; }
+        public ObservableCollection<ConsumptionObjectDto> FilteredObjects { get; set; }
         public ObservableCollection<MeterForReadingDto> Meters { get; set; }
 
         public string SearchText
@@ -31,8 +34,8 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
             get => _searchText;
             set
             {
-                _ = SetProperty(ref _searchText, value);
-                SearchObjects();
+                SetProperty(ref _searchText, value);
+                ApplyFilter();
             }
         }
 
@@ -41,13 +44,18 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
             get => _selectedObject;
             set
             {
-                _ = SetProperty(ref _selectedObject, value);
-                OnPropertyChanged(nameof(HasSelectedObject));
+                SetProperty(ref _selectedObject, value);
+                System.Diagnostics.Debug.WriteLine($"=== ВЫБРАН ОБЪЕКТ: Id={value?.Id}, Address={value?.Address} ===");
 
-                if (value != null)
+                if (value != null && value.Id > 0)
                 {
-                    LoadMeters();
+                    LoadMeters(value.Id);
                 }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine("!!! ОШИБКА: Объект не выбран или Id=0 !!!");
+                }
+                OnPropertyChanged(nameof(HasSelectedObject));
             }
         }
 
@@ -56,7 +64,8 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
             get => _selectedMeter;
             set
             {
-                _ = SetProperty(ref _selectedMeter, value);
+                SetProperty(ref _selectedMeter, value);
+                CheckAnomaly();
                 OnPropertyChanged(nameof(HasSelectedMeter));
             }
         }
@@ -66,7 +75,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
             get => _readingValue;
             set
             {
-                _ = SetProperty(ref _readingValue, value);
+                SetProperty(ref _readingValue, value);
                 CheckAnomaly();
             }
         }
@@ -82,12 +91,11 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
             get => _warningMessage;
             set
             {
-                _ = SetProperty(ref _warningMessage, value);
+                SetProperty(ref _warningMessage, value);
                 OnPropertyChanged(nameof(HasWarning));
             }
         }
 
-        // Свойства для видимости в XAML
         public bool HasSelectedObject => SelectedObject != null;
         public bool HasSelectedMeter => SelectedMeter != null;
         public bool HasWarning => !string.IsNullOrEmpty(WarningMessage);
@@ -100,68 +108,70 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
             _currentUser = currentUser ?? throw new ArgumentNullException(nameof(currentUser));
             _objectRepository = new ConsumptionObjectRepository();
             _readingRepository = new MeterReadingRepository();
+            _meterRepository = new MeterRepository();
 
-            FoundObjects = [];
-            Meters = [];
+            Objects = new ObservableCollection<ConsumptionObjectDto>();
+            FilteredObjects = new ObservableCollection<ConsumptionObjectDto>();
+            Meters = new ObservableCollection<MeterForReadingDto>();
+
             ReadingDate = DateTime.Today;
 
             SaveCommand = new RelayCommand(_ => SaveReading(), _ => CanSave());
             ClearCommand = new RelayCommand(_ => ClearForm());
+
+            LoadObjects();
         }
 
-        private void SearchObjects()
+        private void LoadObjects()
         {
-            FoundObjects.Clear();
-
-            if (string.IsNullOrWhiteSpace(SearchText) || SearchText.Length < 2)
+            var objects = _objectRepository.GetAll();
+            Objects.Clear();
+            FilteredObjects.Clear();
+            foreach (var obj in objects)
             {
-                return;
-            }
-
-            System.Diagnostics.Debug.WriteLine($"Поиск: '{SearchText}'");
-
-            System.Collections.Generic.List<ConsumptionObjectDto> all = _objectRepository.GetAll();
-            System.Diagnostics.Debug.WriteLine($"Всего объектов: {all.Count}");
-
-            if (all.Count == 0)
-            {
-                System.Diagnostics.Debug.WriteLine("В БД нет объектов!");
-                return;
-            }
-
-            System.Collections.Generic.List<ConsumptionObjectDto> filtered = all.Where(o =>
-                !string.IsNullOrEmpty(o.Address) &&
-                o.Address.IndexOf(SearchText, StringComparison.OrdinalIgnoreCase) >= 0
-            ).ToList();
-
-            System.Diagnostics.Debug.WriteLine($"Найдено объектов: {filtered.Count}");
-
-            foreach (ConsumptionObjectDto obj in filtered)
-            {
-                FoundObjects.Add(obj);
+                Objects.Add(obj);
+                FilteredObjects.Add(obj);
             }
         }
 
-        private void LoadMeters()
+        private void ApplyFilter()
+        {
+            if (string.IsNullOrWhiteSpace(SearchText))
+            {
+                FilteredObjects.Clear();
+                foreach (var obj in Objects)
+                    FilteredObjects.Add(obj);
+            }
+            else
+            {
+                var lowerSearch = SearchText.ToLower();
+                var filtered = Objects.Where(o =>
+                    o.Address.ToLower().Contains(lowerSearch)).ToList();
+                FilteredObjects.Clear();
+                foreach (var obj in filtered)
+                    FilteredObjects.Add(obj);
+            }
+        }
+
+        private void LoadMeters(int objectId)
         {
             Meters.Clear();
-            if (_selectedObject == null)
+            var meters = _meterRepository.GetByObjectId(objectId);
+            foreach (var m in meters)
             {
-                return;
-            }
+                var lastReading = _readingRepository.GetLastReading(m.Id);
 
-            System.Diagnostics.Debug.WriteLine($"Загрузка счетчиков для объекта ID={_selectedObject.Id}");
-
-            System.Collections.Generic.List<MeterForReadingDto> meters = _readingRepository.GetMetersByObjectId(_selectedObject.Id);
-
-            System.Diagnostics.Debug.WriteLine($"Найдено счетчиков: {meters.Count}");
-
-            foreach (MeterForReadingDto m in meters)
-            {
-                Meters.Add(m);
+                var meterForReading = new MeterForReadingDto
+                {
+                    Id = m.Id,
+                    SerialNumber = m.SerialNumber,
+                    MeterTypeName = m.MeterTypeName,
+                    LastReading = lastReading,
+                    LastReadingDate = lastReading.HasValue ? (DateTime?)null : null
+                };
+                Meters.Add(meterForReading);
             }
         }
-
         private bool CanSave()
         {
             return SelectedMeter != null && ReadingValue > 0;
@@ -169,39 +179,31 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
 
         private void CheckAnomaly()
         {
-            if (SelectedMeter?.LastReading == null)
-            {
-                return;
-            }
+            if (SelectedMeter?.LastReading == null) return;
 
             if (ReadingValue.ToString().Length > 6)
             {
                 WarningMessage = "⚠ Значение превышает допустимое количество знаков!";
             }
-            decimal difference = ReadingValue - SelectedMeter.LastReading.Value;
-
-            WarningMessage = difference > 1000
-                ? "⚠ Внимание! Аномально высокое потребление!"
-                : difference < 0 ? "⚠ Ошибка! Новое показание меньше предыдущего!" : string.Empty;
+            else
+            {
+                decimal difference = ReadingValue - SelectedMeter.LastReading.Value;
+                WarningMessage = difference > 1000
+                    ? "⚠ Внимание! Аномально высокое потребление!"
+                    : difference < 0 ? "⚠ Ошибка! Новое показание меньше предыдущего!" : string.Empty;
+            }
         }
 
         private void SaveReading()
         {
-            if (_currentUser == null)
-            {
-                _ = System.Windows.MessageBox.Show("Ошибка: пользователь не авторизован", "Ошибка",
-                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
-                return;
-            }
-
             if (SelectedMeter == null)
             {
-                _ = System.Windows.MessageBox.Show("Выберите счетчик", "Ошибка",
+                System.Windows.MessageBox.Show("Выберите счетчик", "Ошибка",
                     System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
                 return;
             }
 
-            MeterReadingInputDto dto = new()
+            var dto = new MeterReadingInputDto
             {
                 MeterId = SelectedMeter.Id,
                 ReadingDate = ReadingDate,
@@ -216,18 +218,13 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
             try
             {
                 _readingRepository.Add(dto);
-                _ = System.Windows.MessageBox.Show("Показания успешно сохранены", "Успех",
+                System.Windows.MessageBox.Show("Показания успешно сохранены", "Успех",
                     System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
                 ClearForm();
             }
-            catch (InvalidOperationException ex)
-            {
-                _ = System.Windows.MessageBox.Show(ex.Message, "Ошибка",
-                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
-            }
             catch (Exception ex)
             {
-                _ = System.Windows.MessageBox.Show($"Ошибка при сохранении:\n{ex.Message}", "Ошибка",
+                System.Windows.MessageBox.Show($"Ошибка при сохранении:\n{ex.Message}", "Ошибка",
                     System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
             }
         }
@@ -239,13 +236,8 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
             SelectedMeter = null;
             ReadingValue = 0;
             ReadingDate = DateTime.Today;
-            FoundObjects.Clear();
-            Meters.Clear();
             WarningMessage = string.Empty;
-
-            OnPropertyChanged(nameof(HasSelectedObject));
-            OnPropertyChanged(nameof(HasSelectedMeter));
-            OnPropertyChanged(nameof(HasWarning));
+            LoadObjects(); // сброс фильтра
         }
     }
 }
