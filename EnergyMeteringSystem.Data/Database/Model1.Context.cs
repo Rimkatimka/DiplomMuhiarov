@@ -52,5 +52,7 @@ namespace EnergyMeteringSystem.Data.Database
         public virtual DbSet<User> User { get; set; }
         public virtual DbSet<UserRole> UserRole { get; set; }
         public virtual DbSet<VerificationInterval> VerificationInterval { get; set; }
+        public virtual DbSet<DebtProcessLog> DebtProcessLog { get; set; }
+        public virtual DbSet<MeterDataHistory> MeterDataHistory { get; set; }
     }
 }

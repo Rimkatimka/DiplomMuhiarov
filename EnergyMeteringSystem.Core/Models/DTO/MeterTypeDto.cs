@@ -9,9 +9,10 @@
         public string AccuracyClass { get; set; }
         public int DigitCount { get; set; }
         public int DecimalPlaces { get; set; }
-        public int? ServiceLifeYears { get; set; }  // ← добавить!
+        public int? ServiceLifeYears { get; set; }
 
-        // Вычисляемые свойства
+        public int? VerificationIntervalYears { get; set; }
+
         public string DisplayName => $"{Name} ({Voltage}В, {MaxCurrent}А)";
         public string FullDescription => $"{Name}, {Voltage}В, {MaxCurrent}А, класс точности {AccuracyClass}";
     }

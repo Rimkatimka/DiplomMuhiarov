@@ -25,6 +25,7 @@
                  GroupName="ReportType"
                  Margin="5" Padding="5"/>
         </StackPanel>
+
         <!-- Параметры отчета -->
         <Border Grid.Row="1" Background="#F5F5F5" Padding="10" CornerRadius="5" Margin="0,0,0,10">
             <StackPanel>
@@ -38,7 +39,6 @@
                     </StackPanel>
                 </StackPanel>
 
-                <!-- Для начислений -->
                 <StackPanel Visibility="{Binding AccrualVisibility}">
                     <TextBlock Text="Параметры начислений" FontWeight="Bold"/>
                     <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
@@ -53,7 +53,6 @@
                     </StackPanel>
                 </StackPanel>
 
-                <!-- Для задолженности -->
                 <StackPanel Visibility="{Binding DebtVisibility}">
                     <TextBlock Text="Актуально на текущую дату" FontWeight="Bold" Margin="0,5,0,5"/>
                 </StackPanel>
@@ -64,13 +63,13 @@
             </StackPanel>
         </Border>
 
-        <!-- Таблицы с данными (показывается только одна) -->
+        <!-- Одна таблица с авто-генерацией колонок -->
         <DataGrid Grid.Row="2" 
-          ItemsSource="{Binding ReportData}"
-          AutoGenerateColumns="True"
-          IsReadOnly="True"
-          Margin="0,0,0,10"
-          Background="White"/>
+                  ItemsSource="{Binding ReportData}"
+                  AutoGenerateColumns="True"
+                  IsReadOnly="True"
+                  Margin="0,0,0,10"
+                  Background="White"/>
 
         <!-- Кнопка экспорта -->
         <Button Grid.Row="3" 

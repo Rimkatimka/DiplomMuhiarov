@@ -49,7 +49,9 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
 
             LogoutCommand = new RelayCommand(_ => Logout());
             MenuItems = [];
+
             BuildMenu();
+            CurrentView = new Views.Main.DashboardView();
         }
 
         private void BuildMenu()

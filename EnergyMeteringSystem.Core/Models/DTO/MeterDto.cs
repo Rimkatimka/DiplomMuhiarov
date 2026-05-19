@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.ObjectModel;
 
 namespace EnergyMeteringSystem.Core.Models.DTO
 {
@@ -12,8 +11,10 @@ namespace EnergyMeteringSystem.Core.Models.DTO
         public string MeterTypeName { get; set; }
         public string StatusName { get; set; }
         public DateTime InstallationDate { get; set; }
-        public DateTime? VerificationDate { get; set; }
+
+        public DateTime? LastVerificationDate { get; set; }
         public DateTime? NextVerificationDate { get; set; }
+
         public decimal InitialReading { get; set; }
         public int StatusId { get; set; }
         public int? ServiceLifeYears { get; set; }

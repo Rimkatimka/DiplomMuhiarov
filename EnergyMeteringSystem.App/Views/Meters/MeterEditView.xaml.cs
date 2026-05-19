@@ -11,9 +11,6 @@ namespace EnergyMeteringSystem.App.Views.Meters
     /// </summary>
     public partial class MeterEditView : Window
     {
-        public DatePicker InstallationDatePicker => (DatePicker)FindName("InstallationDatePicker");
-        public DatePicker VerificationDatePicker => (DatePicker)FindName("VerificationDatePicker");
-        public DatePicker NextVerificationDatePicker => (DatePicker)FindName("NextVerificationDatePicker");
         public MeterEditView(MeterEditViewModel viewModel)
         {
             InitializeComponent();

@@ -23,6 +23,7 @@ namespace EnergyMeteringSystem.Data.Database
             this.MeterReplacementHistory = new HashSet<MeterReplacementHistory>();
             this.Payment = new HashSet<Payment>();
             this.SupplyPointConsumptionObject = new HashSet<SupplyPointConsumptionObject>();
+            this.DebtProcessLog = new HashSet<DebtProcessLog>();
         }
     
         public int Id { get; set; }
@@ -47,5 +48,7 @@ namespace EnergyMeteringSystem.Data.Database
         public virtual ICollection<Payment> Payment { get; set; }
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
         public virtual ICollection<SupplyPointConsumptionObject> SupplyPointConsumptionObject { get; set; }
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
+        public virtual ICollection<DebtProcessLog> DebtProcessLog { get; set; }
     }
 }

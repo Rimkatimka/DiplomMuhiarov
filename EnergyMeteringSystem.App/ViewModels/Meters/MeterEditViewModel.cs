@@ -10,6 +10,8 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using EnergyMeteringSystem.Services;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media;
 
 namespace EnergyMeteringSystem.App.ViewModels.Meters
 {
@@ -27,8 +29,9 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
         private string _serialNumber;
         private decimal _initialReading;
         private int? _serviceLifeYears;
+        private int _verificationIntervalYears = 16;
         private DateTime? _installationDate;
-        private DateTime? _verificationDate;
+        private DateTime? _lastVerificationDate;
         private DateTime? _nextVerificationDate;
         private DateTime? _removalDate;
         private string _dateError;
@@ -39,9 +42,40 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
         public ObservableCollection<ConsumptionObjectDto> Objects { get; set; }
         public ObservableCollection<MeterStatusDto> Statuses { get; set; }
         public bool IsObjectEnabled => !IsObjectReadOnly;
+        public bool HasDateError => !string.IsNullOrEmpty(DateError);
 
         public bool IsObjectReadOnly { get; private set; }
         public bool IsEditMode { get; private set; }
+
+        // Ограничения для DatePicker
+        public DateTime MinInstallationDate => DateTime.Today.AddYears(-100);
+        public DateTime MaxInstallationDate => DateTime.Today;
+        public DateTime? MinLastVerificationDate => InstallationDate;
+        public DateTime? MaxLastVerificationDate => DateTime.Today;
+
+        public DateTime? MinNextVerificationDate
+        {
+            get
+            {
+                if (LastVerificationDate.HasValue)
+                    return LastVerificationDate.Value.AddMonths(3);
+                if (InstallationDate.HasValue)
+                    return InstallationDate.Value.AddMonths(3);
+                return DateTime.Today.AddMonths(3);
+            }
+        }
+
+        public DateTime? MaxNextVerificationDate
+        {
+            get
+            {
+                if (LastVerificationDate.HasValue)
+                    return LastVerificationDate.Value.AddYears(1);
+                if (InstallationDate.HasValue)
+                    return InstallationDate.Value.AddYears(1);
+                return DateTime.Today.AddYears(1);
+            }
+        }
 
         public string SerialNumber
         {
@@ -66,70 +100,56 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
                 SaveCommand.RaiseCanExecuteChanged();
             }
         }
-        private Views.Meters.MeterEditView GetView()
+
+        public DateTime? InstallationDate
         {
-            return Application.Current.Windows.OfType<Views.Meters.MeterEditView>().FirstOrDefault();
+            get => _installationDate;
+            set
+            {
+                if (SetProperty(ref _installationDate, value))
+                {
+                    CalculateRemovalDate();
+                    OnPropertyChanged(nameof(MinLastVerificationDate));
+                    OnPropertyChanged(nameof(MinNextVerificationDate));
+                    OnPropertyChanged(nameof(MaxNextVerificationDate));
+                    ValidateDates();
+                    SaveCommand.RaiseCanExecuteChanged();
+                }
+            }
         }
-        private void ValidateDates()
+
+        public DateTime? LastVerificationDate
         {
-            var view = Application.Current.Windows.OfType<Views.Meters.MeterEditView>().FirstOrDefault();
-
-            // 1. Дата установки не может быть в будущем
-            if (InstallationDate > DateTime.Today)
+            get => _lastVerificationDate;
+            set
             {
-                DateError = "Дата установки не может быть позже сегодняшнего дня";
-                if (view?.InstallationDatePicker != null)
-                    ToastNotificationService.ShowNear(view.InstallationDatePicker, DateError, 2000);
-                return;
+                if (SetProperty(ref _lastVerificationDate, value))
+                {
+                    if (value.HasValue && _verificationIntervalYears > 0)
+                    {
+                        NextVerificationDate = value.Value.AddYears(_verificationIntervalYears);
+                    }
+                    OnPropertyChanged(nameof(MinNextVerificationDate));
+                    OnPropertyChanged(nameof(MaxNextVerificationDate));
+                    ValidateDates();
+                    SaveCommand.RaiseCanExecuteChanged();
+                }
             }
-
-            // 2. Дата поверки не может быть раньше даты установки
-            if (VerificationDate.HasValue && InstallationDate.HasValue && VerificationDate < InstallationDate)
-            {
-                DateError = "Дата поверки не может быть раньше даты установки";
-                if (view?.VerificationDatePicker != null)
-                    ToastNotificationService.ShowNear(view.VerificationDatePicker, DateError, 2000);
-                return;
-            }
-
-            // 3. Следующая поверка не может быть раньше даты поверки
-            if (VerificationDate.HasValue && NextVerificationDate.HasValue && NextVerificationDate < VerificationDate)
-            {
-                DateError = "Дата следующей поверки не может быть раньше даты поверки";
-                if (view?.NextVerificationDatePicker != null)
-                    ToastNotificationService.ShowNear(view.NextVerificationDatePicker, DateError, 2000);
-                return;
-            }
-
-            // 4. Следующая поверка не может быть раньше даты установки
-            if (InstallationDate.HasValue && NextVerificationDate.HasValue && NextVerificationDate < InstallationDate)
-            {
-                DateError = "Дата следующей поверки не может быть раньше даты установки";
-                if (view?.NextVerificationDatePicker != null)
-                    ToastNotificationService.ShowNear(view.NextVerificationDatePicker, DateError, 2000);
-                return;
-            }
-
-            // 5. Дата поверки не может быть в будущем
-            if (VerificationDate.HasValue && VerificationDate > DateTime.Today)
-            {
-                DateError = "Дата поверки не может быть позже сегодняшнего дня";
-                if (view?.VerificationDatePicker != null)
-                    ToastNotificationService.ShowNear(view.VerificationDatePicker, DateError, 2000);
-                return;
-            }
-
-            // 6. Дата поверки не может быть позже следующей поверки
-            if (VerificationDate.HasValue && NextVerificationDate.HasValue && VerificationDate > NextVerificationDate)
-            {
-                DateError = "Дата поверки не может быть позже следующей поверки";
-                if (view?.VerificationDatePicker != null)
-                    ToastNotificationService.ShowNear(view.VerificationDatePicker, DateError, 2000);
-                return;
-            }
-
-            DateError = string.Empty;
         }
+
+        public DateTime? NextVerificationDate
+        {
+            get => _nextVerificationDate;
+            set
+            {
+                if (SetProperty(ref _nextVerificationDate, value))
+                {
+                    ValidateDates();
+                    SaveCommand.RaiseCanExecuteChanged();
+                }
+            }
+        }
+
         public DateTime? RemovalDate
         {
             get => _removalDate;
@@ -148,51 +168,19 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
             set
             {
                 SetProperty(ref _selectedMeterType, value);
-                if (value != null && value.ServiceLifeYears.HasValue)
+                if (value != null)
                 {
                     ServiceLifeYears = value.ServiceLifeYears;
-                }
-            }
-        }
-        public DateTime? InstallationDate
-        {
-            get => _installationDate;
-            set
-            {
-                if (SetProperty(ref _installationDate, value))
-                {
-                    CalculateRemovalDate();
-                    ValidateDates();  // ← вызываем проверку
-                    SaveCommand.RaiseCanExecuteChanged();
+                    _verificationIntervalYears = value.VerificationIntervalYears ?? 16;
+
+                    if (LastVerificationDate.HasValue)
+                    {
+                        NextVerificationDate = LastVerificationDate.Value.AddYears(_verificationIntervalYears);
+                    }
                 }
             }
         }
 
-        public DateTime? VerificationDate
-        {
-            get => _verificationDate;
-            set
-            {
-                if (SetProperty(ref _verificationDate, value))
-                {
-                    ValidateDates();  // ← вызываем проверку
-                    SaveCommand.RaiseCanExecuteChanged();
-                }
-            }
-        }
-
-        public DateTime? NextVerificationDate
-        {
-            get => _nextVerificationDate;
-            set
-            {
-                if (SetProperty(ref _nextVerificationDate, value))
-                {
-                    ValidateDates();  // ← вызываем проверку
-                    SaveCommand.RaiseCanExecuteChanged();
-                }
-            }
-        }
         public ConsumptionObjectDto SelectedObject
         {
             get => _selectedObject;
@@ -208,7 +196,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
         public RelayCommand SaveCommand { get; set; }
         public RelayCommand CancelCommand { get; set; }
 
-        // Конструктор для добавления (с возможностью выбора объекта)
+        // Конструктор для добавления
         public MeterEditViewModel(ConsumptionObjectDto currentObject = null)
         {
             System.Diagnostics.Debug.WriteLine($"=== КОНСТРУКТОР: currentObject = {(currentObject != null ? currentObject.Address : "null")} ===");
@@ -225,15 +213,11 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
             SaveCommand = new RelayCommand(_ => Save(), _ => CanSave());
             CancelCommand = new RelayCommand(_ => Cancel());
 
-            // ✅ СНАЧАЛА загружаем Objects
             LoadData();
 
-            // ✅ ПОТОМ устанавливаем SelectedObject (уже после загрузки)
             if (currentObject != null)
             {
-                // Ищем объект в загруженной коллекции по Id
                 SelectedObject = Objects.FirstOrDefault(o => o.Id == currentObject.Id);
-                System.Diagnostics.Debug.WriteLine($"Установлен SelectedObject: Id={SelectedObject?.Id}, Address={SelectedObject?.Address}");
                 IsObjectReadOnly = true;
             }
             else
@@ -242,8 +226,9 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
             }
 
             InstallationDate = DateTime.Today;
+            LastVerificationDate = InstallationDate;  // первая поверка = дата установки
         }
-        
+
         // Конструктор для редактирования
         public MeterEditViewModel(MeterDto existingMeter)
         {
@@ -303,15 +288,13 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
             SerialNumber = meter.SerialNumber;
             InstallationDate = meter.InstallationDate;
             InitialReading = meter.InitialReading;
-            VerificationDate = meter.VerificationDate;
+            LastVerificationDate = meter.LastVerificationDate;
             NextVerificationDate = meter.NextVerificationDate;
             ServiceLifeYears = meter.ServiceLifeYears;
 
             SelectedMeterType = MeterTypes.FirstOrDefault(t => t.Id == meter.MeterTypeId);
             SelectedObject = Objects.FirstOrDefault(o => o.Id == meter.ConsumptionObjectId);
             SelectedStatus = Statuses.FirstOrDefault(s => s.Id == meter.StatusId);
-
-            System.Diagnostics.Debug.WriteLine($"LoadMeter: SelectedMeterType={SelectedMeterType?.Name}, SelectedObject={SelectedObject?.Address}, SelectedStatus={SelectedStatus?.Name}");
         }
 
         private void CalculateRemovalDate()
@@ -320,16 +303,40 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
                 RemovalDate = InstallationDate.Value.AddYears(ServiceLifeYears.Value);
         }
 
-        private int GetVerificationIntervalYears(int meterTypeId)
+        private void ValidateDates()
         {
-            using (var context = new EnergyMeteringSystemEntities())
+            DateError = string.Empty;
+
+            // 1. Дата установки не может быть в будущем
+            if (InstallationDate > DateTime.Today)
             {
-                var interval = context.VerificationInterval
-                    .FirstOrDefault(vi => vi.MeterTypeId == meterTypeId);
-                return interval?.Years ?? 0;
+                DateError = "Дата установки не может быть позже сегодняшнего дня";
+                return;
+            }
+
+            // 2. Последняя поверка не может быть в будущем
+            if (LastVerificationDate.HasValue && LastVerificationDate > DateTime.Today)
+            {
+                DateError = "Дата последней поверки не может быть позже сегодняшнего дня";
+                return;
+            }
+
+            // 3. Следующая поверка должна быть ПОСЛЕ последней
+            if (LastVerificationDate.HasValue && NextVerificationDate.HasValue &&
+                NextVerificationDate <= LastVerificationDate)
+            {
+                DateError = "Дата следующей поверки должна быть позже даты последней поверки";
+                return;
+            }
+
+            // 4. Следующая поверка не может быть позже даты изъятия
+            if (RemovalDate.HasValue && NextVerificationDate.HasValue &&
+                NextVerificationDate > RemovalDate)
+            {
+                DateError = "Дата следующей поверки не может быть позже даты изъятия счетчика";
+                return;
             }
         }
-
 
         private bool CanSave()
         {
@@ -343,6 +350,15 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
 
         private void Save()
         {
+            ValidateDates();
+
+            if (!string.IsNullOrEmpty(DateError))
+            {
+                MessageBox.Show("Исправьте ошибки в датах перед сохранением",
+                    "Ошибка валидации", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
             var dto = new MeterDto
             {
                 Id = _meter?.Id ?? 0,
@@ -351,7 +367,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
                 ConsumptionObjectId = SelectedObject.Id,
                 InstallationDate = InstallationDate.Value,
                 InitialReading = InitialReading,
-                VerificationDate = VerificationDate,
+                LastVerificationDate = LastVerificationDate,
                 NextVerificationDate = NextVerificationDate,
                 ServiceLifeYears = ServiceLifeYears,
                 StatusId = SelectedStatus.Id

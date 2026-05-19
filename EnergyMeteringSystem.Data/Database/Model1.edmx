@@ -73,6 +73,23 @@
           <Property Name="Name" Type="nvarchar" MaxLength="50" Nullable="false" />
           <Property Name="AllowsBilling" Type="bit" Nullable="false" />
         </EntityType>
+        <EntityType Name="DebtProcessLog">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="ConsumptionObjectId" Type="int" Nullable="false" />
+          <Property Name="DebtAmount" Type="decimal" Precision="15" Scale="2" Nullable="false" />
+          <Property Name="TwoMonthNormAmount" Type="decimal" Precision="15" Scale="2" Nullable="false" />
+          <Property Name="NotificationDate" Type="datetime" />
+          <Property Name="NotificationSent" Type="bit" Nullable="false" />
+          <Property Name="RestrictionDate" Type="datetime" />
+          <Property Name="RestrictionApplied" Type="bit" Nullable="false" />
+          <Property Name="DisconnectionDate" Type="datetime" />
+          <Property Name="DisconnectionApplied" Type="bit" Nullable="false" />
+          <Property Name="Status" Type="nvarchar" MaxLength="50" Nullable="false" />
+          <Property Name="LastUpdate" Type="datetime" Nullable="false" />
+        </EntityType>
         <EntityType Name="EnergySource">
           <Key>
             <PropertyRef Name="Id" />
@@ -97,6 +114,20 @@
           <Property Name="NextVerificationDate" Type="date" />
           <Property Name="ServiceLifeYears" Type="int" />
           <Property Name="RemovalDate" Type="date" StoreGeneratedPattern="Computed" />
+        </EntityType>
+        <EntityType Name="MeterDataHistory">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="MeterId" Type="int" Nullable="false" />
+          <Property Name="PeriodYear" Type="int" Nullable="false" />
+          <Property Name="PeriodMonth" Type="int" Nullable="false" />
+          <Property Name="Value" Type="decimal" Precision="15" Scale="4" Nullable="false" />
+          <Property Name="SourceType" Type="nvarchar" MaxLength="20" Nullable="false" />
+          <Property Name="ChangedByUserId" Type="int" Nullable="false" />
+          <Property Name="ChangedAt" Type="datetime" Nullable="false" />
+          <Property Name="Comment" Type="nvarchar" MaxLength="500" />
         </EntityType>
         <EntityType Name="MeterReading">
           <Key>
@@ -400,6 +431,18 @@
             </Dependent>
           </ReferentialConstraint>
         </Association>
+        <Association Name="FK_DebtProcessLog_ConsumptionObject">
+          <End Role="ConsumptionObject" Type="Self.ConsumptionObject" Multiplicity="1" />
+          <End Role="DebtProcessLog" Type="Self.DebtProcessLog" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="ConsumptionObject">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="DebtProcessLog">
+              <PropertyRef Name="ConsumptionObjectId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
         <Association Name="FK_Meter_ConsumptionObject">
           <End Role="ConsumptionObject" Type="Self.ConsumptionObject" Multiplicity="1" />
           <End Role="Meter" Type="Self.Meter" Multiplicity="*" />
@@ -433,6 +476,30 @@
             </Principal>
             <Dependent Role="Meter">
               <PropertyRef Name="MeterTypeId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_MeterDataHistory_Meter">
+          <End Role="Meter" Type="Self.Meter" Multiplicity="1" />
+          <End Role="MeterDataHistory" Type="Self.MeterDataHistory" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Meter">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="MeterDataHistory">
+              <PropertyRef Name="MeterId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_MeterDataHistory_User">
+          <End Role="User" Type="Self.User" Multiplicity="1" />
+          <End Role="MeterDataHistory" Type="Self.MeterDataHistory" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="User">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="MeterDataHistory">
+              <PropertyRef Name="ChangedByUserId" />
             </Dependent>
           </ReferentialConstraint>
         </Association>
@@ -659,8 +726,10 @@
           <EntitySet Name="ConsumptionObject" EntityType="Self.ConsumptionObject" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="Contract" EntityType="Self.Contract" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="ContractStatus" EntityType="Self.ContractStatus" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="DebtProcessLog" EntityType="Self.DebtProcessLog" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="EnergySource" EntityType="Self.EnergySource" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="Meter" EntityType="Self.Meter" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="MeterDataHistory" EntityType="Self.MeterDataHistory" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="MeterReading" EntityType="Self.MeterReading" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="MeterReplacementHistory" EntityType="Self.MeterReplacementHistory" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="MeterStatus" EntityType="Self.MeterStatus" Schema="dbo" store:Type="Tables" />
@@ -716,6 +785,10 @@
             <End Role="Tariff" EntitySet="Tariff" />
             <End Role="Contract" EntitySet="Contract" />
           </AssociationSet>
+          <AssociationSet Name="FK_DebtProcessLog_ConsumptionObject" Association="Self.FK_DebtProcessLog_ConsumptionObject">
+            <End Role="ConsumptionObject" EntitySet="ConsumptionObject" />
+            <End Role="DebtProcessLog" EntitySet="DebtProcessLog" />
+          </AssociationSet>
           <AssociationSet Name="FK_Meter_ConsumptionObject" Association="Self.FK_Meter_ConsumptionObject">
             <End Role="ConsumptionObject" EntitySet="ConsumptionObject" />
             <End Role="Meter" EntitySet="Meter" />
@@ -727,6 +800,14 @@
           <AssociationSet Name="FK_Meter_MeterType" Association="Self.FK_Meter_MeterType">
             <End Role="MeterType" EntitySet="MeterType" />
             <End Role="Meter" EntitySet="Meter" />
+          </AssociationSet>
+          <AssociationSet Name="FK_MeterDataHistory_Meter" Association="Self.FK_MeterDataHistory_Meter">
+            <End Role="Meter" EntitySet="Meter" />
+            <End Role="MeterDataHistory" EntitySet="MeterDataHistory" />
+          </AssociationSet>
+          <AssociationSet Name="FK_MeterDataHistory_User" Association="Self.FK_MeterDataHistory_User">
+            <End Role="User" EntitySet="User" />
+            <End Role="MeterDataHistory" EntitySet="MeterDataHistory" />
           </AssociationSet>
           <AssociationSet Name="FK_MeterReading_Meter" Association="Self.FK_MeterReading_Meter">
             <End Role="Meter" EntitySet="Meter" />
@@ -864,6 +945,7 @@
           <NavigationProperty Name="MeterReplacementHistory" Relationship="Self.FK_MeterReplacementHistory_ConsumptionObject" FromRole="ConsumptionObject" ToRole="MeterReplacementHistory" />
           <NavigationProperty Name="Payment" Relationship="Self.FK_Payment_ConsumptionObject" FromRole="ConsumptionObject" ToRole="Payment" />
           <NavigationProperty Name="SupplyPointConsumptionObject" Relationship="Self.FK_SupplyPointConsumptionObject_ConsumptionObject" FromRole="ConsumptionObject" ToRole="SupplyPointConsumptionObject" />
+          <NavigationProperty Name="DebtProcessLog" Relationship="EnergyMeteringSystemModel.FK_DebtProcessLog_ConsumptionObject" FromRole="ConsumptionObject" ToRole="DebtProcessLog" />
         </EntityType>
         <EntityType Name="Contract">
           <Key>
@@ -921,6 +1003,7 @@
           <NavigationProperty Name="MeterReplacementHistory1" Relationship="Self.FK_MeterReplacementHistory_OldMeter" FromRole="Meter" ToRole="MeterReplacementHistory" />
           <Property Name="ServiceLifeYears" Type="Int32" />
           <Property Name="RemovalDate" Type="DateTime" annotation:StoreGeneratedPattern="Computed" Precision="0" />
+          <NavigationProperty Name="MeterDataHistory" Relationship="EnergyMeteringSystemModel.FK_MeterDataHistory_Meter" FromRole="Meter" ToRole="MeterDataHistory" />
         </EntityType>
         <EntityType Name="MeterReading">
           <Key>
@@ -1132,6 +1215,7 @@
           <NavigationProperty Name="MeterReading" Relationship="Self.FK_MeterReading_User" FromRole="User" ToRole="MeterReading" />
           <NavigationProperty Name="Payment" Relationship="Self.FK_Payment_User" FromRole="User" ToRole="Payment" />
           <NavigationProperty Name="UserRole" Relationship="Self.FK_User_UserRole" FromRole="User" ToRole="UserRole" />
+          <NavigationProperty Name="MeterDataHistory" Relationship="EnergyMeteringSystemModel.FK_MeterDataHistory_User" FromRole="User" ToRole="MeterDataHistory" />
         </EntityType>
         <EntityType Name="UserRole">
           <Key>
@@ -1660,7 +1744,91 @@
             <End Role="UserRole" EntitySet="UserRole" />
             <End Role="User" EntitySet="User" />
           </AssociationSet>
+          <EntitySet Name="DebtProcessLog" EntityType="EnergyMeteringSystemModel.DebtProcessLog" />
+          <EntitySet Name="MeterDataHistory" EntityType="EnergyMeteringSystemModel.MeterDataHistory" />
+          <AssociationSet Name="FK_DebtProcessLog_ConsumptionObject" Association="EnergyMeteringSystemModel.FK_DebtProcessLog_ConsumptionObject">
+            <End Role="ConsumptionObject" EntitySet="ConsumptionObject" />
+            <End Role="DebtProcessLog" EntitySet="DebtProcessLog" />
+          </AssociationSet>
+          <AssociationSet Name="FK_MeterDataHistory_Meter" Association="EnergyMeteringSystemModel.FK_MeterDataHistory_Meter">
+            <End Role="Meter" EntitySet="Meter" />
+            <End Role="MeterDataHistory" EntitySet="MeterDataHistory" />
+          </AssociationSet>
+          <AssociationSet Name="FK_MeterDataHistory_User" Association="EnergyMeteringSystemModel.FK_MeterDataHistory_User">
+            <End Role="User" EntitySet="User" />
+            <End Role="MeterDataHistory" EntitySet="MeterDataHistory" />
+          </AssociationSet>
         </EntityContainer>
+        <EntityType Name="DebtProcessLog">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="ConsumptionObjectId" Type="Int32" Nullable="false" />
+          <Property Name="DebtAmount" Type="Decimal" Nullable="false" Precision="15" Scale="2" />
+          <Property Name="TwoMonthNormAmount" Type="Decimal" Nullable="false" Precision="15" Scale="2" />
+          <Property Name="NotificationDate" Type="DateTime" Precision="3" />
+          <Property Name="NotificationSent" Type="Boolean" Nullable="false" />
+          <Property Name="RestrictionDate" Type="DateTime" Precision="3" />
+          <Property Name="RestrictionApplied" Type="Boolean" Nullable="false" />
+          <Property Name="DisconnectionDate" Type="DateTime" Precision="3" />
+          <Property Name="DisconnectionApplied" Type="Boolean" Nullable="false" />
+          <Property Name="Status" Type="String" Nullable="false" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="LastUpdate" Type="DateTime" Nullable="false" Precision="3" />
+          <NavigationProperty Name="ConsumptionObject" Relationship="EnergyMeteringSystemModel.FK_DebtProcessLog_ConsumptionObject" FromRole="DebtProcessLog" ToRole="ConsumptionObject" />
+        </EntityType>
+        <EntityType Name="MeterDataHistory">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="MeterId" Type="Int32" Nullable="false" />
+          <Property Name="PeriodYear" Type="Int32" Nullable="false" />
+          <Property Name="PeriodMonth" Type="Int32" Nullable="false" />
+          <Property Name="Value" Type="Decimal" Nullable="false" Precision="15" Scale="4" />
+          <Property Name="SourceType" Type="String" Nullable="false" MaxLength="20" FixedLength="false" Unicode="true" />
+          <Property Name="ChangedByUserId" Type="Int32" Nullable="false" />
+          <Property Name="ChangedAt" Type="DateTime" Nullable="false" Precision="3" />
+          <Property Name="Comment" Type="String" MaxLength="500" FixedLength="false" Unicode="true" />
+          <NavigationProperty Name="Meter" Relationship="EnergyMeteringSystemModel.FK_MeterDataHistory_Meter" FromRole="MeterDataHistory" ToRole="Meter" />
+          <NavigationProperty Name="User" Relationship="EnergyMeteringSystemModel.FK_MeterDataHistory_User" FromRole="MeterDataHistory" ToRole="User" />
+        </EntityType>
+        <Association Name="FK_DebtProcessLog_ConsumptionObject">
+          <End Type="EnergyMeteringSystemModel.ConsumptionObject" Role="ConsumptionObject" Multiplicity="1" />
+          <End Type="EnergyMeteringSystemModel.DebtProcessLog" Role="DebtProcessLog" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="ConsumptionObject">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="DebtProcessLog">
+              <PropertyRef Name="ConsumptionObjectId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_MeterDataHistory_Meter">
+          <End Type="EnergyMeteringSystemModel.Meter" Role="Meter" Multiplicity="1" />
+          <End Type="EnergyMeteringSystemModel.MeterDataHistory" Role="MeterDataHistory" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Meter">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="MeterDataHistory">
+              <PropertyRef Name="MeterId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_MeterDataHistory_User">
+          <End Type="EnergyMeteringSystemModel.User" Role="User" Multiplicity="1" />
+          <End Type="EnergyMeteringSystemModel.MeterDataHistory" Role="MeterDataHistory" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="User">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="MeterDataHistory">
+              <PropertyRef Name="ChangedByUserId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
       </Schema>
     </edmx:ConceptualModels>
     <!-- C-S mapping content -->
@@ -1977,6 +2145,39 @@
                 <ScalarProperty Name="Id" ColumnName="Id" />
                 <ScalarProperty Name="MeterTypeId" ColumnName="MeterTypeId" />
                 <ScalarProperty Name="Years" ColumnName="Years" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="DebtProcessLog">
+            <EntityTypeMapping TypeName="EnergyMeteringSystemModel.DebtProcessLog">
+              <MappingFragment StoreEntitySet="DebtProcessLog">
+                <ScalarProperty Name="LastUpdate" ColumnName="LastUpdate" />
+                <ScalarProperty Name="Status" ColumnName="Status" />
+                <ScalarProperty Name="DisconnectionApplied" ColumnName="DisconnectionApplied" />
+                <ScalarProperty Name="DisconnectionDate" ColumnName="DisconnectionDate" />
+                <ScalarProperty Name="RestrictionApplied" ColumnName="RestrictionApplied" />
+                <ScalarProperty Name="RestrictionDate" ColumnName="RestrictionDate" />
+                <ScalarProperty Name="NotificationSent" ColumnName="NotificationSent" />
+                <ScalarProperty Name="NotificationDate" ColumnName="NotificationDate" />
+                <ScalarProperty Name="TwoMonthNormAmount" ColumnName="TwoMonthNormAmount" />
+                <ScalarProperty Name="DebtAmount" ColumnName="DebtAmount" />
+                <ScalarProperty Name="ConsumptionObjectId" ColumnName="ConsumptionObjectId" />
+                <ScalarProperty Name="Id" ColumnName="Id" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="MeterDataHistory">
+            <EntityTypeMapping TypeName="EnergyMeteringSystemModel.MeterDataHistory">
+              <MappingFragment StoreEntitySet="MeterDataHistory">
+                <ScalarProperty Name="Comment" ColumnName="Comment" />
+                <ScalarProperty Name="ChangedAt" ColumnName="ChangedAt" />
+                <ScalarProperty Name="ChangedByUserId" ColumnName="ChangedByUserId" />
+                <ScalarProperty Name="SourceType" ColumnName="SourceType" />
+                <ScalarProperty Name="Value" ColumnName="Value" />
+                <ScalarProperty Name="PeriodMonth" ColumnName="PeriodMonth" />
+                <ScalarProperty Name="PeriodYear" ColumnName="PeriodYear" />
+                <ScalarProperty Name="MeterId" ColumnName="MeterId" />
+                <ScalarProperty Name="Id" ColumnName="Id" />
               </MappingFragment>
             </EntityTypeMapping>
           </EntitySetMapping>

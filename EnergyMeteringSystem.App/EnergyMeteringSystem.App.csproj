@@ -167,11 +167,14 @@
     <Compile Include="Converters\InverseBooleanConverter.cs" />
     <Compile Include="Converters\MonthIndexConverter.cs" />
     <Compile Include="Helpers\InputValidator.cs" />
+    <Compile Include="Helpers\ValidationService.cs" />
+    <Compile Include="Services\ExportDialogService.cs" />
     <Compile Include="ViewModels\Admin\AuditLogViewModel.cs" />
     <Compile Include="ViewModels\Admin\BackupViewModel.cs" />
     <Compile Include="ViewModels\Admin\UserEditViewModel.cs" />
     <Compile Include="ViewModels\Admin\UserManagementViewModel.cs" />
     <Compile Include="ViewModels\Auth\LoginViewModel.cs" />
+    <Compile Include="ViewModels\Base\ValidatableViewModel.cs" />
     <Compile Include="ViewModels\Base\ViewModelBase.cs" />
     <Compile Include="ViewModels\Billing\AccrualViewModel.cs" />
     <Compile Include="ViewModels\Billing\DebtViewModel.cs" />
@@ -267,6 +270,9 @@
     </Compile>
     <Compile Include="Views\Reports\ReportView.xaml.cs">
       <DependentUpon>ReportView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Shared\ExportFormatDialog.xaml.cs">
+      <DependentUpon>ExportFormatDialog.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\Tariffs\TariffEditView.xaml.cs">
       <DependentUpon>TariffEditView.xaml</DependentUpon>
@@ -382,6 +388,10 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="Views\Shared\ExportFormatDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Views\Tariffs\TariffEditView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -433,9 +443,7 @@
       <Name>EnergyMeteringSystem.Services</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Navigation\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <Resource Include="icons8-электричество-100.ico" />
   </ItemGroup>

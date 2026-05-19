@@ -196,5 +196,7 @@ namespace EnergyMeteringSystem.App.Helpers
             textBox.BorderThickness = new Thickness(1);
             textBox.ToolTip = "Формат: имя@домен.ру";
         }
+
+
     }
 }

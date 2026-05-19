@@ -1,5 +1,6 @@
 ﻿using EnergyMeteringSystem.App.Commands;
 using EnergyMeteringSystem.App.ViewModels.Base;
+using EnergyMeteringSystem.App.Views.Shared;
 using EnergyMeteringSystem.Core.Models.DTO;
 using EnergyMeteringSystem.Data.Repositories;
 using EnergyMeteringSystem.Services;
@@ -8,6 +9,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows;
+using System.Windows.Controls;
 
 namespace EnergyMeteringSystem.App.ViewModels.Reports
 {
@@ -135,7 +137,6 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
             }
         }
 
-
         public DateTime StartDate
         {
             get => _startDate;
@@ -224,13 +225,25 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
                 switch (_selectedReportType)
                 {
                     case 0:
-                        ReportData = _reportRepository.GetConsumptionReport(_startDate, _endDate);
+                        var consumptionData = _reportRepository.GetConsumptionReport(_startDate, _endDate);
+                        ConsumptionData.Clear();
+                        foreach (var item in consumptionData)
+                            ConsumptionData.Add(item);
+                        ReportData = ConsumptionData;
                         break;
                     case 1:
-                        ReportData = _reportRepository.GetAccrualReport(_selectedYear, _selectedMonth);
+                        var accrualData = _reportRepository.GetAccrualReport(_selectedYear, _selectedMonth);
+                        AccrualData.Clear();
+                        foreach (var item in accrualData)
+                            AccrualData.Add(item);
+                        ReportData = AccrualData;
                         break;
                     case 2:
-                        ReportData = _reportRepository.GetDebtReport();
+                        var debtData = _reportRepository.GetDebtReport();
+                        DebtData.Clear();
+                        foreach (var item in debtData)
+                            DebtData.Add(item);
+                        ReportData = DebtData;
                         break;
                 }
 
@@ -255,20 +268,39 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
         {
             try
             {
+                DataGrid tempGrid = null;
+
                 switch (_selectedReportType)
                 {
-                    case 0:
+                    case 0: // Потребление
                         if (ConsumptionData.Any())
-                            _exportService.ExportConsumptionReport(ConsumptionData.ToList(), _startDate, _endDate);
+                        {
+                            tempGrid = CreateTempDataGridForConsumption();
+                        }
                         break;
-                    case 1:
+                    case 1: // Начисления
                         if (AccrualData.Any())
-                            _exportService.ExportAccrualReport(AccrualData.ToList(), _selectedYear, _selectedMonth);
+                        {
+                            tempGrid = CreateTempDataGridForAccrual();
+                        }
                         break;
-                    case 2:
+                    case 2: // Задолженность
                         if (DebtData.Any())
-                            _exportService.ExportDebtReport(DebtData.ToList());
+                        {
+                            tempGrid = CreateTempDataGridForDebt();
+                        }
                         break;
+                }
+
+                if (tempGrid != null)
+                {
+                    string fileName = GetFileName();
+                    _exportService.ExportWithFormatDialog(tempGrid, fileName);
+                }
+                else
+                {
+                    MessageBox.Show("Нет данных для экспорта", "Информация",
+                        MessageBoxButton.OK, MessageBoxImage.Information);
                 }
             }
             catch (Exception ex)
@@ -276,6 +308,76 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
                 MessageBox.Show($"Ошибка при экспорте: {ex.Message}", "Ошибка",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+
+        private string GetFileName()
+        {
+            switch (_selectedReportType)
+            {
+                case 0:
+                    return $"Отчет_потребление_{StartDate:dd.MM.yyyy}_{EndDate:dd.MM.yyyy}";
+                case 1:
+                    return $"Отчет_начисления_{SelectedMonthName}_{SelectedYear}";
+                case 2:
+                    return $"Отчет_задолженность_{DateTime.Now:dd.MM.yyyy}";
+                default:
+                    return "Отчет";
+            }
+        }
+
+        private DataGrid CreateTempDataGridForConsumption()
+        {
+            var grid = new DataGrid
+            {
+                AutoGenerateColumns = false,
+                ItemsSource = ConsumptionData,
+                IsReadOnly = true
+            };
+
+            grid.Columns.Add(new DataGridTextColumn { Header = "Адрес", Binding = new System.Windows.Data.Binding("Address") });
+            grid.Columns.Add(new DataGridTextColumn { Header = "Счетчик", Binding = new System.Windows.Data.Binding("MeterSerial") });
+            grid.Columns.Add(new DataGridTextColumn { Header = "Период", Binding = new System.Windows.Data.Binding("PeriodText") });
+            grid.Columns.Add(new DataGridTextColumn { Header = "Нач. показание", Binding = new System.Windows.Data.Binding("StartValue") });
+            grid.Columns.Add(new DataGridTextColumn { Header = "Кон. показание", Binding = new System.Windows.Data.Binding("EndValue") });
+            grid.Columns.Add(new DataGridTextColumn { Header = "Потребление (кВт)", Binding = new System.Windows.Data.Binding("Consumption") });
+
+            return grid;
+        }
+
+        private DataGrid CreateTempDataGridForAccrual()
+        {
+            var grid = new DataGrid
+            {
+                AutoGenerateColumns = false,
+                ItemsSource = AccrualData,
+                IsReadOnly = true
+            };
+
+            grid.Columns.Add(new DataGridTextColumn { Header = "Адрес", Binding = new System.Windows.Data.Binding("Address") });
+            grid.Columns.Add(new DataGridTextColumn { Header = "Период", Binding = new System.Windows.Data.Binding("PeriodText") });
+            grid.Columns.Add(new DataGridTextColumn { Header = "Начислено", Binding = new System.Windows.Data.Binding("AccrualText") });
+            grid.Columns.Add(new DataGridTextColumn { Header = "Оплачено", Binding = new System.Windows.Data.Binding("PaidText") });
+            grid.Columns.Add(new DataGridTextColumn { Header = "Долг", Binding = new System.Windows.Data.Binding("DebtText") });
+
+            return grid;
+        }
+
+        private DataGrid CreateTempDataGridForDebt()
+        {
+            var grid = new DataGrid
+
+            {
+                AutoGenerateColumns = false,
+                ItemsSource = DebtData,
+                IsReadOnly = true
+            };
+
+            grid.Columns.Add(new DataGridTextColumn { Header = "Адрес", Binding = new System.Windows.Data.Binding("Address") });
+            grid.Columns.Add(new DataGridTextColumn { Header = "Сумма долга", Binding = new System.Windows.Data.Binding("DebtAmountText") });
+            grid.Columns.Add(new DataGridTextColumn { Header = "Период", Binding = new System.Windows.Data.Binding("PeriodText") });
+            grid.Columns.Add(new DataGridTextColumn { Header = "Просрочка", Binding = new System.Windows.Data.Binding("OverdueText") });
+
+            return grid;
         }
     }
 }

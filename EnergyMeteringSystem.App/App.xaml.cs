@@ -1,4 +1,6 @@
-﻿using System.Windows;
+﻿using EnergyMeteringSystem.App.Services;
+using EnergyMeteringSystem.Services.Export;
+using System.Windows;
 
 namespace EnergyMeteringSystem.App
 {
@@ -11,7 +13,11 @@ namespace EnergyMeteringSystem.App
         {
             base.OnStartup(e);
 
-            Views.Auth.LoginView loginView = new();
+            // Регистрация сервиса (можно использовать простой DI)
+            var exportDialogService = new ExportDialogService();
+            var exportService = new ExportService(exportDialogService);
+
+            var loginView = new Views.Auth.LoginView();
             loginView.Show();
         }
     }

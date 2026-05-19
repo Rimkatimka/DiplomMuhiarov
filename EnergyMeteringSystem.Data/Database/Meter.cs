@@ -20,6 +20,7 @@ namespace EnergyMeteringSystem.Data.Database
             this.MeterReading = new HashSet<MeterReading>();
             this.MeterReplacementHistory = new HashSet<MeterReplacementHistory>();
             this.MeterReplacementHistory1 = new HashSet<MeterReplacementHistory>();
+            this.MeterDataHistory = new HashSet<MeterDataHistory>();
         }
     
         public int Id { get; set; }
@@ -43,5 +44,7 @@ namespace EnergyMeteringSystem.Data.Database
         public virtual ICollection<MeterReplacementHistory> MeterReplacementHistory { get; set; }
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
         public virtual ICollection<MeterReplacementHistory> MeterReplacementHistory1 { get; set; }
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
+        public virtual ICollection<MeterDataHistory> MeterDataHistory { get; set; }
     }
 }

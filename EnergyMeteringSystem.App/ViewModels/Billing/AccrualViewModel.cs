@@ -1,12 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
-using EnergyMeteringSystem.App.Commands;
+﻿using EnergyMeteringSystem.App.Commands;
 using EnergyMeteringSystem.App.ViewModels.Base;
+using EnergyMeteringSystem.App.Views.Shared;
 using EnergyMeteringSystem.Core.Models.DTO;
 using EnergyMeteringSystem.Data.Repositories;
 using EnergyMeteringSystem.Services.Calculation;
+using EnergyMeteringSystem.Services.Export;
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
+using System.Windows;
+using EnergyMeteringSystem.App.Views.Shared;
+using EnergyMeteringSystem.Services.Export;
 
 namespace EnergyMeteringSystem.App.ViewModels.Billing
 {
@@ -65,7 +70,16 @@ namespace EnergyMeteringSystem.App.ViewModels.Billing
         public AccrualCalculationDto SelectedItem
         {
             get => _selectedItem;
-            set => SetProperty(ref _selectedItem, value);
+            set
+            {
+                SetProperty(ref _selectedItem, value);
+                SaveCommand.RaiseCanExecuteChanged();  // ← это должно быть
+            }
+        }
+
+        private bool CanSave()
+        {
+            return SelectedItem != null && !SelectedItem.HasExistingAccrual;
         }
 
         public decimal TotalAmount => Calculations?.Sum(c => c.TotalAmount) ?? 0;
@@ -73,20 +87,22 @@ namespace EnergyMeteringSystem.App.ViewModels.Billing
         public RelayCommand CalculateCommand { get; }
         public RelayCommand SaveCommand { get; }
         public RelayCommand RefreshCommand { get; }
+        public RelayCommand ExportCommand { get; }
 
         public AccrualViewModel()
         {
             _accrualRepository = new AccrualRepository();
             _calculationService = new CalculationService();
 
+            CalculateCommand = new RelayCommand(_ => Calculate(), _ => CanCalculate());
+            SaveCommand = new RelayCommand(_ => SaveSelected(), _ => CanSave());
+            RefreshCommand = new RelayCommand(_ => LoadData());
+            ExportCommand = new RelayCommand(_ => ExportToExcel());  // ← добавить
+
             Years = [];
             Months = [];
             Calculations = [];
             ExistingAccruals = [];
-
-            CalculateCommand = new RelayCommand(_ => Calculate(), _ => CanCalculate());
-            SaveCommand = new RelayCommand(_ => SaveSelected(), _ => CanSave());
-            RefreshCommand = new RelayCommand(_ => LoadData());
 
             InitializeYearsAndMonths();
         }
@@ -125,10 +141,6 @@ namespace EnergyMeteringSystem.App.ViewModels.Billing
             OnPropertyChanged(nameof(TotalAmount));
         }
 
-        private bool CanSave()
-        {
-            return SelectedItem != null && !SelectedItem.HasExistingAccrual;
-        }
 
         private void SaveSelected()
         {
@@ -166,6 +178,19 @@ namespace EnergyMeteringSystem.App.ViewModels.Billing
 
             foreach (var item in list)
                 ExistingAccruals.Add(item);
+        }
+        private void ExportToExcel()
+        {
+            var dialog = new ExportFormatDialog();
+            dialog.Owner = Application.Current.MainWindow;
+
+            if (dialog.ShowDialog() == true)
+            {
+                var exportService = new ExportService();
+                // Здесь нужно получить DataGrid из View
+                // Временно покажем сообщение
+                MessageBox.Show($"Выбран формат: {dialog.SelectedFormat}", "Экспорт");
+            }
         }
     }
 }

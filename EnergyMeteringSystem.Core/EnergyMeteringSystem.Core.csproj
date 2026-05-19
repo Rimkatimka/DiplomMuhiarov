@@ -111,6 +111,7 @@
     <Compile Include="Interfaces\Repositories\IUserRepository.cs" />
     <Compile Include="Interfaces\Services\IAuthService.cs" />
     <Compile Include="Interfaces\Services\ICalculationService.cs" />
+    <Compile Include="Interfaces\Services\IExportDialogService.cs" />
     <Compile Include="Interfaces\Services\IReadingService.cs" />
     <Compile Include="Models\DTO\AccrualCalculationDto.cs" />
     <Compile Include="Models\DTO\AccrualDto.cs" />
@@ -124,6 +125,7 @@
     <Compile Include="Models\DTO\DebtDto.cs" />
     <Compile Include="Models\DTO\DirectoryDto.cs" />
     <Compile Include="Models\DTO\LoginDto.cs" />
+    <Compile Include="Models\DTO\MeterDataHistoryDto.cs" />
     <Compile Include="Models\DTO\MeterDto.cs" />
     <Compile Include="Models\DTO\MeterForReadingDto.cs" />
     <Compile Include="Models\DTO\MeterReadingDto.cs" />

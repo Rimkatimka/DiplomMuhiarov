@@ -33,7 +33,7 @@ namespace EnergyMeteringSystem.Data.Repositories
                         StatusId = m.MeterStatusId,
                         StatusName = m.MeterStatus.Name,
                         InstallationDate = m.InstallationDate,
-                        VerificationDate = m.VerificationDate,
+                        LastVerificationDate = m.VerificationDate,
                         NextVerificationDate = m.NextVerificationDate,
                         InitialReading = m.InitialReading,
                         ConsumptionObjectId = m.ConsumptionObjectId,
@@ -71,12 +71,12 @@ namespace EnergyMeteringSystem.Data.Repositories
                     StatusId = m.MeterStatusId,
                     StatusName = m.MeterStatus?.Name ?? "Неизвестно",
                     InstallationDate = m.InstallationDate,
-                    VerificationDate = m.VerificationDate,
-                    NextVerificationDate = m.NextVerificationDate,
-                    InitialReading = m.InitialReading
+                    LastVerificationDate = m.VerificationDate,        // ← маппинг
+                    NextVerificationDate = m.NextVerificationDate,    // ← маппинг
+                    InitialReading = m.InitialReading,
+                    ServiceLifeYears = m.ServiceLifeYears
                 }).ToList();
 
-                System.Diagnostics.Debug.WriteLine($"GetAll возвращает {result.Count} счетчиков");
                 return result;
             }
             catch (Exception ex)
@@ -84,6 +84,32 @@ namespace EnergyMeteringSystem.Data.Repositories
                 System.Diagnostics.Debug.WriteLine($"Ошибка в GetAll: {ex.Message}");
                 return [];
             }
+        }
+
+        public MeterDto GetById(int id)
+        {
+            var meter = _context.Meter
+                .Include("MeterType")
+                .Include("MeterStatus")
+                .FirstOrDefault(m => m.Id == id);
+
+            if (meter == null) return null;
+
+            return new MeterDto
+            {
+                Id = meter.Id,
+                SerialNumber = meter.SerialNumber,
+                MeterTypeId = meter.MeterTypeId,
+                MeterTypeName = meter.MeterType?.Name,
+                StatusId = meter.MeterStatusId,
+                StatusName = meter.MeterStatus?.Name,
+                InstallationDate = meter.InstallationDate,
+                LastVerificationDate = meter.VerificationDate,      // ← маппинг
+                NextVerificationDate = meter.NextVerificationDate,  // ← маппинг
+                InitialReading = meter.InitialReading,
+                ConsumptionObjectId = meter.ConsumptionObjectId,
+                ServiceLifeYears = meter.ServiceLifeYears
+            };
         }
 
         private string GetMeterTypeName(int typeId)
@@ -109,13 +135,13 @@ namespace EnergyMeteringSystem.Data.Repositories
                     entity.ConsumptionObjectId = dto.ConsumptionObjectId;
                     entity.InstallationDate = dto.InstallationDate;
                     entity.InitialReading = dto.InitialReading;
-                    entity.VerificationDate = dto.VerificationDate;
+                    entity.VerificationDate = dto.LastVerificationDate;
                     entity.MeterStatusId = dto.StatusId;
                     entity.ServiceLifeYears = dto.ServiceLifeYears;   // ← добавить!
 
-                    if (dto.VerificationDate.HasValue)
+                    if (dto.LastVerificationDate.HasValue)
                     {
-                        entity.NextVerificationDate = dto.VerificationDate.Value.AddYears(6);
+                        entity.NextVerificationDate = dto.LastVerificationDate.Value.AddYears(6);
                     }
 
                     _context.SaveChanges();
@@ -137,38 +163,14 @@ namespace EnergyMeteringSystem.Data.Repositories
                 ConsumptionObjectId = dto.ConsumptionObjectId,
                 InstallationDate = dto.InstallationDate,
                 InitialReading = dto.InitialReading,
-                VerificationDate = dto.VerificationDate,
+                VerificationDate = dto.LastVerificationDate,
                 MeterStatusId = dto.StatusId
             };
 
             _ = _context.Meter.Add(entity);
             _ = _context.SaveChanges();
         }
-        public MeterDto GetById(int id)
-        {
-            var meter = _context.Meter
-                .Include("MeterType")
-                .Include("MeterStatus")
-                .FirstOrDefault(m => m.Id == id);
-
-            if (meter == null) return null;
-
-            return new MeterDto
-            {
-                Id = meter.Id,
-                SerialNumber = meter.SerialNumber,
-                MeterTypeId = meter.MeterTypeId,
-                MeterTypeName = meter.MeterType?.Name,
-                StatusId = meter.MeterStatusId,
-                StatusName = meter.MeterStatus?.Name,
-                InstallationDate = meter.InstallationDate,
-                VerificationDate = meter.VerificationDate,
-                NextVerificationDate = meter.NextVerificationDate,
-                InitialReading = meter.InitialReading,
-                ConsumptionObjectId = meter.ConsumptionObjectId,
-                ServiceLifeYears = meter.ServiceLifeYears
-            };
-        }
+        
         public void Delete(int id)
         {
             try
