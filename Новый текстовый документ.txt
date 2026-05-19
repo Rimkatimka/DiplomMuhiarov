@@ -1,0 +1,43 @@
+писок файлов, которые нужно обновить для внедрения универсальной валидации:
+1. Создать новые файлы:
+Файл	Путь
+ValidationService.cs	EnergyMeteringSystem.App/Helpers/ValidationService.cs
+ValidatableViewModel.cs	EnergyMeteringSystem.App/ViewModels/Base/ValidatableViewModel.cs
+BooleanToColorConverter.cs	EnergyMeteringSystem.App/Converters/BooleanToColorConverter.cs
+StringToVisibilityConverter.cs	EnergyMeteringSystem.App/Converters/StringToVisibilityConverter.cs
+2. Обновить ViewModel (наследовать от ValidatableViewModel):
+Файл	Изменение
+MeterReadingInputViewModel.cs	class MeterReadingInputViewModel : ValidatableViewModel
+MeterReadingVerificationViewModel.cs	class MeterReadingVerificationViewModel : ValidatableViewModel
+PaymentViewModel.cs	class PaymentViewModel : ValidatableViewModel
+UserManagementViewModel.cs	class UserManagementViewModel : ValidatableViewModel
+UserEditViewModel.cs	class UserEditViewModel : ValidatableViewModel
+ContractEditViewModel.cs	class ContractEditViewModel : ValidatableViewModel
+MeterEditViewModel.cs	class MeterEditViewModel : ValidatableViewModel
+ConsumptionObjectEditViewModel.cs	class ConsumptionObjectEditViewModel : ValidatableViewModel
+TariffEditViewModel.cs	class TariffEditViewModel : ValidatableViewModel
+DirectoryEditViewModel.cs	class DirectoryEditViewModel : ValidatableViewModel
+3. Обновить View (привязать кнопку и поля):
+Файл	Изменение
+MeterReadingInputView.xaml.cs	viewModel.BindSaveButton(SaveButton)
+MeterReadingVerificationView.xaml.cs	viewModel.BindSaveButton(VerifyButton)
+PaymentView.xaml.cs	viewModel.BindSaveButton(SaveButton)
+UserManagementView.xaml.cs	viewModel.BindSaveButton(AddButton)
+UserEditView.xaml.cs	viewModel.BindSaveButton(SaveButton)
+ContractEditView.xaml.cs	viewModel.BindSaveButton(SaveButton)
+MeterEditView.xaml.cs	viewModel.BindSaveButton(SaveButton)
+ConsumptionObjectEditView.xaml.cs	viewModel.BindSaveButton(SaveButton)
+TariffEditView.xaml.cs	viewModel.BindSaveButton(SaveButton)
+DirectoryEditView.xaml.cs	viewModel.BindSaveButton(SaveButton)
+4. Обновить XAML (добавить ValidationMessage и x:Name для кнопок):
+Файл	Изменение
+MeterReadingInputView.xaml	Добавить TextBlock для ValidationMessage, x:Name="SaveButton"
+MeterReadingVerificationView.xaml	Добавить x:Name="VerifyButton", x:Name="RejectButton"
+PaymentView.xaml	Добавить x:Name="SaveButton"
+UserManagementView.xaml	Добавить x:Name="AddButton", x:Name="EditButton"
+UserEditView.xaml	Добавить x:Name="SaveButton"
+ContractEditView.xaml	Добавить x:Name="SaveButton"
+MeterEditView.xaml	Добавить x:Name="SaveButton"
+ConsumptionObjectEditView.xaml	Добавить x:Name="SaveButton"
+TariffEditView.xaml	Добавить x:Name="SaveButton"
+DirectoryEditView.xaml	Добавить x:Name="SaveButton"
