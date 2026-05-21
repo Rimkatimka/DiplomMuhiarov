@@ -29,7 +29,17 @@ namespace EnergyMeteringSystem.App.Views.Auth
         {
             InputValidator.RestrictLoginInput(sender, e);
         }
+        // Перетаскивание окна
+        private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            DragMove();
+        }
 
+        // Закрытие окна
+        private void CloseButton_Click(object sender, RoutedEventArgs e)
+        {
+            Close();
+        }
         private void LoginTextBox_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             InputValidator.BlockSpace(sender, e);

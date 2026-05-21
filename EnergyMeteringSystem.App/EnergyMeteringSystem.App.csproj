@@ -125,6 +125,7 @@
       <HintPath>..\packages\System.Configuration.ConfigurationManager.10.0.3\lib\net462\System.Configuration.ConfigurationManager.dll</HintPath>
     </Reference>
     <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Memory, Version=4.0.1.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Memory.4.5.4\lib\net461\System.Memory.dll</HintPath>
     </Reference>
@@ -182,9 +183,12 @@
     <Compile Include="ViewModels\Billing\PaymentViewModel.cs" />
     <Compile Include="ViewModels\Contracts\ContractEditViewModel.cs" />
     <Compile Include="ViewModels\Contracts\ContractListViewModel.cs" />
+    <Compile Include="ViewModels\Directories\CityEditViewModel.cs" />
     <Compile Include="ViewModels\Directories\DirectoryEditViewModel.cs" />
     <Compile Include="ViewModels\Directories\DirectoryFactory.cs" />
     <Compile Include="ViewModels\Directories\DirectoryListViewModel.cs" />
+    <Compile Include="ViewModels\Directories\RegionEditViewModel.cs" />
+    <Compile Include="ViewModels\Directories\StreetEditViewModel.cs" />
     <Compile Include="ViewModels\Main\DashboardViewModel.cs" />
     <Compile Include="ViewModels\Main\MenuItemViewModel.cs" />
     <Compile Include="ViewModels\Main\ShellViewModel.cs" />
@@ -230,11 +234,20 @@
     <Compile Include="Views\Contracts\ContractListView.xaml.cs">
       <DependentUpon>ContractListView.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Views\Directories\CityEditView.xaml.cs">
+      <DependentUpon>CityEditView.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\Directories\DirectoryEditView.xaml.cs">
       <DependentUpon>DirectoryEditView.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\Directories\DirectoryListView.xaml.cs">
       <DependentUpon>DirectoryListView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Directories\RegionEditView.xaml.cs">
+      <DependentUpon>RegionEditView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Directories\StreetEditView.xaml.cs">
+      <DependentUpon>StreetEditView.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\Main\DashboardView.xaml.cs">
       <DependentUpon>DashboardView.xaml</DependentUpon>
@@ -333,11 +346,23 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="Views\Directories\CityEditView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Views\Directories\DirectoryEditView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Views\Directories\DirectoryListView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\Directories\RegionEditView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\Directories\StreetEditView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -444,7 +469,6 @@
       <Name>EnergyMeteringSystem.Services</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup />
   <ItemGroup>
     <Resource Include="icons8-электричество-100.ico" />
   </ItemGroup>
@@ -459,6 +483,12 @@
       <ProductName>.NET Framework 3.5 SP1</ProductName>
       <Install>false</Install>
     </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\Plusik.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Views\Objects\Plusik.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

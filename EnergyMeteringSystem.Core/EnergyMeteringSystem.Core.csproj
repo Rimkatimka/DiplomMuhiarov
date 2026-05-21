@@ -117,6 +117,7 @@
     <Compile Include="Models\DTO\AccrualDto.cs" />
     <Compile Include="Models\DTO\AccrualReportDto.cs" />
     <Compile Include="Models\DTO\AuditLogDto.cs" />
+    <Compile Include="Models\DTO\CityDto.cs" />
     <Compile Include="Models\DTO\ConsumptionObjectDto.cs" />
     <Compile Include="Models\DTO\ConsumptionReportDto.cs" />
     <Compile Include="Models\DTO\ContractDto.cs" />
@@ -137,6 +138,7 @@
     <Compile Include="Models\DTO\ObjectTypeDto.cs" />
     <Compile Include="Models\DTO\PaymentDto.cs" />
     <Compile Include="Models\DTO\PaymentRegistrationDto.cs" />
+    <Compile Include="Models\DTO\RegionDto.cs" />
     <Compile Include="Models\DTO\RejectionReasonDto.cs" />
     <Compile Include="Models\DTO\StreetDto.cs" />
     <Compile Include="Models\DTO\TariffDto.cs" />

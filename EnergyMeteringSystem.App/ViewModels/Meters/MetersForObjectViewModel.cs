@@ -63,9 +63,20 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
             Meters.Clear();
             foreach (var m in meters)
             {
-                System.Diagnostics.Debug.WriteLine($"  Meter: Id={m.Id}, Serial={m.SerialNumber}");
+                // Полная отладка свойств
+                System.Diagnostics.Debug.WriteLine($"  Meter: Id={m.Id}");
+                System.Diagnostics.Debug.WriteLine($"    SerialNumber: {m.SerialNumber}");
+                System.Diagnostics.Debug.WriteLine($"    MeterTypeName: {m.MeterTypeName}");
+                System.Diagnostics.Debug.WriteLine($"    StatusName: {m.StatusName}");
+                System.Diagnostics.Debug.WriteLine($"    InstallationDate: {m.InstallationDate}");
+                System.Diagnostics.Debug.WriteLine($"    NextVerificationDate: {m.NextVerificationDate}");
+                System.Diagnostics.Debug.WriteLine($"    ServiceLifeYears: {m.ServiceLifeYears}");
+                System.Diagnostics.Debug.WriteLine($"    RemovalDate: {m.RemovalDate}");
+
                 Meters.Add(m);
             }
+
+            OnPropertyChanged(nameof(Meters));
         }
 
         private void AddMeter()
@@ -78,7 +89,6 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
                 return;
             }
 
-            // ✅ Передаём объект!
             var editViewModel = new MeterEditViewModel(_currentObject);
             var editView = new Views.Meters.MeterEditView(editViewModel);
             editView.Owner = Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive);

@@ -15,8 +15,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
         private readonly MeterReadingRepository _readingRepository;
         private readonly MeterRepository _meterRepository;
         private readonly UserDto _currentUser;
-        public bool HasSelectedObject => SelectedObject != null;
-        public bool HasSelectedMeter => SelectedMeter != null;
+
         private string _searchText;
         private ConsumptionObjectDto _selectedObject;
         private MeterForReadingDto _selectedMeter;
@@ -26,6 +25,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
         private string _warningMessage;
         private MeterReadingHistoryDto _lastReading;
         private ObservableCollection<MeterReadingHistoryDto> _readingHistory;
+        private string _periodDisplay;
 
         public ObservableCollection<int> Years { get; set; }
         public ObservableCollection<string> Months { get; set; }
@@ -37,6 +37,19 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
         {
             get => _readingHistory;
             set => SetProperty(ref _readingHistory, value);
+        }
+
+        // Вспомогательные свойства для Visibility
+        public bool HasSelectedObject => SelectedObject != null;
+        public bool HasSelectedMeter => SelectedMeter != null;
+        public bool HasLastReading => LastReading != null;
+        public bool HasReadingHistory => ReadingHistory?.Count > 0;
+        public bool HasWarning => !string.IsNullOrEmpty(WarningMessage);
+
+        public string PeriodDisplay
+        {
+            get => _periodDisplay;
+            set => SetProperty(ref _periodDisplay, value);
         }
 
         public string SearchText
@@ -71,6 +84,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
             {
                 SetProperty(ref _selectedMeter, value);
                 OnPropertyChanged(nameof(HasSelectedMeter));
+                SetDefaultPeriod();
                 LoadLastReading();
                 LoadReadingHistory();
                 CheckAnomaly();
@@ -84,6 +98,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
             set
             {
                 SetProperty(ref _selectedYear, value);
+                UpdatePeriodDisplay();
                 CheckAnomaly();
                 SaveCommand.RaiseCanExecuteChanged();
             }
@@ -95,6 +110,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
             set
             {
                 SetProperty(ref _selectedMonth, value);
+                UpdatePeriodDisplay();
                 CheckAnomaly();
                 SaveCommand.RaiseCanExecuteChanged();
             }
@@ -102,14 +118,11 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
 
         public string SelectedMonthName
         {
-            get => Months[SelectedMonth - 1];
-            set
+            get
             {
-                int monthIndex = Months.IndexOf(value) + 1;
-                if (monthIndex != SelectedMonth)
-                {
-                    SelectedMonth = monthIndex;
-                }
+                if (Months == null || Months.Count == 0 || SelectedMonth < 1 || SelectedMonth > 12)
+                    return "";
+                return Months[SelectedMonth - 1];
             }
         }
 
@@ -127,20 +140,26 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
         public string WarningMessage
         {
             get => _warningMessage;
-            set => SetProperty(ref _warningMessage, value);
+            set
+            {
+                SetProperty(ref _warningMessage, value);
+                OnPropertyChanged(nameof(HasWarning));
+            }
         }
 
         public MeterReadingHistoryDto LastReading
         {
             get => _lastReading;
-            set => SetProperty(ref _lastReading, value);
+            set
+            {
+                SetProperty(ref _lastReading, value);
+                OnPropertyChanged(nameof(HasLastReading));
+            }
         }
-
-        public bool HasLastReading => LastReading != null;
-        public bool HasReadingHistory => ReadingHistory?.Count > 0;
 
         public RelayCommand SaveCommand { get; }
         public RelayCommand ClearCommand { get; }
+        public RelayCommand SetLastReadingCommand { get; }
 
         public MeterReadingInputViewModel(UserDto currentUser)
         {
@@ -158,12 +177,16 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
 
             SaveCommand = new RelayCommand(_ => SaveReading(), _ => CanSave());
             ClearCommand = new RelayCommand(_ => ClearForm());
+            SetLastReadingCommand = new RelayCommand(_ => SetLastReadingValue(), _ => HasLastReading);
 
             InitializeYearsAndMonths();
             LoadObjects();
 
-            SelectedYear = DateTime.Today.Year;
-            SelectedMonth = DateTime.Today.Month;
+            // Устанавливаем начальные значения до вызова SetDefaultPeriod
+            _selectedYear = DateTime.Today.Year;
+            _selectedMonth = DateTime.Today.Month;
+
+            SetDefaultPeriod();
         }
 
         private void InitializeYearsAndMonths()
@@ -171,10 +194,51 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
             for (int i = 2020; i <= DateTime.Today.Year + 1; i++)
                 Years.Add(i);
 
-            Months.Add("Январь"); Months.Add("Февраль"); Months.Add("Март");
-            Months.Add("Апрель"); Months.Add("Май"); Months.Add("Июнь");
-            Months.Add("Июль"); Months.Add("Август"); Months.Add("Сентябрь");
-            Months.Add("Октябрь"); Months.Add("Ноябрь"); Months.Add("Декабрь");
+            Months.Add("Январь");
+            Months.Add("Февраль");
+            Months.Add("Март");
+            Months.Add("Апрель");
+            Months.Add("Май");
+            Months.Add("Июнь");
+            Months.Add("Июль");
+            Months.Add("Август");
+            Months.Add("Сентябрь");
+            Months.Add("Октябрь");
+            Months.Add("Ноябрь");
+            Months.Add("Декабрь");
+        }
+
+        private void SetDefaultPeriod()
+        {
+            var today = DateTime.Today;
+
+            // Если сегодня 15-е число или позже → текущий месяц
+            if (today.Day >= 15)
+            {
+                SelectedYear = today.Year;
+                SelectedMonth = today.Month;
+            }
+            // Если сегодня 1-14 число → предыдущий месяц
+            else
+            {
+                var previousMonth = today.AddMonths(-1);
+                SelectedYear = previousMonth.Year;
+                SelectedMonth = previousMonth.Month;
+            }
+
+            UpdatePeriodDisplay();
+        }
+
+        private void UpdatePeriodDisplay()
+        {
+            if (SelectedMonth >= 1 && SelectedMonth <= 12 && Months != null && Months.Count >= SelectedMonth)
+            {
+                PeriodDisplay = $"{Months[SelectedMonth - 1]} {SelectedYear}";
+            }
+            else
+            {
+                PeriodDisplay = $"{SelectedMonth}.{SelectedYear}";
+            }
         }
 
         private void LoadObjects()
@@ -208,17 +272,32 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
             }
         }
 
+        private DateTime? GetLastReadingDate(int meterId)
+        {
+            var lastReading = _readingRepository.GetHistoryByMeterId(meterId)
+                .OrderByDescending(r => r.ReadingDate)
+                .FirstOrDefault();
+            return lastReading?.ReadingDate;
+        }
+
         private void LoadMeters(int objectId)
         {
             Meters.Clear();
             var meters = _meterRepository.GetByObjectId(objectId);
+
             foreach (var m in meters)
             {
+                var lastReading = _readingRepository.GetLastReading(m.Id);
+                var lastReadingDate = GetLastReadingDate(m.Id);
+
                 Meters.Add(new MeterForReadingDto
                 {
                     Id = m.Id,
                     SerialNumber = m.SerialNumber,
-                    MeterTypeName = m.MeterTypeName
+                    MeterTypeName = m.MeterTypeName,
+                    LastReading = lastReading,
+                    LastReadingDate = lastReadingDate,
+                    StatusName = m.StatusName
                 });
             }
         }
@@ -233,7 +312,6 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
 
             var history = _readingRepository.GetHistoryByMeterId(SelectedMeter.Id);
             LastReading = history.OrderByDescending(h => h.ReadingDate).FirstOrDefault();
-            OnPropertyChanged(nameof(HasLastReading));
         }
 
         private void LoadReadingHistory()
@@ -241,6 +319,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
             if (SelectedMeter == null)
             {
                 ReadingHistory.Clear();
+                OnPropertyChanged(nameof(HasReadingHistory));
                 return;
             }
 
@@ -253,11 +332,42 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
             OnPropertyChanged(nameof(HasReadingHistory));
         }
 
+        private void SetLastReadingValue()
+        {
+            if (LastReading != null)
+            {
+                ReadingValue = LastReading.Value;
+                WarningMessage = "Подставлено последнее показание. При необходимости отредактируйте.";
+            }
+        }
+
         private bool CanSave()
         {
-            return SelectedMeter != null &&
-                   ReadingValue > 0 &&
-                   !HasReadingForSelectedPeriod();
+            if (SelectedMeter == null) return false;
+            if (ReadingValue <= 0) return false;
+            if (HasReadingForSelectedPeriod()) return false;
+
+            var readingDate = new DateTime(SelectedYear, SelectedMonth, 1);
+            var today = DateTime.Today;
+
+            // Запрет на будущие месяцы
+            if (readingDate > today)
+            {
+                WarningMessage = "Нельзя вводить показания за будущий период";
+                return false;
+            }
+
+            // Для текущего месяца: можно вводить только с 15-го числа
+            if (readingDate.Year == today.Year && readingDate.Month == today.Month)
+            {
+                if (today.Day < 15)
+                {
+                    WarningMessage = "Показания за текущий месяц можно вводить с 15-го числа";
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         private bool HasReadingForSelectedPeriod()
@@ -300,14 +410,13 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
 
             if (HasReadingForSelectedPeriod())
             {
-                MessageBox.Show($"Показания за {SelectedMonthName} {SelectedYear} уже введены. Для корректировки используйте редактирование.",
+                MessageBox.Show($"Показания за {SelectedMonthName} {SelectedYear} уже введены.",
                     "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
             DateTime readingDate = new DateTime(SelectedYear, SelectedMonth, 1);
 
-            // Корректируем дату на последний день месяца, если нужно
             if (readingDate > DateTime.Today)
             {
                 MessageBox.Show("Нельзя вводить показания за будущий период", "Ошибка",
@@ -332,8 +441,6 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
                     "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
 
                 ClearForm();
-                LoadLastReading();
-                LoadReadingHistory();
             }
             catch (Exception ex)
             {
@@ -349,9 +456,10 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
             SelectedMeter = null;
             ReadingValue = 0;
             WarningMessage = string.Empty;
-            SelectedYear = DateTime.Today.Year;
-            SelectedMonth = DateTime.Today.Month;
+            SetDefaultPeriod();
             LoadObjects();
+            LoadLastReading();
+            LoadReadingHistory();
         }
     }
 }

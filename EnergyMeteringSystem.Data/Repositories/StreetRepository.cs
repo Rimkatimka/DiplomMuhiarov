@@ -29,6 +29,21 @@ namespace EnergyMeteringSystem.Data.Repositories
                 .OrderBy(s => s.Name)
                 .ToList();
         }
+        public List<StreetDto> GetByCityId(int cityId)
+        {
+            return _context.Street
+                .Where(s => s.CityId == cityId)
+                .Select(s => new StreetDto
+                {
+                    Id = s.Id,
+                    Name = s.Name,
+                    CityId = s.CityId,
+                    CityName = s.City.Name,
+                    PostalCode = s.PostalCode
+                })
+                .OrderBy(s => s.Name)
+                .ToList();
+        }
 
         public StreetDto GetById(int id)
         {
@@ -46,6 +61,27 @@ namespace EnergyMeteringSystem.Data.Repositories
                     CityName = s.City.Name,
                     PostalCode = s.PostalCode
                 };
+        }
+        public void Add(StreetDto dto)
+        {
+            var entity = new Street
+            {
+                Name = dto.Name,
+                CityId = dto.CityId,
+                PostalCode = dto.PostalCode
+            };
+            _context.Street.Add(entity);
+            _context.SaveChanges();
+        }
+
+        public void Delete(int id)
+        {
+            var entity = _context.Street.Find(id);
+            if (entity != null)
+            {
+                _context.Street.Remove(entity);
+                _context.SaveChanges();
+            }
         }
     }
 }

@@ -28,9 +28,9 @@
         <!-- Серийный номер -->
         <TextBlock Grid.Row="0" Grid.Column="0" Text="Серийный номер:" Margin="5" VerticalAlignment="Center"/>
         <TextBox Grid.Row="0" Grid.Column="1" 
+                 MaxLength="30"
                  Text="{Binding SerialNumber}" 
                  Margin="5" Padding="5"
-                 MaxLength="50"
                  PreviewTextInput="TextBox_PreviewTextInput_Alphanumeric"
                  PreviewKeyDown="TextBox_PreviewKeyDown_BlockSpace"/>
 
@@ -65,8 +65,10 @@
         <TextBox Grid.Row="4" Grid.Column="1" 
                  Text="{Binding InitialReading}" 
                  Margin="5" Padding="5"
+                 MaxLength="10"
                  PreviewTextInput="TextBox_PreviewTextInput_Decimal"
-                 PreviewKeyDown="TextBox_PreviewKeyDown_BlockSpace"/>
+                 PreviewKeyDown="TextBox_PreviewKeyDown_BlockSpace"
+                 ToolTip="Максимум 99 999,999"/>
 
         <!-- Дата последней поверки -->
         <TextBlock Grid.Row="5" Grid.Column="0" Text="Дата последней поверки:" Margin="5" VerticalAlignment="Center"/>

@@ -20,17 +20,23 @@ namespace EnergyMeteringSystem.Data.Repositories
             System.Diagnostics.Debug.WriteLine("GetAll() — прямой запрос в БД");
 
             var objects = _context.ConsumptionObject
-                .AsNoTracking()  // ← отключает кэш EF
+                .AsNoTracking()
                 .ToList();
 
             var result = new List<ConsumptionObjectDto>();
             foreach (var o in objects)
             {
-                var streetName = _context.Street
+                var street = _context.Street
                     .AsNoTracking()
-                    .Where(s => s.Id == o.StreetId)
-                    .Select(s => s.Name)
-                    .FirstOrDefault() ?? "Неизвестно";
+                    .FirstOrDefault(s => s.Id == o.StreetId);
+
+                var city = street != null ? _context.City
+                    .AsNoTracking()
+                    .FirstOrDefault(c => c.Id == street.CityId) : null;
+
+                var region = city != null ? _context.Region
+                    .AsNoTracking()
+                    .FirstOrDefault(r => r.Id == city.RegionId) : null;
 
                 var typeName = _context.ObjectType
                     .AsNoTracking()
@@ -41,8 +47,12 @@ namespace EnergyMeteringSystem.Data.Repositories
                 result.Add(new ConsumptionObjectDto
                 {
                     Id = o.Id,
-                    Street = streetName,
+                    Street = street?.Name ?? "Неизвестно",
                     StreetId = o.StreetId,
+                    City = city?.Name ?? "Неизвестно",
+                    CityId = city?.Id ?? 0,
+                    Region = region?.Name ?? "Неизвестно",
+                    RegionId = region?.Id ?? 0,
                     HouseNumber = o.HouseNumber,
                     ApartmentNumber = o.ApartmentNumber,
                     ObjectTypeId = o.ObjectTypeId,
@@ -60,21 +70,20 @@ namespace EnergyMeteringSystem.Data.Repositories
             var o = _context.ConsumptionObject.FirstOrDefault(x => x.Id == id);
             if (o == null) return null;
 
-            var streetName = _context.Street
-                .Where(s => s.Id == o.StreetId)
-                .Select(s => s.Name)
-                .FirstOrDefault() ?? "Неизвестно";
-
-            var typeName = _context.ObjectType
-                .Where(t => t.Id == o.ObjectTypeId)
-                .Select(t => t.Name)
-                .FirstOrDefault() ?? "Неизвестно";
+            var street = _context.Street.FirstOrDefault(s => s.Id == o.StreetId);
+            var city = street != null ? _context.City.FirstOrDefault(c => c.Id == street.CityId) : null;
+            var region = city != null ? _context.Region.FirstOrDefault(r => r.Id == city.RegionId) : null;
+            var typeName = _context.ObjectType.Where(t => t.Id == o.ObjectTypeId).Select(t => t.Name).FirstOrDefault() ?? "Неизвестно";
 
             return new ConsumptionObjectDto
             {
-                Id = o.Id,                         
-                Street = streetName,
+                Id = o.Id,
+                Street = street?.Name ?? "Неизвестно",
                 StreetId = o.StreetId,
+                City = city?.Name ?? "Неизвестно",
+                CityId = city?.Id ?? 0,
+                Region = region?.Name ?? "Неизвестно",
+                RegionId = region?.Id ?? 0,
                 HouseNumber = o.HouseNumber,
                 ApartmentNumber = o.ApartmentNumber,
                 ObjectTypeId = o.ObjectTypeId,
@@ -105,16 +114,6 @@ namespace EnergyMeteringSystem.Data.Repositories
             var entity = _context.ConsumptionObject.Find(dto.Id);
             if (entity != null)
             {
-                System.Diagnostics.Debug.WriteLine($"=== БЫЛО ===");
-                System.Diagnostics.Debug.WriteLine($"StreetId: {entity.StreetId}, HouseNumber: {entity.HouseNumber}");
-                System.Diagnostics.Debug.WriteLine($"ApartmentNumber: {entity.ApartmentNumber}, ObjectTypeId: {entity.ObjectTypeId}");
-                System.Diagnostics.Debug.WriteLine($"TotalArea: {entity.TotalArea}, ResidentCount: {entity.ResidentCount}");
-
-                System.Diagnostics.Debug.WriteLine($"=== СТАЛО ===");
-                System.Diagnostics.Debug.WriteLine($"StreetId: {dto.StreetId}, HouseNumber: {dto.HouseNumber}");
-                System.Diagnostics.Debug.WriteLine($"ApartmentNumber: {dto.ApartmentNumber}, ObjectTypeId: {dto.ObjectTypeId}");
-                System.Diagnostics.Debug.WriteLine($"TotalArea: {dto.TotalArea}, ResidentCount: {dto.ResidentCount}");
-
                 entity.StreetId = dto.StreetId;
                 entity.HouseNumber = dto.HouseNumber;
                 entity.ApartmentNumber = dto.ApartmentNumber;
@@ -122,8 +121,7 @@ namespace EnergyMeteringSystem.Data.Repositories
                 entity.TotalArea = dto.TotalArea;
                 entity.ResidentCount = dto.ResidentCount;
 
-                int result = _context.SaveChanges();
-                System.Diagnostics.Debug.WriteLine($"SaveChanges вернул: {result}");
+                _context.SaveChanges();
             }
         }
 

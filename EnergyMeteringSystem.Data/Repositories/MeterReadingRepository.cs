@@ -38,6 +38,14 @@ namespace EnergyMeteringSystem.Data.Repositories
                 return null;
             }
         }
+        public DateTime? GetLastReadingDate(int meterId)
+        {
+            return _context.MeterReading
+                .Where(r => r.MeterId == meterId)
+                .OrderByDescending(r => r.ReadingDate)
+                .Select(r => (DateTime?)r.ReadingDate)
+                .FirstOrDefault();
+        }
         public List<MeterReadingVerificationDto> GetForVerification()
         {
             try

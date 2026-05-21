@@ -29,17 +29,24 @@ namespace EnergyMeteringSystem.Data.Repositories
                         Id = m.Id,
                         SerialNumber = m.SerialNumber,
                         MeterTypeId = m.MeterTypeId,
-                        MeterTypeName = m.MeterType.Name,
+                        MeterTypeName = m.MeterType.Name,           // ← проверьте, есть ли данные
                         StatusId = m.MeterStatusId,
-                        StatusName = m.MeterStatus.Name,
+                        StatusName = m.MeterStatus.Name,            // ← проверьте, есть ли данные
                         InstallationDate = m.InstallationDate,
-                        LastVerificationDate = m.VerificationDate,
                         NextVerificationDate = m.NextVerificationDate,
                         InitialReading = m.InitialReading,
                         ConsumptionObjectId = m.ConsumptionObjectId,
-                        ServiceLifeYears = m.ServiceLifeYears   // ← добавить!
+                        ServiceLifeYears = m.ServiceLifeYears,
+                        RemovalDate = m.RemovalDate                 // ← добавьте это поле!
                     })
                     .ToList();
+
+                // Отладка
+                System.Diagnostics.Debug.WriteLine($"GetByObjectId: найдено {meters.Count} счетчиков");
+                foreach (var m in meters)
+                {
+                    System.Diagnostics.Debug.WriteLine($"  SN={m.SerialNumber}, Type={m.MeterTypeName}, Status={m.StatusName}");
+                }
 
                 return meters;
             }

@@ -21,6 +21,8 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
         private readonly IMeterTypeRepository _meterTypeRepository;
         private readonly ConsumptionObjectRepository _objectRepository;
         private readonly MeterStatusRepository _statusRepository;
+        private const decimal MAX_INITIAL_READING = 99999.999m;
+        private const decimal MIN_INITIAL_READING = 0;
 
         private MeterDto _meter;
         private MeterTypeDto _selectedMeterType;
@@ -76,7 +78,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
                 return DateTime.Today.AddYears(1);
             }
         }
-
+        
         public string SerialNumber
         {
             get => _serialNumber;
@@ -86,7 +88,25 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
         public decimal InitialReading
         {
             get => _initialReading;
-            set => SetProperty(ref _initialReading, value);
+            set
+            {
+                if (value < MIN_INITIAL_READING)
+                {
+                    ToastNotificationService.ShowNear(null, "Начальные показания не могут быть отрицательными", 2000);
+                    SetProperty(ref _initialReading, 0);
+                }
+                else if (value > MAX_INITIAL_READING)
+                {
+                    ToastNotificationService.ShowNear(null, $"Начальные показания не могут превышать {MAX_INITIAL_READING}", 2000);
+                    SetProperty(ref _initialReading, MAX_INITIAL_READING);
+                }
+                else
+                {
+                    SetProperty(ref _initialReading, value);
+                }
+
+                SaveCommand.RaiseCanExecuteChanged();
+            }
         }
 
         public int? ServiceLifeYears

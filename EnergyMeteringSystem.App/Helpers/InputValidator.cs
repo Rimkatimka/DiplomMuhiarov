@@ -22,7 +22,31 @@ namespace EnergyMeteringSystem.App.Helpers
                 e.Handled = true;
             }
         }
+        /// <summary>
+        /// Проверка длины для названия счетчика
+        /// </summary>
+        public static void ValidateMeterTypeNameLength(object sender, RoutedEventArgs e)
+        {
+            var textBox = sender as TextBox;
+            if (textBox == null) return;
 
+            if (textBox.Text.Length < 2)
+            {
+                ToastNotificationService.ShowNear(sender as UIElement,
+                    "Название должно содержать минимум 2 символа", 2000);
+                textBox.BorderBrush = Brushes.Red;
+            }
+            else if (textBox.Text.Length > 30)
+            {
+                ToastNotificationService.ShowNear(sender as UIElement,
+                    "Название не должно превышать 30 символов", 2000);
+                textBox.BorderBrush = Brushes.Red;
+            }
+            else
+            {
+                textBox.BorderBrush = Brushes.LightGray;
+            }
+        }
         /// <summary>
         /// Разрешает цифры, русские буквы, слеш, дефис (для номера дома)
         /// </summary>
