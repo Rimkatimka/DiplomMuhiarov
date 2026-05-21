@@ -4,7 +4,7 @@
         Title="Учет электроэнергии" 
         Height="600" Width="900"
         WindowStartupLocation="CenterScreen"
-        MinHeight="500"
+        MinHeight="650"
         MinWidth="900"
         xmlns:local="clr-namespace:EnergyMeteringSystem.App.ViewModels.Main">
 

@@ -159,38 +159,16 @@
                     </Style>
                 </Button.Resources>
             </Button>
-
             <Button Content="Удалить" 
-                    Command="{Binding DeleteCommand}"
-                    Padding="15,8"
-                    Margin="5"
-                    Background="#F44336"
-                    Foreground="White"
-                    BorderThickness="0"
-                    FontWeight="Bold"
-                    ToolTip="Удалить выбранный объект"
-                    Cursor="Hand">
-                <Button.Resources>
-                    <Style TargetType="Button">
-                        <Setter Property="Template">
-                            <Setter.Value>
-                                <ControlTemplate TargetType="Button">
-                                    <Border Background="{TemplateBinding Background}"
-                                            CornerRadius="3"
-                                            Padding="{TemplateBinding Padding}">
-                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                    </Border>
-                                    <ControlTemplate.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter Property="Background" Value="#d32f2f"/>
-                                        </Trigger>
-                                    </ControlTemplate.Triggers>
-                                </ControlTemplate>
-                            </Setter.Value>
-                        </Setter>
-                    </Style>
-                </Button.Resources>
-            </Button>
+                Command="{Binding DeleteCommand}"
+                Padding="15,8"
+                Margin="5"
+                Background="#F44336"
+                Foreground="White"
+                BorderThickness="0"
+                FontWeight="Bold"
+                ToolTip="Удалить выбранный объект"
+                Cursor="Hand"/>     
         </StackPanel>
     </Grid>
 </UserControl>

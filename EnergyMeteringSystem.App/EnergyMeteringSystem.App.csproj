@@ -166,6 +166,7 @@
     <Compile Include="Converters\ActiveStatusConverter.cs" />
     <Compile Include="Converters\InverseBooleanConverter.cs" />
     <Compile Include="Converters\MonthIndexConverter.cs" />
+    <Compile Include="Converters\ObjectToVisibilityConverter.cs" />
     <Compile Include="Helpers\InputValidator.cs" />
     <Compile Include="Helpers\ValidationService.cs" />
     <Compile Include="Services\ExportDialogService.cs" />

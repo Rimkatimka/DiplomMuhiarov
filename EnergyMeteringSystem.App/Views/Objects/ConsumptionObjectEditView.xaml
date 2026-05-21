@@ -41,13 +41,14 @@
         <!-- Номер квартиры -->
         <TextBlock Grid.Row="2" Grid.Column="0" Text="Номер квартиры:" Margin="5" VerticalAlignment="Center"/>
         <TextBox Grid.Row="2" Grid.Column="1" 
-                 Text="{Binding ApartmentNumber}" 
-                 Margin="5" Padding="5"
-                 MaxLength="10"
-                 PreviewTextInput="TextBox_PreviewTextInput_NumbersOnly"
-                 PreviewKeyDown="TextBox_PreviewKeyDown_BlockSpace"/>
+         Text="{Binding ApartmentNumber}" 
+         Margin="5" Padding="5"
+         MaxLength="10"
+         IsEnabled="{Binding IsApartmentNumberEnabled}"  
+            PreviewTextInput="TextBox_PreviewTextInput_NumbersOnly"
+         PreviewKeyDown="TextBox_PreviewKeyDown_BlockSpace"/>
 
-        <!-- Тип объекта -->
+            <!-- Тип объекта -->
         <TextBlock Grid.Row="3" Grid.Column="0" Text="Тип объекта:" Margin="5" VerticalAlignment="Center"/>
         <ComboBox Grid.Row="3" Grid.Column="1" 
                   ItemsSource="{Binding ObjectTypes}"

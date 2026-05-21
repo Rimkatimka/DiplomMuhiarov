@@ -6,103 +6,145 @@
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
     </UserControl.Resources>
 
-    <Grid Margin="10">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <Grid Margin="10">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
 
-        <!-- Поиск по адресу -->
-        <GroupBox Grid.Row="0" Header="Поиск объекта" Margin="0,0,0,10">
-            <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" 
-                     Margin="5" Padding="5"
-                     MaxLength="50"
-                     ToolTip="Введите адрес для поиска"/>
-        </GroupBox>
-
-        <!-- Таблица объектов (выбор по клику) -->
-        <DataGrid Grid.Row="1" 
-                  ItemsSource="{Binding FilteredObjects}"
-                  SelectedItem="{Binding SelectedObject}"
-                  AutoGenerateColumns="False"
-                  IsReadOnly="True"
-                  MaxHeight="200"
-                  Margin="0,0,0,10"
-                  SelectionMode="Single">
-            <DataGrid.Columns>
-                <DataGridTextColumn Header="Адрес" Binding="{Binding Address}" Width="*" MinWidth="200"/>
-                <DataGridTextColumn Header="Тип" Binding="{Binding ObjectTypeName}" Width="Auto" MinWidth="80"/>
-                <DataGridTextColumn Header="Площадь" Binding="{Binding TotalArea, StringFormat={}{0:F1} м²}" Width="Auto" MinWidth="80"/>
-                <DataGridTextColumn Header="Жильцы" Binding="{Binding ResidentCount}" Width="Auto" MinWidth="80"/>
-            </DataGrid.Columns>
-        </DataGrid>
-
-        <!-- Счетчики выбранного объекта -->
-        <GroupBox Grid.Row="2" Header="Счетчики" Margin="0,0,0,10"
-                  Visibility="{Binding HasSelectedObject, Converter={StaticResource BooleanToVisibilityConverter}}">
-            <ListBox ItemsSource="{Binding Meters}" 
-                     SelectedItem="{Binding SelectedMeter}"
-                     Height="80" Margin="5">
-                <ListBox.ItemTemplate>
-                    <DataTemplate>
-                        <StackPanel>
-                            <TextBlock Text="{Binding SerialNumber}" FontWeight="Bold"/>
-                            <TextBlock Text="{Binding MeterTypeName}" FontSize="10"/>
-                            <TextBlock Text="{Binding LastReadingInfo}" 
-                                       FontSize="10" Foreground="Gray"/>
-                        </StackPanel>
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-            </ListBox>
-        </GroupBox>
-
-        <!-- Ввод показаний -->
-        <GroupBox Grid.Row="3" Header="Ввод показаний" Margin="0,0,0,10"
-                  Visibility="{Binding HasSelectedMeter, Converter={StaticResource BooleanToVisibilityConverter}}">
-            <Grid Margin="5">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-
-                <TextBlock Grid.Row="0" Grid.Column="0" Text="Дата:" Margin="5" VerticalAlignment="Center"/>
-                <DatePicker Grid.Row="0" Grid.Column="1" 
-                            SelectedDate="{Binding ReadingDate}" 
-                            Margin="5"/>
-
-                <TextBlock Grid.Row="1" Grid.Column="0" Text="Показание:" Margin="5" VerticalAlignment="Center"/>
-                <TextBox Grid.Row="1" Grid.Column="1" 
-                         Text="{Binding ReadingValue}" 
+            <!-- Поиск по адресу -->
+            <GroupBox Grid.Row="0" Header="Поиск объекта" Margin="0,0,0,10">
+                <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" 
                          Margin="5" Padding="5"
-                         MaxLength="15"
-                         PreviewTextInput="TextBox_PreviewTextInput_Decimal"
-                         PreviewKeyDown="TextBox_PreviewKeyDown_BlockSpace"
-                         ToolTip="Только цифры, точка или запятая"/>
-            </Grid>
-        </GroupBox>
+                         MaxLength="50"
+                         ToolTip="Введите адрес для поиска"/>
+            </GroupBox>
 
-        <!-- Предупреждение -->
-        <TextBlock Grid.Row="4" Text="{Binding WarningMessage}" 
-                   Foreground="Red" FontWeight="Bold"
-                   Margin="5" HorizontalAlignment="Center"
-                   Visibility="{Binding HasWarning, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+            <!-- Таблица объектов (выбор по клику) -->
+            <DataGrid Grid.Row="1" 
+                      ItemsSource="{Binding FilteredObjects}"
+                      SelectedItem="{Binding SelectedObject}"
+                      AutoGenerateColumns="False"
+                      IsReadOnly="True"
+                      MaxHeight="200"
+                      Margin="0,0,0,10"
+                      SelectionMode="Single">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Адрес" Binding="{Binding Address}" Width="*" MinWidth="200"/>
+                    <DataGridTextColumn Header="Тип" Binding="{Binding ObjectTypeName}" Width="Auto" MinWidth="80"/>
+                    <DataGridTextColumn Header="Площадь" Binding="{Binding TotalArea, StringFormat={}{0:F1} м²}" Width="Auto" MinWidth="80"/>
+                    <DataGridTextColumn Header="Жильцы" Binding="{Binding ResidentCount}" Width="Auto" MinWidth="80"/>
+                </DataGrid.Columns>
+            </DataGrid>
 
-        <!-- Кнопки -->
-        <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Center" Margin="5">
-            <Button Content="Сохранить" 
-                    Command="{Binding SaveCommand}" 
-                    Padding="20,5" Margin="5" Width="100"
-                    Background="#4CAF50" Foreground="White"/>
-            <Button Content="Очистить" 
-                    Command="{Binding ClearCommand}" 
-                    Padding="20,5" Margin="5" Width="100"/>
-        </StackPanel>
-    </Grid>
+            <!-- Счетчики выбранного объекта -->
+            <GroupBox Grid.Row="2" Header="Счетчики" Margin="0,0,0,10"
+                      Visibility="{Binding HasSelectedObject, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <ListBox ItemsSource="{Binding Meters}" 
+                         SelectedItem="{Binding SelectedMeter}"
+                         Height="80" Margin="5">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel>
+                                <TextBlock Text="{Binding SerialNumber}" FontWeight="Bold"/>
+                                <TextBlock Text="{Binding MeterTypeName}" FontSize="10"/>
+                                <TextBlock Text="{Binding LastReadingInfo}" 
+                                           FontSize="10" Foreground="Gray"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </GroupBox>
+
+            <!-- Ввод показаний с выбором месяца и года -->
+            <GroupBox Grid.Row="3" Header="Ввод показаний" Margin="0,0,0,10"
+                      Visibility="{Binding HasSelectedMeter, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <Grid Margin="5">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Год:" Margin="5" VerticalAlignment="Center"/>
+                    <ComboBox Grid.Row="0" Grid.Column="1" 
+                              ItemsSource="{Binding Years}"
+                              SelectedItem="{Binding SelectedYear}"
+                              Margin="5" Width="100" HorizontalAlignment="Left"/>
+
+                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Месяц:" Margin="5" VerticalAlignment="Center"/>
+                    <ComboBox Grid.Row="1" Grid.Column="1" 
+                              ItemsSource="{Binding Months}"
+                              SelectedItem="{Binding SelectedMonthName}"
+                              Margin="5" Width="120" HorizontalAlignment="Left"/>
+
+                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Показание:" Margin="5" VerticalAlignment="Center"/>
+                    <TextBox Grid.Row="2" Grid.Column="1" 
+                             Text="{Binding ReadingValue}" 
+                             Margin="5" Padding="5"
+                             MaxLength="15"
+                             PreviewTextInput="TextBox_PreviewTextInput_Decimal"
+                             PreviewKeyDown="TextBox_PreviewKeyDown_BlockSpace"
+                             ToolTip="Только цифры, точка или запятая"
+                             Width="150" HorizontalAlignment="Left"/>
+                </Grid>
+            </GroupBox>
+
+            <!-- Последнее показание -->
+            <Border Grid.Row="4" Background="#F5F5F5" Padding="10" CornerRadius="5" Margin="0,0,0,10"
+                    Visibility="{Binding HasLastReading, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <StackPanel>
+                    <TextBlock Text="Последнее показание:" FontWeight="Bold" Margin="0,0,0,10"/>
+                    <TextBlock Text="{Binding LastReading.Value, StringFormat=Показание: {0:F2}}"/>
+                    <TextBlock Text="{Binding LastReading.ReadingDate, StringFormat=Дата: {0:dd.MM.yyyy}}"/>
+                    <TextBlock Text="{Binding LastReading.Consumption, StringFormat=Потребление: {0:F2} кВт}"/>
+                </StackPanel>
+            </Border>
+
+            <!-- История показаний -->
+            <GroupBox Grid.Row="5" Header="История показаний" Margin="0,0,0,10"
+                      Visibility="{Binding HasReadingHistory, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <DataGrid ItemsSource="{Binding ReadingHistory}"
+                          AutoGenerateColumns="False"
+                          IsReadOnly="True"
+                          MaxHeight="150"
+                          Margin="5">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Дата" Binding="{Binding ReadingDate, StringFormat={}{0:dd.MM.yyyy}}" Width="100"/>
+                        <DataGridTextColumn Header="Показание" Binding="{Binding Value}" Width="100"/>
+                        <DataGridTextColumn Header="Потребление" Binding="{Binding Consumption, StringFormat={}{0:F2} кВт}" Width="100"/>
+                        <DataGridTextColumn Header="Статус" Binding="{Binding StatusName}" Width="100"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </GroupBox>
+
+            <!-- Предупреждение -->
+            <TextBlock Grid.Row="6" Text="{Binding WarningMessage}" 
+                       Foreground="Red" FontWeight="Bold"
+                       Margin="5" HorizontalAlignment="Center"
+                       Visibility="{Binding HasWarning, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+
+            <!-- Кнопки -->
+            <StackPanel Grid.Row="7" Orientation="Horizontal" HorizontalAlignment="Center" Margin="5">
+                <Button Content="Сохранить" 
+                        Command="{Binding SaveCommand}" 
+                        Padding="20,5" Margin="5" Width="100"
+                        Background="#4CAF50" Foreground="White"/>
+                <Button Content="Очистить" 
+                        Command="{Binding ClearCommand}" 
+                        Padding="20,5" Margin="5" Width="100"/>
+            </StackPanel>
+        </Grid>
+    </ScrollViewer>
 </UserControl>

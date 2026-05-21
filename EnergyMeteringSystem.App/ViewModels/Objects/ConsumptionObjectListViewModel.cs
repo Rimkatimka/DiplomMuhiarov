@@ -3,7 +3,6 @@ using EnergyMeteringSystem.App.ViewModels.Base;
 using EnergyMeteringSystem.App.Views.Objects;
 using EnergyMeteringSystem.Core.Models.DTO;
 using EnergyMeteringSystem.Data.Repositories;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows;
@@ -14,12 +13,12 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
     {
         private readonly ConsumptionObjectRepository _repository;
         private string _searchText;
+
         public RelayCommand<ConsumptionObjectDto> ShowMetersCommand { get; private set; }
-        public RelayCommand DeleteCommand { get; private set; }
+        public RelayCommand DeleteCommand { get; private set; }  // ← добавить
 
         public ObservableCollection<ConsumptionObjectDto> Objects { get; set; }
         public ObservableCollection<ConsumptionObjectDto> FilteredObjects { get; set; }
-
 
         public string SearchText
         {
@@ -30,6 +29,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
                 ApplyFilter();
             }
         }
+
         private ConsumptionObjectDto _selectedObject;
         public ConsumptionObjectDto SelectedObject
         {
@@ -37,8 +37,8 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
             set
             {
                 SetProperty(ref _selectedObject, value);
-                System.Diagnostics.Debug.WriteLine($"SelectedObject установлен: Id={value?.Id}");
-                // Не вызывай здесь LoadData!
+                // Обновляем доступность команды удаления
+                DeleteCommand?.RaiseCanExecuteChanged();
             }
         }
 
@@ -55,8 +55,10 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
             RefreshCommand = new RelayCommand(_ => LoadData());
             AddCommand = new RelayCommand(_ => AddObject());
             EditCommand = new RelayCommand<ConsumptionObjectDto>(EditObject);
-
             ShowMetersCommand = new RelayCommand<ConsumptionObjectDto>(ShowMeters);
+
+            // ← добавить команду удаления
+            DeleteCommand = new RelayCommand(_ => DeleteObject(), _ => SelectedObject != null);
 
             LoadData();
         }
@@ -65,9 +67,6 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
         {
             Objects.Clear();
             var list = _repository.GetAll();
-            
-            FilteredObjects = new ObservableCollection<ConsumptionObjectDto>(Objects);
-            OnPropertyChanged(nameof(FilteredObjects));
             foreach (var obj in list)
                 Objects.Add(obj);
 
@@ -86,8 +85,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
             foreach (var obj in filtered)
                 FilteredObjects.Add(obj);
 
-            System.Diagnostics.Debug.WriteLine($"FilteredObjects: {FilteredObjects.Count} объектов");
-            OnPropertyChanged(nameof(FilteredObjects));  // ← добавить!
+            OnPropertyChanged(nameof(FilteredObjects));
         }
 
         private void AddObject()
@@ -96,10 +94,8 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
             var editView = new ConsumptionObjectEditView(editViewModel);
             editView.Owner = Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive);
 
-
             editViewModel.OnObjectSaved += (s, e) =>
             {
-                System.Diagnostics.Debug.WriteLine("OnObjectSaved сработал");
                 LoadData();
                 editView.Close();
             };
@@ -123,6 +119,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
 
             editView.ShowDialog();
         }
+
         private void ShowMeters(ConsumptionObjectDto obj)
         {
             if (obj == null) return;
@@ -134,5 +131,33 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
             window.ShowDialog();
         }
 
+        // ← добавить метод удаления
+        private void DeleteObject()
+        {
+            if (SelectedObject == null) return;
+
+            var result = MessageBox.Show(
+                $"Удалить объект \"{SelectedObject.Address}\"?\n\n" +
+                "Все связанные данные (счетчики, показания, начисления, платежи) также будут удалены!",
+                "Подтверждение удаления",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning);
+
+            if (result == MessageBoxResult.Yes)
+            {
+                try
+                {
+                    _repository.Delete(SelectedObject.Id);
+                    LoadData();
+                    MessageBox.Show("Объект успешно удален", "Успех",
+                        MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                catch (System.Exception ex)
+                {
+                    MessageBox.Show($"Ошибка при удалении: {ex.Message}", "Ошибка",
+                        MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
     }
 }

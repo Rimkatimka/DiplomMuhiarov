@@ -20,12 +20,15 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
         private string _houseNumber;
         private string _apartmentNumber;
         private decimal _totalArea;
-        private int _residentCount;
+        private int? _residentCount;  // ← изменили на int?
+        private string _residentCountError;
 
         public event EventHandler OnObjectSaved;
 
         public ObservableCollection<StreetDto> Streets { get; set; }
         public ObservableCollection<ObjectTypeDto> ObjectTypes { get; set; }
+
+        public bool IsApartmentNumberEnabled => !IsPrivateHouse;
 
         public StreetDto SelectedStreet
         {
@@ -33,11 +36,104 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
             set => SetProperty(ref _selectedStreet, value);
         }
 
+        public bool IsPrivateHouse
+        {
+            get => SelectedObjectType?.Name == "Частный дом";
+        }
+
+        // ✅ ЕДИНСТВЕННОЕ свойство ResidentCount (int?)
+        public int? ResidentCount
+        {
+            get => _residentCount;
+            set
+            {
+                if (SetProperty(ref _residentCount, value))
+                {
+                    ValidateResidentCount();
+                    SaveCommand?.RaiseCanExecuteChanged();
+                }
+            }
+        }
+
+        public string ResidentCountError
+        {
+            get => _residentCountError;
+            set => SetProperty(ref _residentCountError, value);
+        }
+
+        public bool HasResidentCountError => !string.IsNullOrEmpty(ResidentCountError);
+
+        private void ValidateResidentCount()
+        {
+            ResidentCountError = string.Empty;
+
+            if (!ResidentCount.HasValue)
+            {
+                if (SelectedObjectType?.Name != "Магазин")
+                {
+                    ResidentCountError = "Укажите количество проживающих";
+                }
+                return;
+            }
+
+            if (ResidentCount.Value <= 0)
+            {
+                ResidentCountError = "Количество проживающих должно быть больше 0";
+                return;
+            }
+
+            // Ограничение по площади
+            decimal? totalArea = TotalArea;
+            if (totalArea.HasValue && totalArea > 0)
+            {
+                int maxResidents = CalculateMaxResidents(totalArea.Value);
+                if (ResidentCount.Value > maxResidents)
+                {
+                    ResidentCountError = $"Согласно санитарным нормам, при площади {totalArea.Value} м² " +
+                                         $"не может проживать более {maxResidents} человек. " +
+                                         $"Рекомендуем проверить данные или зарегистрировать перепланировку.";
+                }
+            }
+            else if (ResidentCount.Value > 10)
+            {
+                ResidentCountError = $"Указано {ResidentCount.Value} человек. " +
+                                     $"Пожалуйста, укажите общую площадь помещения для проверки санитарных норм.";
+            }
+        }
+
+        private int CalculateMaxResidents(decimal totalArea)
+        {
+            if (SelectedObjectType?.Name == "Частный дом")
+            {
+                return (int)Math.Floor(totalArea / 18m);
+            }
+            else
+            {
+                return (int)Math.Floor(totalArea / 12m);
+            }
+        }
 
         public ObjectTypeDto SelectedObjectType
         {
             get => _selectedObjectType;
-            set => SetProperty(ref _selectedObjectType, value);
+            set
+            {
+                if (SetProperty(ref _selectedObjectType, value))
+                {
+                    OnPropertyChanged(nameof(IsPrivateHouse));
+                    OnPropertyChanged(nameof(IsApartmentNumberEnabled));
+
+                    if (IsPrivateHouse)
+                    {
+                        ApartmentNumber = string.Empty;
+                        OnPropertyChanged(nameof(ApartmentNumber));
+                    }
+
+                    // Пересчитываем валидацию при смене типа объекта
+                    ValidateResidentCount();
+                    SaveCommand?.RaiseCanExecuteChanged();
+                }
+            }
         }
 
         public string HouseNumber
@@ -59,13 +155,12 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
         public decimal TotalArea
         {
             get => _totalArea;
-            set => SetProperty(ref _totalArea, value);
-        }
-
-        public int ResidentCount
-        {
-            get => _residentCount;
-            set => SetProperty(ref _residentCount, value);
+            set
+            {
+                SetProperty(ref _totalArea, value);
+                ValidateResidentCount();  // ← пересчёт при изменении площади
+                SaveCommand?.RaiseCanExecuteChanged();
+            }
         }
 
         public bool IsEditMode { get; private set; }
@@ -124,46 +219,32 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
             HouseNumber = obj.HouseNumber;
             ApartmentNumber = obj.ApartmentNumber;
             TotalArea = obj.TotalArea ?? 0;
-            ResidentCount = obj.ResidentCount ?? 0;
-        }
-
-        private StreetDto FindStreet(int id)
-        {
-            foreach (StreetDto street in Streets)
-            {
-                if (street.Id == id)
-                {
-                    return street;
-                }
-            }
-
-            return null;
-        }
-
-        private ObjectTypeDto FindObjectType(int id)
-        {
-            foreach (ObjectTypeDto type in ObjectTypes)
-            {
-                if (type.Id == id)
-                {
-                    return type;
-                }
-            }
-
-            return null;
+            ResidentCount = obj.ResidentCount;
         }
 
         private bool CanSave()
         {
             return SelectedStreet != null &&
                    SelectedObjectType != null &&
-                   !string.IsNullOrWhiteSpace(HouseNumber);
+                   !string.IsNullOrWhiteSpace(HouseNumber) &&
+                   string.IsNullOrEmpty(ResidentCountError);
         }
 
         private void Save()
         {
+            // Финальная проверка
+            ValidateResidentCount();
+
+            if (!string.IsNullOrEmpty(ResidentCountError))
+            {
+                System.Windows.MessageBox.Show(ResidentCountError, "Ошибка",
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                return;
+            }
+
             System.Diagnostics.Debug.WriteLine($"HouseNumber из формы: {HouseNumber}");
             System.Diagnostics.Debug.WriteLine($"_object?.Id = {_object?.Id}");
+
             ConsumptionObjectDto dto = new()
             {
                 Id = _object?.Id ?? 0,
