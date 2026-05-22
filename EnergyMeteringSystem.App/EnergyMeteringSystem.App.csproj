@@ -181,7 +181,6 @@
     <Compile Include="ViewModels\Billing\AccrualViewModel.cs" />
     <Compile Include="ViewModels\Billing\DebtViewModel.cs" />
     <Compile Include="ViewModels\Billing\PaymentViewModel.cs" />
-    <Compile Include="ViewModels\Billing\ReceiptViewModel.cs" />
     <Compile Include="ViewModels\Contracts\ContractEditViewModel.cs" />
     <Compile Include="ViewModels\Contracts\ContractListViewModel.cs" />
     <Compile Include="ViewModels\Directories\CityEditViewModel.cs" />
@@ -228,9 +227,6 @@
     </Compile>
     <Compile Include="Views\Billing\PaymentView.xaml.cs">
       <DependentUpon>PaymentView.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="Views\Billing\ReceiptView.xaml.cs">
-      <DependentUpon>ReceiptView.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\Contracts\ContractEditView.xaml.cs">
       <DependentUpon>ContractEditView.xaml</DependentUpon>
@@ -339,10 +335,6 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Views\Billing\PaymentView.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="Views\Billing\ReceiptView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -508,4 +500,5 @@
     </Content>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  
 </Project>

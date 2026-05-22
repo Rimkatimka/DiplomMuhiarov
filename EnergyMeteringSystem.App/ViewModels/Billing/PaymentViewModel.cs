@@ -1,13 +1,12 @@
-﻿using EnergyMeteringSystem.App.Commands;
-using EnergyMeteringSystem.App.ViewModels.Base;
-using EnergyMeteringSystem.App.Views.Billing;
-using EnergyMeteringSystem.Core.Models.DTO;
-using EnergyMeteringSystem.Data.Repositories;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows;
+using EnergyMeteringSystem.App.Commands;
+using EnergyMeteringSystem.App.ViewModels.Base;
+using EnergyMeteringSystem.Core.Models.DTO;
+using EnergyMeteringSystem.Data.Repositories;
 
 namespace EnergyMeteringSystem.App.ViewModels.Billing
 {
@@ -41,7 +40,6 @@ namespace EnergyMeteringSystem.App.ViewModels.Billing
                 SelectedMonth = Array.IndexOf(Months.ToArray(), value) + 1;
             }
         }
-
         public int SelectedYear
         {
             get => _selectedYear;
@@ -134,21 +132,6 @@ namespace EnergyMeteringSystem.App.ViewModels.Billing
             LoadPayments();
         }
 
-        private void PrintReceipt()
-        {
-            if (SelectedObject == null)
-            {
-                MessageBox.Show("Выберите объект для печати квитанции", "Ошибка",
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
-            var receipt = new ReceiptViewModel(SelectedObject, SelectedYear, SelectedMonth);
-            var receiptView = new ReceiptView();
-            receiptView.DataContext = receipt;
-            receiptView.Owner = Application.Current.MainWindow;
-            receiptView.ShowDialog();
-        }
         private void LoadObjects()
         {
             Objects.Clear();
@@ -246,7 +229,23 @@ namespace EnergyMeteringSystem.App.ViewModels.Billing
         private string GenerateReceiptNumber()
         {
             return $"ПЛ-{DateTime.Now:yyyyMMdd-HHmmss}";
-        }    }
+        }
+
+        private void PrintReceipt()
+        {
+            if (SelectedObject == null)
+            {
+                return;
+            }
+
+            // Заглушка для печати
+            _ = System.Windows.MessageBox.Show(
+                $"Печать квитанции для объекта: {SelectedObject.Address}\nСумма: {Amount}",
+                "Печать",
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Information);
+        }
+    }
 
     // DTO для метода оплаты
     public class PaymentMethodDto
