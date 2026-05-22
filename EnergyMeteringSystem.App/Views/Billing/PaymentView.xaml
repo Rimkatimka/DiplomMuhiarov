@@ -64,11 +64,10 @@
                  ToolTip="Только цифры, точка или запятая"/>
 
                 <Button Grid.Row="0" Grid.Column="2" 
-                        Content="Печать квитанции"
+                        Content="Печать квитанции" 
                         Command="{Binding PrintReceiptCommand}"
-                        Margin="10,5,0,5"
-                        Padding="10,5"
-                        VerticalAlignment="Center"/>
+                        Padding="10,5" Margin="5"
+                        Background="#2196F3" Foreground="White"/>       
             </Grid>
         </GroupBox>
 
