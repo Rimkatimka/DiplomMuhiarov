@@ -2,27 +2,30 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Квитанция" 
-        Height="550" Width="450"
+        Height="Auto" Width="450"
+        MinHeight="550"
+        MaxHeight="800"
         WindowStartupLocation="CenterOwner"
-        ResizeMode="NoResize">
+        ResizeMode="CanResize"
+        SizeToContent="Height">
 
     <Border BorderBrush="Black" BorderThickness="1" Margin="10" Padding="15">
         <StackPanel>
             <!-- Шапка -->
             <TextBlock Text="КВИТАНЦИЯ" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center"/>
-            <TextBlock Text="{Binding ReceiptNumber}" FontSize="12" HorizontalAlignment="Center"/>
-            <TextBlock Text="от {Binding PaymentDate}" FontSize="12" HorizontalAlignment="Center"/>
+            <TextBlock Text="{Binding ReceiptNumber}" FontSize="12" HorizontalAlignment="Center" Margin="0,5"/>
+            <TextBlock Text="{Binding PaymentDate, StringFormat=от {0}}" FontSize="12" HorizontalAlignment="Center"/>
 
             <Line X1="0" Y1="10" X2="400" Y2="10" Stroke="Black" StrokeThickness="1" Margin="0,10"/>
 
             <!-- Абонент -->
             <TextBlock Text="Абонент:" FontWeight="Bold" Margin="0,5,0,0"/>
-            <TextBlock Text="{Binding FullName}"/>
+            <TextBlock Text="{Binding FullName}" TextWrapping="Wrap"/>
 
-            <TextBlock Text="Адрес:" FontWeight="Bold" Margin="0,5,0,0"/>
-            <TextBlock Text="{Binding Address}"/>
+            <TextBlock Text="Адрес:" FontWeight="Bold" Margin="0,8,0,0"/>
+            <TextBlock Text="{Binding Address}" TextWrapping="Wrap"/>
 
-            <TextBlock Text="Лицевой счет:" FontWeight="Bold" Margin="0,5,0,0"/>
+            <TextBlock Text="Лицевой счет:" FontWeight="Bold" Margin="0,8,0,0"/>
             <TextBlock Text="{Binding AccountNumber}"/>
 
             <Line X1="0" Y1="10" X2="400" Y2="10" Stroke="Black" StrokeThickness="1" Margin="0,10"/>
@@ -33,20 +36,26 @@
 
             <Line X1="0" Y1="10" X2="400" Y2="10" Stroke="Black" StrokeThickness="1" Margin="0,10"/>
 
-            <!-- Таблица показаний -->
+            <!-- Таблица показаний - Автоматическая высота -->
+            <TextBlock Text="Показания приборов учёта:" FontWeight="Bold" Margin="0,0,0,5"/>
+
             <DataGrid ItemsSource="{Binding Readings}" 
                       AutoGenerateColumns="False" 
                       IsReadOnly="True"
                       HeadersVisibility="Column"
                       BorderThickness="0"
                       RowHeaderWidth="0"
-                      Height="120">
+                      CanUserResizeRows="False"
+                      CanUserSortColumns="False"
+                      VerticalScrollBarVisibility="Auto"
+                      MaxHeight="300"
+                      MinHeight="80">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Счетчик" Binding="{Binding SerialNumber}" Width="100"/>
                     <DataGridTextColumn Header="Текущее" Binding="{Binding CurrentReading}" Width="70"/>
                     <DataGridTextColumn Header="Предыдущее" Binding="{Binding PreviousReading}" Width="70"/>
-                    <DataGridTextColumn Header="Расход" Binding="{Binding Consumption}" Width="60"/>
-                    <DataGridTextColumn Header="Сумма" Binding="{Binding Amount, StringFormat={}{0:F2}}"/>
+                    <DataGridTextColumn Header="Расход" Binding="{Binding Consumption, StringFormat={}{0:F2}}" Width="60"/>
+                    <DataGridTextColumn Header="Сумма, руб" Binding="{Binding Amount, StringFormat={}{0:F2}}" Width="80"/>
                 </DataGrid.Columns>
             </DataGrid>
 
@@ -54,23 +63,37 @@
 
             <!-- Итого -->
             <Grid Margin="0,5">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0" Text="Тариф:" FontWeight="Bold"/>
-                <TextBlock Grid.Column="1" Text="{Binding TariffText}" HorizontalAlignment="Right"/>
 
-                <TextBlock Grid.Column="0" Text="Начислено:" FontWeight="Bold" Margin="0,5,0,0"/>
-                <TextBlock Grid.Column="1" Text="{Binding AccrualAmount, StringFormat={}{0:F2} ₽}" HorizontalAlignment="Right" Margin="0,5,0,0"/>
+                <!-- Строка 0: Тариф -->
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="Тариф:" FontWeight="Bold"/>
+                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding TariffText}" HorizontalAlignment="Right"/>
 
-                <TextBlock Grid.Column="0" Text="Оплачено:" FontWeight="Bold" Margin="0,5,0,0"/>
-                <TextBlock Grid.Column="1" Text="{Binding PaidAmount, StringFormat={}{0:F2} ₽}" HorizontalAlignment="Right" Margin="0,5,0,0"/>
+                <!-- Строка 1: Начислено -->
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="Начислено:" FontWeight="Bold" Margin="0,5,0,0"/>
+                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding AccrualAmount, StringFormat={}{0:F2} ₽}" 
+               HorizontalAlignment="Right" Margin="0,5,0,0"/>
 
-                <TextBlock Grid.Column="0" Text="Задолженность:" FontWeight="Bold" Margin="0,10,0,0"/>
-                <TextBlock Grid.Column="1" Text="{Binding DebtAmount, StringFormat={}{0:F2} ₽}" 
-                           HorizontalAlignment="Right" Margin="0,10,0,0"
-                           Foreground="{Binding DebtColor}"/>
+                <!-- Строка 2: Оплачено -->
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="Оплачено:" FontWeight="Bold" Margin="0,5,0,0"/>
+                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding PaidAmount, StringFormat={}{0:F2} ₽}" 
+               HorizontalAlignment="Right" Margin="0,5,0,0"/>
+
+                <!-- Строка 3: Задолженность -->
+                <TextBlock Grid.Row="3" Grid.Column="0" Text="Задолженность:" FontWeight="Bold" Margin="0,10,0,0"/>
+                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding DebtAmount, StringFormat={}{0:F2} ₽}" 
+               HorizontalAlignment="Right" Margin="0,10,0,0"
+               Foreground="{Binding DebtColor}"
+               FontWeight="Bold"/>
             </Grid>
 
             <Line X1="0" Y1="10" X2="400" Y2="10" Stroke="Black" StrokeThickness="1" Margin="0,10"/>
@@ -79,8 +102,14 @@
             <TextBlock Text="Спасибо за своевременную оплату!" 
                        FontSize="12" HorizontalAlignment="Center" Margin="0,10,0,0"/>
 
-            <TextBlock Text="Подпись: ___________" 
-                       FontSize="12" HorizontalAlignment="Right" Margin="0,20,0,0"/>
+            <Grid Margin="0,15,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Text="(дата и подпись)" FontSize="10" Foreground="Gray"/>
+                <TextBlock Grid.Column="1" Text="___________" FontSize="12" Margin="10,0,0,0"/>
+            </Grid>
         </StackPanel>
     </Border>
 </Window>

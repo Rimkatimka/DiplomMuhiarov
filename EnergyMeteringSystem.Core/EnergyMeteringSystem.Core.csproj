@@ -138,6 +138,7 @@
     <Compile Include="Models\DTO\ObjectTypeDto.cs" />
     <Compile Include="Models\DTO\PaymentDto.cs" />
     <Compile Include="Models\DTO\PaymentRegistrationDto.cs" />
+    <Compile Include="Models\DTO\ReceiptReadingDto.cs" />
     <Compile Include="Models\DTO\RegionDto.cs" />
     <Compile Include="Models\DTO\RejectionReasonDto.cs" />
     <Compile Include="Models\DTO\StreetDto.cs" />
