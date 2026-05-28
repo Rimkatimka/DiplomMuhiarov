@@ -14,35 +14,18 @@
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <!-- Левая панель с меню (сворачиваемая) -->
+        <!-- Левая панель с меню -->
         <Border x:Name="MenuPanel" Grid.Column="0" Background="#2D3F5E" Width="250">
             <Grid>
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <!-- Кнопка сворачивания/разворачивания -->
-                <Button Grid.Row="0" 
-                        x:Name="ToggleMenuButton"
-                        Content="☰"
-                        Width="40" Height="40"
-                        HorizontalAlignment="Left"
-                        Margin="5,5,0,0"
-                        Background="#1F2A40"
-                        Foreground="White"
-                        FontSize="20"
-                        FontWeight="Bold"
-                        BorderThickness="0"
-                        Cursor="Hand"
-                        Click="ToggleMenu_Click"
-                        ToolTip="Свернуть меню (скрыть боковую панель)"/>
-
                 <!-- Имя пользователя -->
-                <StackPanel x:Name="UserInfoPanel" Grid.Row="1" Background="#1F2A40" Margin="10,20,10,10">
+                <StackPanel x:Name="UserInfoPanel" Grid.Row="0" Background="#1F2A40" Margin="10">
                     <TextBlock Text="Пользователь:" Foreground="#AAAAAA" FontSize="11"/>
                     <TextBlock Text="{Binding CurrentUser.DisplayName}" 
                                Foreground="White" FontSize="14" FontWeight="Bold"
@@ -51,11 +34,11 @@
                                Foreground="#4CAF50" FontSize="12"/>
                 </StackPanel>
 
-                <!-- ПОЛЕ ПОИСКА ПО МЕНЮ -->
-                <Border x:Name="SearchPanel" Grid.Row="2" Background="#1F2A40" Margin="10,0,10,10" CornerRadius="4">
+                <!-- Поиск -->
+                <Border Grid.Row="1" Background="#1F2A40" Margin="10" CornerRadius="4">
                     <TextBox x:Name="SearchMenuTextBox"
                              Height="30"
-                             Padding="8,0,30,0"
+                             Padding="8"
                              Background="#3A4A6A"
                              Foreground="White"
                              BorderThickness="0"
@@ -64,44 +47,47 @@
                              ToolTip="Поиск по меню"/>
                 </Border>
 
-                <!-- TreeView меню -->
-                <TreeView x:Name="MainMenuTree" Grid.Row="3" 
-                          ItemsSource="{Binding FilteredMenuItems}"
-                          SelectedItemChanged="TreeView_SelectedItemChanged"
-                          Background="Transparent"
-                          BorderThickness="0"
-                          Foreground="White"
-                          Margin="0,0,0,0">
+                <!-- TreeView меню с прокруткой -->
+                <ScrollViewer Grid.Row="2" 
+                              VerticalScrollBarVisibility="Auto" 
+                              HorizontalScrollBarVisibility="Disabled">
 
-                    <TreeView.ItemTemplate>
-                        <HierarchicalDataTemplate DataType="{x:Type local:MenuItemViewModel}" 
-                                                  ItemsSource="{Binding Children}">
-                            <StackPanel Orientation="Horizontal">
+                    <TreeView x:Name="MainMenuTree" 
+                              ItemsSource="{Binding FilteredMenuItems}"
+                              SelectedItemChanged="TreeView_SelectedItemChanged"
+                              Background="Transparent"
+                              BorderThickness="0"
+                              Foreground="White">
+
+                        <TreeView.ItemTemplate>
+                            <HierarchicalDataTemplate DataType="{x:Type local:MenuItemViewModel}" 
+                                                      ItemsSource="{Binding Children}">
                                 <TextBlock Text="{Binding Title}" Margin="10,5" FontSize="14"/>
-                            </StackPanel>
-                        </HierarchicalDataTemplate>
-                    </TreeView.ItemTemplate>
+                            </HierarchicalDataTemplate>
+                        </TreeView.ItemTemplate>
 
-                    <TreeView.ItemContainerStyle>
-                        <Style TargetType="TreeViewItem">
-                            <Setter Property="IsExpanded" Value="True"/>
-                            <Setter Property="Background" Value="Transparent"/>
-                            <Setter Property="Foreground" Value="White"/>
-                            <Setter Property="Cursor" Value="Hand"/>
-                            <Style.Triggers>
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter Property="Background" Value="#1F2A40"/>
-                                </Trigger>
-                                <Trigger Property="IsSelected" Value="True">
-                                    <Setter Property="Background" Value="#1976D2"/>
-                                </Trigger>
-                            </Style.Triggers>
-                        </Style>
-                    </TreeView.ItemContainerStyle>
-                </TreeView>
+                        <TreeView.ItemContainerStyle>
+                            <Style TargetType="TreeViewItem">
+                                <Setter Property="IsExpanded" Value="True"/>
+                                <Setter Property="Background" Value="Transparent"/>
+                                <Setter Property="Foreground" Value="White"/>
+                                <Setter Property="Cursor" Value="Hand"/>
+                                <Setter Property="Padding" Value="0"/>
+                                <Style.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="#1F2A40"/>
+                                    </Trigger>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter Property="Background" Value="#1976D2"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TreeView.ItemContainerStyle>
+                    </TreeView>
+                </ScrollViewer>
 
                 <!-- Кнопка выхода -->
-                <Button Grid.Row="4" 
+                <Button Grid.Row="3" 
                         x:Name="LogoutButton"
                         Content="Выйти"
                         Command="{Binding LogoutCommand}"
@@ -114,9 +100,34 @@
             </Grid>
         </Border>
 
-        <!-- Правая область - Контейнер для View -->
+        <!-- Правая область (контент) -->
         <Border Grid.Column="1" Background="#F5F5F5">
-            <ContentControl x:Name="MainContent" Content="{Binding CurrentView}"/>
+            <Grid>
+                <!-- Кнопка открытия/закрытия меню -->
+                <Button x:Name="ToggleMenuButton"
+                        Width="30" Height="30"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Top"
+                        Margin="10,10,0,0"
+                        Background="#1976D2"
+                        Foreground="White"
+                        FontSize="14"
+                        FontWeight="Bold"
+                        BorderThickness="0"
+                        Cursor="Hand"
+                        Click="ToggleMenu_Click"
+                        ToolTip="Свернуть меню"
+                        Panel.ZIndex="100">
+
+                    <TextBlock x:Name="ToggleButtonText" Text="◀" 
+                               VerticalAlignment="Center"
+                               HorizontalAlignment="Center"/>
+                </Button>
+
+                <ContentControl x:Name="MainContent" 
+                                Content="{Binding CurrentView}"
+                                Margin="50,10,10,10"/>
+            </Grid>
         </Border>
     </Grid>
 </Window>

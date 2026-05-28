@@ -11,16 +11,17 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
 {
     public class ShellViewModel : ViewModelBase
     {
-
         public UserDto CurrentUser { get; }
         public ObservableCollection<MenuItemViewModel> MenuItems { get; set; }
         public RelayCommand LogoutCommand { get; }
+
         private object _currentView;
         public object CurrentView
         {
             get => _currentView;
             set => SetProperty(ref _currentView, value);
         }
+
         private MenuItemViewModel _selectedMenuItem;
         public MenuItemViewModel SelectedMenuItem
         {
@@ -33,6 +34,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
                 }
             }
         }
+
         private string _searchText;
         private ObservableCollection<MenuItemViewModel> _filteredMenuItems;
 
@@ -56,9 +58,18 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
 
         private void FilterMenu()
         {
+            System.Diagnostics.Debug.WriteLine($"FilterMenu: SearchText='{SearchText}', MenuItems.Count={MenuItems?.Count ?? 0}");
+
+            if (MenuItems == null || MenuItems.Count == 0)
+            {
+                FilteredMenuItems = new ObservableCollection<MenuItemViewModel>();
+                return;
+            }
+
             if (string.IsNullOrWhiteSpace(SearchText))
             {
                 FilteredMenuItems = new ObservableCollection<MenuItemViewModel>(MenuItems);
+                System.Diagnostics.Debug.WriteLine($"FilterMenu: показано {FilteredMenuItems.Count} пунктов");
                 return;
             }
 
@@ -67,15 +78,12 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
 
             foreach (var item in MenuItems)
             {
-                // Проверяем сам пункт
                 bool itemMatches = item.Title.ToLower().Contains(lowerSearch);
-
-                // Проверяем дочерние пункты
                 var matchingChildren = item.Children.Where(c => c.Title.ToLower().Contains(lowerSearch)).ToList();
 
                 if (itemMatches || matchingChildren.Any())
                 {
-                    var newItem = new MenuItemViewModel { Title = item.Title };
+                    var newItem = new MenuItemViewModel { Title = item.Title, Command = item.Command };
 
                     if (matchingChildren.Any())
                     {
@@ -97,30 +105,36 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
             }
 
             FilteredMenuItems = filtered;
+            System.Diagnostics.Debug.WriteLine($"FilterMenu: отфильтровано {filtered.Count} пунктов");
         }
+
         public ShellViewModel(UserDto currentUser)
         {
             System.Diagnostics.Debug.WriteLine("ShellViewModel: конструктор начат");
 
-            CurrentUser = currentUser;  // ← получаем пользователя из параметра
+            CurrentUser = currentUser;
 
-            System.Diagnostics.Debug.WriteLine($"ShellViewModel: _currentUser = {CurrentUser?.Username ?? "null"}");
+            System.Diagnostics.Debug.WriteLine($"ShellViewModel: CurrentUser = {CurrentUser?.Username ?? "null"}");
 
             if (CurrentUser == null)
             {
-                System.Diagnostics.Debug.WriteLine("ShellViewModel: _currentUser == null, выход");
+                System.Diagnostics.Debug.WriteLine("ShellViewModel: CurrentUser == null, выход");
                 return;
             }
 
             LogoutCommand = new RelayCommand(_ => Logout());
-            MenuItems = [];
+            MenuItems = new ObservableCollection<MenuItemViewModel>();
+            FilteredMenuItems = new ObservableCollection<MenuItemViewModel>();  // ← добавить
 
             BuildMenu();
+            FilterMenu();  // ← добавить - инициализация отфильтрованного меню
             CurrentView = new Views.Main.DashboardView();
         }
 
         private void BuildMenu()
         {
+            MenuItems.Clear();  // ← добавить для чистоты
+
             // Главная - всем
             MenuItems.Add(new MenuItemViewModel
             {
@@ -150,7 +164,6 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
                 Command = new RelayCommand(_ => OpenReadingHistory())
             });
 
-            // Верификация - только инспектор и админ
             if (CurrentUser.IsInspector || CurrentUser.IsAdmin)
             {
                 readingsMenu.Children.Add(new MenuItemViewModel
@@ -191,7 +204,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
                 Command = new RelayCommand(_ => OpenReports())
             });
 
-            // Аналитика - подменю (ЗАМЕНИТЕ ЭТОТ БЛОК)
+            // Аналитика - подменю
             MenuItemViewModel analyticsMenu = new() { Title = "Аналитика" };
 
             analyticsMenu.Children.Add(new MenuItemViewModel
@@ -296,43 +309,73 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
 
                 // Администрирование
                 MenuItemViewModel adminMenu = new() { Title = "Администрирование" };
+
+                adminMenu.Children.Add(new MenuItemViewModel
+                {
+                    Title = "Пользователи",
+                    Command = new RelayCommand(_ => OpenUserManagement())
+                });
+
+                adminMenu.Children.Add(new MenuItemViewModel
+                {
+                    Title = "Журнал аудита",
+                    Command = new RelayCommand(_ => OpenAuditLog())
+                });
+
+                adminMenu.Children.Add(new MenuItemViewModel
+                {
+                    Title = "Резервное копирование",
+                    Command = new RelayCommand(_ => OpenBackup())
+                });
+
+                MenuItems.Add(adminMenu);
             }
 
-                // Выход - всем
-                MenuItems.Add(new MenuItemViewModel
+            // Выход - всем
+            MenuItems.Add(new MenuItemViewModel
             {
                 Title = "Выход",
                 Command = new RelayCommand(_ => Logout())
             });
+
+            System.Diagnostics.Debug.WriteLine($"BuildMenu: добавлено {MenuItems.Count} пунктов меню");
         }
+
         // Методы открытия окон
         private void OpenDashboard()
         {
             CurrentView = new Views.Main.DashboardView();
         }
+
         private void OpenMeterList()
         {
-            CurrentView = new Views.Meters.MeterListView();  // ← открытие окна
+            CurrentView = new Views.Meters.MeterListView();
         }
 
         private void OpenObjects()
         {
             CurrentView = new Views.Objects.ConsumptionObjectListView();
         }
+
         private void OpenAnalytics()
         {
             CurrentView = new Views.Analytics.AnalyticsView();
         }
+
+        private void OpenHierarchyAnalytics()
+        {
+            CurrentView = new Views.Analytics.HierarchyAnalyticsView();
+        }
+
         private void OpenReadingInput()
         {
             if (CurrentUser == null)
             {
-                _ = System.Windows.MessageBox.Show("Ошибка: пользователь не авторизован", "Ошибка",
-                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                MessageBox.Show("Ошибка: пользователь не авторизован", "Ошибка",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 
-            // Передаем текущего пользователя в View
             Views.Readings.MeterReadingInputView view = new(CurrentUser);
             CurrentView = view;
         }
@@ -351,20 +394,16 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
         {
             CurrentView = new Views.Billing.AccrualView();
         }
-        private void OpenHierarchyAnalytics()
-        {
-            CurrentView = new Views.Analytics.HierarchyAnalyticsView();
-        }
+
         private void OpenPayment()
         {
             if (CurrentUser == null)
             {
-                _ = MessageBox.Show("Ошибка: пользователь не авторизован", "Ошибка",
+                MessageBox.Show("Ошибка: пользователь не авторизован", "Ошибка",
                     MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 
-            // Передаем текущего пользователя в View
             Views.Billing.PaymentView view = new(CurrentUser);
             CurrentView = view;
         }
@@ -418,14 +457,13 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
         private void Logout()
         {
             MessageBoxResult result = MessageBox.Show("Вы действительно хотите выйти?", "Подтверждение",
-        MessageBoxButton.YesNo, MessageBoxImage.Question);
+                MessageBoxButton.YesNo, MessageBoxImage.Question);
 
             if (result == MessageBoxResult.Yes)
             {
                 new Views.Auth.LoginView().Show();
                 Application.Current.Windows[0]?.Close();
             }
-
         }
     }
 }
