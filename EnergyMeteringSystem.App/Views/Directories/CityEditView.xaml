@@ -17,18 +17,19 @@
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <!-- Регион -->
+        <!-- Регион (только для просмотра, если передан) -->
         <TextBlock Grid.Row="0" Grid.Column="0" Text="Регион:" Margin="5" VerticalAlignment="Center"/>
         <ComboBox Grid.Row="0" Grid.Column="1" 
                   ItemsSource="{Binding Regions}"
                   SelectedItem="{Binding SelectedRegion}"
                   DisplayMemberPath="Name"
+                  IsEnabled="True"
                   Margin="5" Padding="5"/>
 
         <!-- Название города -->
         <TextBlock Grid.Row="1" Grid.Column="0" Text="Название города:" Margin="5" VerticalAlignment="Center"/>
         <TextBox Grid.Row="1" Grid.Column="1" 
-                 Text="{Binding Name}" 
+                 Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" 
                  Margin="5" Padding="5"
                  MaxLength="100"/>
 

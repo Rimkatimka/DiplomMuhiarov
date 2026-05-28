@@ -15,6 +15,8 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
         private readonly ConsumptionObjectRepository _objectRepository;
         private readonly StreetRepository _streetRepository;
         private readonly ObjectTypeRepository _typeRepository;
+        private readonly CityRepository _cityRepository;
+        private readonly RegionRepository _regionRepository;
 
         private ConsumptionObjectDto _object;
         private StreetDto _selectedStreet;
@@ -32,6 +34,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
 
         public ObservableCollection<StreetDto> Streets { get; set; }
         public ObservableCollection<ObjectTypeDto> ObjectTypes { get; set; }
+
         public ObservableCollection<CityDto> Cities
         {
             get => _cities;
@@ -49,19 +52,53 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
         public RelayCommand AddCityCommand { get; }
         public RelayCommand AddStreetCommand { get; }
 
+        private RegionDto _selectedRegion;
+        private ObservableCollection<RegionDto> _regions;
+
+        public ObservableCollection<RegionDto> Regions
+        {
+            get => _regions;
+            set => SetProperty(ref _regions, value);
+        }
+
+        public RegionDto SelectedRegion
+        {
+            get => _selectedRegion;
+            set
+            {
+                if (SetProperty(ref _selectedRegion, value))
+                {
+                    if (value != null)
+                    {
+                        LoadCitiesByRegion(value.Id);
+                    }
+                    else
+                    {
+                        Cities?.Clear();
+                        StreetsList?.Clear();
+                        SelectedCity = null;
+                        SelectedStreet = null;
+                    }
+                }
+            }
+        }
+
         public CityDto SelectedCity
         {
             get => _selectedCity;
             set
             {
-                SetProperty(ref _selectedCity, value);
-                if (value != null)
+                if (SetProperty(ref _selectedCity, value))
                 {
-                    LoadStreetsByCity(value.Id);
-                }
-                else
-                {
-                    StreetsList?.Clear();
+                    if (value != null)
+                    {
+                        LoadStreetsByCity(value.Id);
+                    }
+                    else
+                    {
+                        StreetsList?.Clear();
+                        SelectedStreet = null;
+                    }
                 }
             }
         }
@@ -126,7 +163,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
             set
             {
                 SetProperty(ref _houseNumber, value);
-                System.Diagnostics.Debug.WriteLine($"HouseNumber изменён на: '{value}'");
+                SaveCommand?.RaiseCanExecuteChanged();
             }
         }
 
@@ -146,67 +183,8 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
                 SaveCommand?.RaiseCanExecuteChanged();
             }
         }
-        private RegionDto _selectedRegion;
-        private ObservableCollection<RegionDto> _regions;
-
-        public ObservableCollection<RegionDto> Regions
-        {
-            get => _regions;
-            set => SetProperty(ref _regions, value);
-        }
-
-        public RegionDto SelectedRegion
-        {
-            get => _selectedRegion;
-            set
-            {
-                SetProperty(ref _selectedRegion, value);
-                if (value != null)
-                {
-                    LoadCitiesByRegion(value.Id);
-                }
-                else
-                {
-                    Cities?.Clear();
-                    StreetsList?.Clear();
-                }
-            }
-        }
-        private void AddRegion()
-        {
-            var editViewModel = new RegionEditViewModel();
-            var editView = new Views.Directories.RegionEditView();
-            editView.DataContext = editViewModel;
-
-            editViewModel.OnRegionSaved += (s, e) =>
-            {
-                LoadRegions();
-                editView.Close();
-            };
-
-            editView.ShowDialog();
-        }
-
-        private void LoadRegions()
-        {
-            var regionRepo = new RegionRepository();
-            var regions = regionRepo.GetAll();
-            Regions.Clear();
-            foreach (var region in regions)
-                Regions.Add(region);
-        }
 
         public RelayCommand AddRegionCommand { get; }
-
-        private void LoadCitiesByRegion(int regionId)
-        {
-            var cityRepo = new CityRepository();
-            var cities = cityRepo.GetByRegionId(regionId);
-            Cities.Clear();
-            foreach (var city in cities)
-                Cities.Add(city);
-        }
-
         public bool IsEditMode { get; private set; }
 
         public RelayCommand SaveCommand { get; }
@@ -217,25 +195,23 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
             _objectRepository = new ConsumptionObjectRepository();
             _streetRepository = new StreetRepository();
             _typeRepository = new ObjectTypeRepository();
+            _cityRepository = new CityRepository();
+            _regionRepository = new RegionRepository();
 
-            // Инициализация коллекций
             Regions = new ObservableCollection<RegionDto>();
             Cities = new ObservableCollection<CityDto>();
             StreetsList = new ObservableCollection<StreetDto>();
             Streets = new ObservableCollection<StreetDto>();
             ObjectTypes = new ObservableCollection<ObjectTypeDto>();
 
-            // Инициализация команд
             SaveCommand = new RelayCommand(_ => Save(), _ => CanSave());
             CancelCommand = new RelayCommand(_ => Cancel());
             AddRegionCommand = new RelayCommand(_ => AddRegion());
             AddCityCommand = new RelayCommand(_ => AddCity());
             AddStreetCommand = new RelayCommand(_ => AddStreet());
 
-            // Загрузка данных
-            LoadRegions();      // ← сначала регионы
-            LoadCities();       // ← потом города (можно удалить, если они загружаются через регион)
-            LoadData();         // ← потом остальные данные
+            LoadRegions();
+            LoadData();
 
             if (existingObject != null)
             {
@@ -244,13 +220,23 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
             }
         }
 
-        private void LoadCities()
+        private void LoadRegions()
         {
-            var cityRepo = new CityRepository();
-            var cities = cityRepo.GetAll();
+            var regions = _regionRepository.GetAll();
+            Regions.Clear();
+            foreach (var region in regions)
+                Regions.Add(region);
+        }
+
+        private void LoadCitiesByRegion(int regionId)
+        {
+            var cities = _cityRepository.GetByRegionId(regionId);
             Cities.Clear();
             foreach (var city in cities)
                 Cities.Add(city);
+
+            // Сбрасываем выбранный город, так как список изменился
+            SelectedCity = null;
         }
 
         private void LoadStreetsByCity(int cityId)
@@ -259,17 +245,53 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
             StreetsList.Clear();
             foreach (var street in streets)
                 StreetsList.Add(street);
+
+            // Сбрасываем выбранную улицу
+            SelectedStreet = null;
+        }
+
+        private void AddRegion()
+        {
+            var editViewModel = new RegionEditViewModel();
+            var editView = new Views.Directories.RegionEditView();
+            editView.DataContext = editViewModel;
+
+            editViewModel.OnRegionSaved += (s, e) =>
+            {
+                LoadRegions();
+
+                // Находим добавленный регион и выбираем его
+                var addedRegion = Regions.FirstOrDefault(r => r.Name == editViewModel.Name);
+                if (addedRegion != null)
+                {
+                    SelectedRegion = addedRegion;
+                }
+                editView.Close();
+            };
+
+            editView.ShowDialog();
         }
 
         private void AddCity()
         {
-            var editViewModel = new CityEditViewModel();
+            if (SelectedRegion == null)
+            {
+                MessageBox.Show("Сначала выберите регион", "Ошибка",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            // Передаём ID выбранного региона в ViewModel
+            var editViewModel = new CityEditViewModel(SelectedRegion.Id, SelectedRegion.Name);
             var editView = new Views.Directories.CityEditView();
             editView.DataContext = editViewModel;
 
             editViewModel.OnCitySaved += (s, e) =>
             {
-                LoadCities();
+                // Перезагружаем города для выбранного региона
+                LoadCitiesByRegion(SelectedRegion.Id);
+
+                // Находим добавленный город и выбираем его
                 var addedCity = Cities.FirstOrDefault(c => c.Name == editViewModel.Name);
                 if (addedCity != null)
                 {
@@ -285,30 +307,35 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
         {
             if (SelectedCity == null)
             {
-                MessageBox.Show("Сначала выберите город", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("Сначала выберите город", "Ошибка",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
             var editViewModel = new StreetEditViewModel(SelectedCity.Id, SelectedCity.Name);
             var editView = new Views.Directories.StreetEditView();
             editView.DataContext = editViewModel;
+
             editViewModel.OnStreetSaved += (s, e) =>
             {
+                // Перезагружаем улицы для выбранного города
                 LoadStreetsByCity(SelectedCity.Id);
+
+                // Находим добавленную улицу и выбираем её
+                var addedStreet = StreetsList.FirstOrDefault(s => s.Name == editViewModel.Name);
+                if (addedStreet != null)
+                {
+                    SelectedStreet = addedStreet;
+                }
                 editView.Close();
             };
+
             editView.ShowDialog();
         }
 
         private void LoadData()
         {
-            var streets = _streetRepository.GetAll();
-            System.Diagnostics.Debug.WriteLine($"Загружено улиц: {streets.Count}");
-            Streets.Clear();
-            foreach (var street in streets) Streets.Add(street);
-
             var types = _typeRepository.GetAll();
-            System.Diagnostics.Debug.WriteLine($"Загружено типов: {types.Count}");
             ObjectTypes.Clear();
             foreach (var type in types)
             {
@@ -324,13 +351,30 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
         private void LoadObject(ConsumptionObjectDto obj)
         {
             _object = obj;
-            System.Diagnostics.Debug.WriteLine($"LoadObject: obj.Id = {obj.Id}");
 
+            // Загружаем информацию об объекте
             var street = _streetRepository.GetById(obj.StreetId);
             if (street != null)
             {
-                SelectedCity = Cities.FirstOrDefault(c => c.Id == street.CityId);
-                SelectedStreet = StreetsList.FirstOrDefault(s => s.Id == obj.StreetId);
+                var city = _cityRepository.GetById(street.CityId);
+                if (city != null)
+                {
+                    // Выбираем регион
+                    SelectedRegion = Regions.FirstOrDefault(r => r.Id == city.RegionId);
+
+                    // После выбора региона загружаются города, затем выбираем город
+                    if (SelectedRegion != null)
+                    {
+                        LoadCitiesByRegion(SelectedRegion.Id);
+                        SelectedCity = Cities.FirstOrDefault(c => c.Id == city.Id);
+
+                        if (SelectedCity != null)
+                        {
+                            LoadStreetsByCity(SelectedCity.Id);
+                            SelectedStreet = StreetsList.FirstOrDefault(s => s.Id == obj.StreetId);
+                        }
+                    }
+                }
             }
 
             SelectedObjectType = ObjectTypes.FirstOrDefault(t => t.Id == obj.ObjectTypeId);
@@ -391,7 +435,8 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
 
         private bool CanSave()
         {
-            return SelectedCity != null &&
+            return SelectedRegion != null &&
+                   SelectedCity != null &&
                    SelectedStreet != null &&
                    SelectedObjectType != null &&
                    !string.IsNullOrWhiteSpace(HouseNumber) &&
@@ -422,12 +467,10 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
 
             if (IsEditMode)
             {
-                System.Diagnostics.Debug.WriteLine("Вызов Update");
                 _objectRepository.Update(dto);
             }
             else
             {
-                System.Diagnostics.Debug.WriteLine("Вызов Add");
                 _objectRepository.Add(dto);
             }
 

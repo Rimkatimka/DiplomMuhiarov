@@ -4,6 +4,7 @@ using EnergyMeteringSystem.Core.Models.DTO;
 using EnergyMeteringSystem.Data.Repositories;
 using System;
 using System.Collections.ObjectModel;
+using System.Linq;
 
 namespace EnergyMeteringSystem.App.ViewModels.Directories
 {
@@ -14,6 +15,8 @@ namespace EnergyMeteringSystem.App.ViewModels.Directories
         private string _name;
         private RegionDto _selectedRegion;
         private ObservableCollection<RegionDto> _regions;
+        private int _preselectedRegionId;
+        private string _preselectedRegionName;
 
         public event EventHandler OnCitySaved;
 
@@ -38,18 +41,20 @@ namespace EnergyMeteringSystem.App.ViewModels.Directories
         public RelayCommand SaveCommand { get; }
         public RelayCommand CancelCommand { get; }
 
-        public CityEditViewModel()
+        // Конструктор для добавления города с предвыбранным регионом
+        public CityEditViewModel(int preselectedRegionId = 0, string preselectedRegionName = "")
         {
             _cityRepository = new CityRepository();
             _regionRepository = new RegionRepository();
             Regions = new ObservableCollection<RegionDto>();
+            _preselectedRegionId = preselectedRegionId;
+            _preselectedRegionName = preselectedRegionName;
 
             SaveCommand = new RelayCommand(_ => Save(), _ => CanSave());
             CancelCommand = new RelayCommand(_ => Cancel());
 
-            LoadRegions(); // ← загружаем регионы
+            LoadRegions();
         }
-
 
         private void LoadRegions()
         {
@@ -57,6 +62,12 @@ namespace EnergyMeteringSystem.App.ViewModels.Directories
             Regions.Clear();
             foreach (var region in regions)
                 Regions.Add(region);
+
+            // Если передан ID региона - выбираем его
+            if (_preselectedRegionId > 0)
+            {
+                SelectedRegion = Regions.FirstOrDefault(r => r.Id == _preselectedRegionId);
+            }
         }
 
         private bool CanSave()
