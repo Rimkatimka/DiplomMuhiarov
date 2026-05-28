@@ -17,8 +17,17 @@ namespace EnergyMeteringSystem.Data.Repositories
 
         public List<MeterTypeDto> GetAll()
         {
-            return _context.MeterType
-                .Select(mt => new MeterTypeDto
+            // 1. Сначала получаем все типы счетчиков
+            var meterTypes = _context.MeterType.ToList();
+
+            // 2. Получаем все интервалы поверки
+            var intervals = _context.VerificationInterval.ToDictionary(vi => vi.MeterTypeId, vi => vi.Years);
+
+            // 3. Формируем результат в памяти
+            var result = new List<MeterTypeDto>();
+            foreach (var mt in meterTypes)
+            {
+                result.Add(new MeterTypeDto
                 {
                     Id = mt.Id,
                     Name = mt.Name,
@@ -28,15 +37,20 @@ namespace EnergyMeteringSystem.Data.Repositories
                     DigitCount = mt.DigitCount,
                     DecimalPlaces = mt.DecimalPlaces,
                     ServiceLifeYears = mt.ServiceLifeYears,
-                    VerificationIntervalYears = GetVerificationInterval(mt.Id)
-                })
-                .ToList();
+                    VerificationIntervalYears = intervals.ContainsKey(mt.Id) ? intervals[mt.Id] : (int?)null
+                });
+            }
+
+            return result;
         }
 
         public MeterTypeDto GetById(int id)
         {
-            var mt = _context.MeterType.Find(id);
+            var mt = _context.MeterType.FirstOrDefault(m => m.Id == id);
             if (mt == null) return null;
+
+            var interval = _context.VerificationInterval
+                .FirstOrDefault(vi => vi.MeterTypeId == id);
 
             return new MeterTypeDto
             {
@@ -48,15 +62,8 @@ namespace EnergyMeteringSystem.Data.Repositories
                 DigitCount = mt.DigitCount,
                 DecimalPlaces = mt.DecimalPlaces,
                 ServiceLifeYears = mt.ServiceLifeYears,
-                VerificationIntervalYears = GetVerificationInterval(mt.Id)
+                VerificationIntervalYears = interval?.Years
             };
-        }
-
-        private int? GetVerificationInterval(int meterTypeId)
-        {
-            var interval = _context.VerificationInterval
-                .FirstOrDefault(vi => vi.MeterTypeId == meterTypeId);
-            return interval?.Years;
         }
     }
 }

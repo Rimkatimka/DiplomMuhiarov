@@ -171,7 +171,9 @@
     <Compile Include="Helpers\DatabasePathHelper.cs" />
     <Compile Include="Helpers\InputValidator.cs" />
     <Compile Include="Helpers\ValidationService.cs" />
+    <Compile Include="Services\DatabaseService.cs" />
     <Compile Include="Services\ExportDialogService.cs" />
+    <Compile Include="Services\IDatabaseService.cs" />
     <Compile Include="ViewModels\Admin\AuditLogViewModel.cs" />
     <Compile Include="ViewModels\Admin\BackupViewModel.cs" />
     <Compile Include="ViewModels\Admin\UserEditViewModel.cs" />

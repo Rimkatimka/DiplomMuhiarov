@@ -1,11 +1,13 @@
-﻿using EnergyMeteringSystem.App.Commands;
+﻿using System;
+using System.Collections.ObjectModel;
+using System.Linq;
+using System.Windows;
+using EnergyMeteringSystem.App.Commands;
 using EnergyMeteringSystem.App.ViewModels.Base;
 using EnergyMeteringSystem.App.Views.Objects;
 using EnergyMeteringSystem.Core.Models.DTO;
 using EnergyMeteringSystem.Data.Repositories;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Windows;
+using RelayCommand = EnergyMeteringSystem.App.Commands.RelayCommand;
 
 namespace EnergyMeteringSystem.App.ViewModels.Objects
 {
@@ -15,7 +17,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
         private string _searchText;
 
         public RelayCommand<ConsumptionObjectDto> ShowMetersCommand { get; private set; }
-        public RelayCommand DeleteCommand { get; private set; }  // ← добавить
+        public RelayCommand DeleteCommand { get; private set; }
 
         public ObservableCollection<ConsumptionObjectDto> Objects { get; set; }
         public ObservableCollection<ConsumptionObjectDto> FilteredObjects { get; set; }
@@ -37,7 +39,6 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
             set
             {
                 SetProperty(ref _selectedObject, value);
-                // Обновляем доступность команды удаления
                 DeleteCommand?.RaiseCanExecuteChanged();
             }
         }
@@ -49,15 +50,13 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
         public ConsumptionObjectListViewModel()
         {
             _repository = new ConsumptionObjectRepository();
-            Objects = [];
-            FilteredObjects = [];
+            Objects = new ObservableCollection<ConsumptionObjectDto>();
+            FilteredObjects = new ObservableCollection<ConsumptionObjectDto>();
 
             RefreshCommand = new RelayCommand(_ => LoadData());
             AddCommand = new RelayCommand(_ => AddObject());
             EditCommand = new RelayCommand<ConsumptionObjectDto>(EditObject);
             ShowMetersCommand = new RelayCommand<ConsumptionObjectDto>(ShowMeters);
-
-            // ← добавить команду удаления
             DeleteCommand = new RelayCommand(_ => DeleteObject(), _ => SelectedObject != null);
 
             LoadData();
@@ -131,7 +130,6 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
             window.ShowDialog();
         }
 
-        // ← добавить метод удаления
         private void DeleteObject()
         {
             if (SelectedObject == null) return;
@@ -152,7 +150,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
                     MessageBox.Show("Объект успешно удален", "Успех",
                         MessageBoxButton.OK, MessageBoxImage.Information);
                 }
-                catch (System.Exception ex)
+                catch (Exception ex)
                 {
                     MessageBox.Show($"Ошибка при удалении: {ex.Message}", "Ошибка",
                         MessageBoxButton.OK, MessageBoxImage.Error);

@@ -10,30 +10,20 @@ namespace EnergyMeteringSystem.App.Commands
 
         public RelayCommand(Action<object> execute, Func<object, bool> canExecute = null)
         {
-            _execute = execute;
+            _execute = execute ?? throw new ArgumentNullException(nameof(execute));
             _canExecute = canExecute;
         }
 
+        public bool CanExecute(object parameter) => _canExecute == null || _canExecute(parameter);
+        public void Execute(object parameter) => _execute(parameter);
+
         public event EventHandler CanExecuteChanged
         {
-            add => CommandManager.RequerySuggested += value;
-            remove => CommandManager.RequerySuggested -= value;
+            add { CommandManager.RequerySuggested += value; }
+            remove { CommandManager.RequerySuggested -= value; }
         }
 
-        public bool CanExecute(object parameter)
-        {
-            return _canExecute == null || _canExecute(parameter);
-        }
-
-        public void Execute(object parameter)
-        {
-            _execute(parameter);
-        }
-
-        public void RaiseCanExecuteChanged()
-        {
-            CommandManager.InvalidateRequerySuggested();
-        }
+        public void RaiseCanExecuteChanged() => CommandManager.InvalidateRequerySuggested();
     }
 
     public class RelayCommand<T> : ICommand
@@ -43,45 +33,32 @@ namespace EnergyMeteringSystem.App.Commands
 
         public RelayCommand(Action<T> execute, Func<T, bool> canExecute = null)
         {
-            _execute = execute;
+            _execute = execute ?? throw new ArgumentNullException(nameof(execute));
             _canExecute = canExecute;
-        }
-
-        public event EventHandler CanExecuteChanged
-        {
-            add => CommandManager.RequerySuggested += value;
-            remove => CommandManager.RequerySuggested -= value;
         }
 
         public bool CanExecute(object parameter)
         {
-            return parameter == null && typeof(T).IsValueType
-                ? _canExecute == null || _canExecute(default)
-                : parameter is T t && (_canExecute == null || _canExecute(t));
+            if (parameter == null && typeof(T).IsValueType)
+                return _canExecute == null || _canExecute(default);
+
+            return parameter is T t && (_canExecute == null || _canExecute(t));
         }
 
         public void Execute(object parameter)
         {
-            if (parameter == null)
-            {
-                if (typeof(T).IsValueType)
-                {
-                    _execute(default);
-                }
-                else
-                {
-                    _execute(default);
-                }
-            }
-            else if (parameter is T t)
-            {
+            if (parameter is T t)
                 _execute(t);
-            }
+            else if (parameter == null && typeof(T).IsValueType)
+                _execute(default);
         }
 
-        public void RaiseCanExecuteChanged()
+        public event EventHandler CanExecuteChanged
         {
-            CommandManager.InvalidateRequerySuggested();
+            add { CommandManager.RequerySuggested += value; }
+            remove { CommandManager.RequerySuggested -= value; }
         }
+
+        public void RaiseCanExecuteChanged() => CommandManager.InvalidateRequerySuggested();
     }
 }

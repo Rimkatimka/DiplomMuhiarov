@@ -1,211 +1,373 @@
-﻿using System.Collections.Generic;
+﻿using System;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Windows;
+using System.Data.SqlClient;
+using System.Collections.Generic;
 using EnergyMeteringSystem.App.Commands;
-using EnergyMeteringSystem.App.ViewModels.Base;
-using EnergyMeteringSystem.Core.Models.DTO;
-using EnergyMeteringSystem.Data.Repositories;
+using EnergyMeteringSystem.App.Services;
+using EnergyMeteringSystem.App.DTO;
+using EnergyMeteringSystem.Data.Database;
+using System.Windows.Input;
 
 namespace EnergyMeteringSystem.App.ViewModels.Readings
 {
-    public class MeterReadingVerificationViewModel : ViewModelBase
+    public class MeterReadingVerificationViewModel : INotifyPropertyChanged
     {
-        private readonly MeterReadingRepository _readingRepository;
-        private readonly RejectionReasonRepository _reasonRepository;
-
-        private MeterReadingVerificationDto _selectedReading;
-        private RejectionReasonDto _selectedReason;
-        private string _rejectionComment;
+        private readonly IDatabaseService _databaseService;
+        private ObservableCollection<ReadingVerificationDto> _readings;
+        private ReadingVerificationDto _selectedReading;
         private bool _isBatchMode;
         private bool _isRejectionMode;
 
-        public ObservableCollection<MeterReadingVerificationDto> Readings { get; set; }
-        public ObservableCollection<RejectionReasonDto> RejectionReasons { get; set; }
-        public MeterReadingVerificationDto SelectedReading
+        public ObservableCollection<ReadingVerificationDto> Readings
+        {
+            get => _readings;
+            set
+            {
+                _readings = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public ReadingVerificationDto SelectedReading
         {
             get => _selectedReading;
             set
             {
-                _ = SetProperty(ref _selectedReading, value);
-                VerifyCommand.RaiseCanExecuteChanged();
-                RejectCommand.RaiseCanExecuteChanged();
-            }
-        }
-
-        public RejectionReasonDto SelectedReason
-        {
-            get => _selectedReason;
-            set
-            {
-                _ = SetProperty(ref _selectedReason, value);
-                ConfirmRejectCommand.RaiseCanExecuteChanged();
-            }
-        }
-
-        public string RejectionComment
-        {
-            get => _rejectionComment;
-            set
-            {
-                _ = SetProperty(ref _rejectionComment, value);
-                ConfirmRejectCommand.RaiseCanExecuteChanged();
+                _selectedReading = value;
+                OnPropertyChanged();
+                (VerifyCommand as RelayCommand)?.RaiseCanExecuteChanged();
+                (RejectCommand as RelayCommand)?.RaiseCanExecuteChanged();
             }
         }
 
         public bool IsBatchMode
         {
             get => _isBatchMode;
-            set => SetProperty(ref _isBatchMode, value);
+            set
+            {
+                _isBatchMode = value;
+                OnPropertyChanged();
+
+                if (!value)
+                {
+                    // При выходе из пакетного режима снимаем все галочки
+                    foreach (var reading in Readings)
+                    {
+                        reading.IsSelected = false;
+                    }
+                }
+
+                (VerifyCommand as RelayCommand)?.RaiseCanExecuteChanged();
+                (RejectCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            }
         }
 
         public bool IsRejectionMode
         {
             get => _isRejectionMode;
-            set => SetProperty(ref _isRejectionMode, value);
-        }
-
-        public bool HasSelectedAny => Readings?.Any(r => r.IsSelected) == true;
-
-        public RelayCommand RefreshCommand { get; }
-        public RelayCommand VerifyCommand { get; }
-        public RelayCommand RejectCommand { get; }
-        public RelayCommand ConfirmRejectCommand { get; }
-        public RelayCommand CancelRejectCommand { get; }
-        public RelayCommand ToggleBatchModeCommand { get; }
-        public RelayCommand SelectAllCommand { get; }
-
-        public MeterReadingVerificationViewModel()
-        {
-            _readingRepository = new MeterReadingRepository();
-            _reasonRepository = new RejectionReasonRepository();
-
-            Readings = [];
-            RejectionReasons = [];
-
-            RefreshCommand = new RelayCommand(_ => LoadData());
-            VerifyCommand = new RelayCommand(_ => Verify(), _ => CanVerify());
-            RejectCommand = new RelayCommand(_ => StartReject(), _ => CanReject());
-            ConfirmRejectCommand = new RelayCommand(_ => ConfirmReject(), _ => CanConfirmReject());
-            CancelRejectCommand = new RelayCommand(_ => CancelReject());
-            ToggleBatchModeCommand = new RelayCommand(_ => ToggleBatchMode());
-            SelectAllCommand = new RelayCommand(_ => SelectAll());
-
-            LoadData();
-            LoadRejectionReasons();
-        }
-
-        private void LoadData()
-        {
-            Readings.Clear();
-            List<MeterReadingVerificationDto> list = _readingRepository.GetForVerification();
-            foreach (MeterReadingVerificationDto item in list)
+            set
             {
-                Readings.Add(item);
+                _isRejectionMode = value;
+                OnPropertyChanged();
             }
         }
 
-        private void LoadRejectionReasons()
-        {
-            RejectionReasons.Clear();
-            List<DirectoryDto> list = _reasonRepository.GetAll(); // это List<DirectoryDto>
+        public ICommand RefreshCommand { get; }
+        public ICommand SelectAllCommand { get; }
+        public ICommand VerifyCommand { get; }
+        public ICommand RejectCommand { get; }
+        public ICommand CancelRejectCommand { get; }
+        public ICommand ConfirmRejectCommand { get; }
 
-            foreach (DirectoryDto item in list)
+        public ObservableCollection<RejectionReason> RejectionReasons { get; set; }
+
+        private RejectionReason _selectedReason;
+        public RejectionReason SelectedReason
+        {
+            get => _selectedReason;
+            set
             {
-                RejectionReasons.Add(new RejectionReasonDto
+                _selectedReason = value;
+                OnPropertyChanged();
+                (ConfirmRejectCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            }
+        }
+
+        private string _rejectionComment;
+        public string RejectionComment
+        {
+            get => _rejectionComment;
+            set
+            {
+                _rejectionComment = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public MeterReadingVerificationViewModel(IDatabaseService databaseService)
+        {
+            _databaseService = databaseService;
+
+            RefreshCommand = new RelayCommand(_ => LoadReadings());
+            SelectAllCommand = new RelayCommand(_ => SelectAll(), _ => IsBatchMode);
+            VerifyCommand = new RelayCommand(_ => Verify(), _ => CanVerify());
+            RejectCommand = new RelayCommand(_ => ShowRejectionMode(), _ => CanReject());
+            CancelRejectCommand = new RelayCommand(_ => CancelRejection());
+            ConfirmRejectCommand = new RelayCommand(_ => ConfirmRejection(), _ => CanConfirmRejection());
+
+            LoadRejectionReasons();
+            LoadReadings();
+        }
+
+        private void LoadReadings()
+        {
+            try
+            {
+                string query = @"
+                SELECT 
+                    r.Id,
+                    s.Name as Address,
+                    m.SerialNumber,
+                    r.ReadingDate,
+                    r.Value,
+                    u.FullName as EnteredBy,
+                    r.EnteredAt
+                FROM MeterReading r
+                INNER JOIN Meter m ON r.MeterId = m.Id
+                INNER JOIN ConsumptionObject o ON m.ConsumptionObjectId = o.Id
+                INNER JOIN Street s ON o.StreetId = s.Id
+                LEFT JOIN [User] u ON r.EnteredByUserId = u.Id
+                WHERE r.ReadingStatusId = 1
+                ORDER BY r.ReadingDate DESC";
+
+                var readings = _databaseService.ExecuteQuery<ReadingVerificationDto>(query);
+
+                foreach (var reading in readings)
                 {
-                    Id = item.Id,
-                    Name = item.Name,
-                    RequiresComment = item.Description?.Contains("Требует") ?? false
-                });
+                    reading.IsSelected = false;  // ← ЯВНО УСТАНАВЛИВАЕМ ЗНАЧЕНИЕ
+                }
+
+                Readings = new ObservableCollection<ReadingVerificationDto>(readings);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"LoadReadings error: {ex.Message}");
+                MessageBox.Show($"Ошибка загрузки показаний: {ex.Message}", "Ошибка",
+                              MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
         private bool CanVerify()
         {
-            return IsBatchMode ? HasSelectedAny : SelectedReading != null;
+            if (IsBatchMode)
+                return Readings != null && Readings.Any(r => r.IsSelected);
+            else
+                return SelectedReading != null && SelectedReading.Id > 0;
         }
 
         private void Verify()
         {
-            if (IsBatchMode)
+            try
             {
-                List<MeterReadingVerificationDto> selected = Readings.Where(r => r.IsSelected).ToList();
-                foreach (MeterReadingVerificationDto item in selected)
-                {
-                    _readingRepository.UpdateStatus(item.Id, 2); // "Подтверждено"
-                }
-            }
-            else
-            {
-                _readingRepository.UpdateStatus(SelectedReading.Id, 2);
-            }
+                System.Diagnostics.Debug.WriteLine("=== VERIFY CALLED ===");
 
-            LoadData();
-            IsRejectionMode = false;
+                var readingsToVerify = IsBatchMode
+                    ? Readings.Where(r => r.IsSelected).ToList()
+                    : new List<ReadingVerificationDto> { SelectedReading };
+
+                if (!readingsToVerify.Any())
+                {
+                    MessageBox.Show("Нет выбранных показаний для верификации", "Предупреждение",
+                                  MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                var result = MessageBox.Show($"Вы уверены, что хотите верифицировать {readingsToVerify.Count} показание(й)?",
+                    "Подтверждение", MessageBoxButton.YesNo, MessageBoxImage.Question);
+
+                if (result != MessageBoxResult.Yes)
+                    return;
+
+                int successCount = 0;
+
+                foreach (var reading in readingsToVerify)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Verify: показание ID={reading.Id}");
+
+                    string updateQuery = @"
+                        UPDATE MeterReading 
+                        SET ReadingStatusId = 2 
+                        WHERE Id = @Id AND ReadingStatusId = 1";
+
+                    int rowsAffected = _databaseService.ExecuteNonQuery(updateQuery,
+                        new SqlParameter("@Id", reading.Id));
+
+                    if (rowsAffected > 0)
+                    {
+                        successCount++;
+                        if (IsBatchMode)
+                            Readings.Remove(reading);
+                    }
+                }
+
+                if (!IsBatchMode && SelectedReading != null && successCount > 0)
+                {
+                    Readings.Remove(SelectedReading);
+                    SelectedReading = null;
+                }
+
+                MessageBox.Show($"Верифицировано: {successCount}", "Результат",
+                              MessageBoxButton.OK, MessageBoxImage.Information);
+
+                (VerifyCommand as RelayCommand)?.RaiseCanExecuteChanged();
+                (RejectCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Verify error: {ex.Message}");
+                MessageBox.Show($"Ошибка: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private bool CanReject()
         {
-            return IsBatchMode ? HasSelectedAny : SelectedReading != null;
+            if (IsBatchMode)
+                return Readings != null && Readings.Any(r => r.IsSelected);
+            else
+                return SelectedReading != null && SelectedReading.Id > 0;
         }
 
-        private void StartReject()
+        private void ShowRejectionMode()
         {
+            if (!CanReject())
+            {
+                MessageBox.Show("Выберите показание для отклонения", "Предупреждение",
+                              MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
             IsRejectionMode = true;
+        }
+
+        private void CancelRejection()
+        {
+            IsRejectionMode = false;
             SelectedReason = null;
             RejectionComment = string.Empty;
         }
 
-        private bool CanConfirmReject()
+        private bool CanConfirmRejection()
         {
-            return SelectedReason != null && (!SelectedReason.RequiresComment || !string.IsNullOrWhiteSpace(RejectionComment));
+            return SelectedReason != null;
         }
 
-        private void ConfirmReject()
+        private void ConfirmRejection()
         {
-            int newStatusId = 3; // "Отклонено"
-
-            if (IsBatchMode)
+            try
             {
-                List<MeterReadingVerificationDto> selected = Readings.Where(r => r.IsSelected).ToList();
-                foreach (MeterReadingVerificationDto item in selected)
+                var readingsToReject = IsBatchMode
+                    ? Readings.Where(r => r.IsSelected).ToList()
+                    : new List<ReadingVerificationDto> { SelectedReading };
+
+                if (!readingsToReject.Any())
                 {
-                    _readingRepository.UpdateStatus(item.Id, newStatusId, SelectedReason?.Id, RejectionComment);
+                    MessageBox.Show("Нет выбранных показаний для отклонения", "Предупреждение",
+                                  MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
                 }
-            }
-            else
-            {
-                _readingRepository.UpdateStatus(SelectedReading.Id, newStatusId, SelectedReason?.Id, RejectionComment);
-            }
 
-            LoadData();
-            IsRejectionMode = false;
-        }
+                var result = MessageBox.Show($"Вы уверены, что хотите отклонить {readingsToReject.Count} показание(й)?",
+                    "Подтверждение", MessageBoxButton.YesNo, MessageBoxImage.Question);
 
-        private void CancelReject()
-        {
-            IsRejectionMode = false;
-        }
+                if (result != MessageBoxResult.Yes)
+                    return;
 
-        private void ToggleBatchMode()
-        {
-            IsBatchMode = !IsBatchMode;
-            if (!IsBatchMode)
-            {
-                foreach (MeterReadingVerificationDto item in Readings)
+                int successCount = 0;
+
+                foreach (var reading in readingsToReject)
                 {
-                    item.IsSelected = false;
+                    System.Diagnostics.Debug.WriteLine($"Reject: отклонение показания ID={reading.Id}");
+
+                    string updateQuery = @"
+                        UPDATE MeterReading 
+                        SET ReadingStatusId = 3,
+                            RejectionReasonId = @ReasonId,
+                            Comment = @Comment
+                        WHERE Id = @Id AND ReadingStatusId = 1";
+
+                    int rowsAffected = _databaseService.ExecuteNonQuery(updateQuery,
+                        new SqlParameter("@Id", reading.Id),
+                        new SqlParameter("@ReasonId", SelectedReason?.Id ?? 1),
+                        new SqlParameter("@Comment", RejectionComment ?? ""));
+
+                    if (rowsAffected > 0)
+                    {
+                        successCount++;
+                        System.Diagnostics.Debug.WriteLine($"Reject: показание ID={reading.Id} успешно отклонено");
+
+                        if (IsBatchMode)
+                            Readings.Remove(reading);
+                    }
                 }
+
+                if (!IsBatchMode && SelectedReading != null && successCount > 0)
+                {
+                    Readings.Remove(SelectedReading);
+                    SelectedReading = null;
+                }
+
+                CancelRejection();
+
+                MessageBox.Show($"Отклонено показаний: {successCount}", "Результат",
+                              MessageBoxButton.OK, MessageBoxImage.Information);
+
+                (VerifyCommand as RelayCommand)?.RaiseCanExecuteChanged();
+                (RejectCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Reject error: {ex.Message}");
+                MessageBox.Show($"Ошибка при отклонении: {ex.Message}", "Ошибка",
+                              MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
         private void SelectAll()
         {
+            if (Readings == null || !IsBatchMode) return;
+
+            // Проверяем, все ли уже выбраны
             bool allSelected = Readings.All(r => r.IsSelected);
-            foreach (MeterReadingVerificationDto item in Readings)
+            bool newValue = !allSelected;
+
+            foreach (var reading in Readings)
             {
-                item.IsSelected = !allSelected;
+                reading.IsSelected = newValue;
             }
+        }
+
+        private void LoadRejectionReasons()
+        {
+            RejectionReasons = new ObservableCollection<RejectionReason>
+            {
+                new RejectionReason { Id = 1, Name = "Неверные показания" },
+                new RejectionReason { Id = 2, Name = "Дублирующая запись" },
+                new RejectionReason { Id = 3, Name = "Нет доступа к счётчику" },
+                new RejectionReason { Id = 4, Name = "Счётчик неисправен" },
+                new RejectionReason { Id = 5, Name = "Показания не соответствуют норме" },
+                new RejectionReason { Id = 6, Name = "Другое" }
+            };
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
 }

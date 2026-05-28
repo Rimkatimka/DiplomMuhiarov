@@ -23,24 +23,26 @@
 
         <!-- Таблица показаний -->
         <DataGrid Grid.Row="1" 
-                  ItemsSource="{Binding Readings}"
-                  SelectedItem="{Binding SelectedReading}"
-                  AutoGenerateColumns="False"
-                  IsReadOnly="True"
-                  SelectionMode="Single">
+          ItemsSource="{Binding Readings}"
+          SelectedItem="{Binding SelectedReading}"
+          AutoGenerateColumns="False"
+          SelectionMode="Single"
+                  MouseDoubleClick="DataGrid_MouseDoubleClick">
+
             <DataGrid.Columns>
                 <!-- Чекбокс для пакетного режима -->
                 <DataGridCheckBoxColumn Header="✓" 
-                                        Binding="{Binding IsSelected}"
-                                        Visibility="{Binding DataContext.IsBatchMode, RelativeSource={RelativeSource AncestorType=DataGrid}, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                Binding="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                Width="50"
+                                Visibility="{Binding DataContext.IsBatchMode, RelativeSource={RelativeSource AncestorType=DataGrid}, Converter={StaticResource BooleanToVisibilityConverter}}"/>
 
-                <DataGridTextColumn Header="Адрес" Binding="{Binding Address}" Width="200"/>
-                <DataGridTextColumn Header="Счётчик" Binding="{Binding SerialNumber}" Width="120"/>
-                <DataGridTextColumn Header="Дата" Binding="{Binding ReadingDate, StringFormat={}{0:dd.MM.yyyy}}" Width="100"/>
-                <DataGridTextColumn Header="Показание" Binding="{Binding Value}" Width="100"/>
-                <DataGridTextColumn Header="Предыдущее" Binding="{Binding PreviousValue}" Width="100"/>
-                <DataGridTextColumn Header="Ввёл" Binding="{Binding EnteredBy}" Width="150"/>
-                <DataGridTextColumn Header="Время" Binding="{Binding EnteredAt, StringFormat={}{0:HH:mm}}" Width="80"/>
+                <DataGridTextColumn Header="Адрес" Binding="{Binding Address}" Width="200" IsReadOnly="True"/>
+                <DataGridTextColumn Header="Счётчик" Binding="{Binding SerialNumber}" Width="120" IsReadOnly="True"/>
+                <DataGridTextColumn Header="Дата" Binding="{Binding ReadingDate, StringFormat={}{0:dd.MM.yyyy}}" Width="100" IsReadOnly="True"/>
+                <DataGridTextColumn Header="Показание" Binding="{Binding Value}" Width="100" IsReadOnly="True"/>
+                <DataGridTextColumn Header="Предыдущее" Binding="{Binding PreviousValue}" Width="100" IsReadOnly="True"/>
+                <DataGridTextColumn Header="Ввёл" Binding="{Binding EnteredBy}" Width="150" IsReadOnly="True"/>
+                <DataGridTextColumn Header="Время" Binding="{Binding EnteredAt, StringFormat={}{0:HH:mm}}" Width="80" IsReadOnly="True"/>
             </DataGrid.Columns>
         </DataGrid>
 

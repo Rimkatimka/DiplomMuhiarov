@@ -142,6 +142,7 @@
     <Compile Include="Models\DTO\ObjectTypeDto.cs" />
     <Compile Include="Models\DTO\PaymentDto.cs" />
     <Compile Include="Models\DTO\PaymentRegistrationDto.cs" />
+    <Compile Include="Models\DTO\ReadingVerificationDto.cs" />
     <Compile Include="Models\DTO\ReceiptReadingDto.cs" />
     <Compile Include="Models\DTO\RegionAnalyticsDto.cs" />
     <Compile Include="Models\DTO\RegionDto.cs" />
