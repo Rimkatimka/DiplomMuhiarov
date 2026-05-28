@@ -1,14 +1,10 @@
-﻿using EnergyMeteringSystem.App.Helpers;
-using EnergyMeteringSystem.App.ViewModels.Meters;
-using System.Windows;
-using System.Windows.Controls;
+﻿using System.Windows;
 using System.Windows.Input;
+using EnergyMeteringSystem.App.Helpers;
+using EnergyMeteringSystem.App.ViewModels.Meters;
 
 namespace EnergyMeteringSystem.App.Views.Meters
 {
-    /// <summary>
-    /// Логика взаимодействия для MeterEditView.xaml
-    /// </summary>
     public partial class MeterEditView : Window
     {
         public MeterEditView(MeterEditViewModel viewModel)
@@ -34,7 +30,7 @@ namespace EnergyMeteringSystem.App.Views.Meters
             InputValidator.RestrictNumbersOnly(sender, e);
         }
 
-        private void TextBox_PreviewKeyDown_BlockSpace(object sender, System.Windows.Input.KeyEventArgs e)
+        private void TextBox_PreviewKeyDown_BlockSpace(object sender, KeyEventArgs e)
         {
             InputValidator.BlockSpace(sender, e);
         }

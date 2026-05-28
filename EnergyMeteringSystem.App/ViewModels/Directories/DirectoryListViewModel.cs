@@ -25,8 +25,8 @@ namespace EnergyMeteringSystem.App.ViewModels.Directories
             set
             {
                 _ = SetProperty(ref _selectedItem, value);
-                EditCommand.RaiseCanExecuteChanged();
-                DeleteCommand.RaiseCanExecuteChanged();
+                EditCommand?.RaiseCanExecuteChanged();
+                DeleteCommand?.RaiseCanExecuteChanged();
             }
         }
 
@@ -47,51 +47,52 @@ namespace EnergyMeteringSystem.App.ViewModels.Directories
 
         public DirectoryListViewModel(IDirectoryRepository<DirectoryDto> repository)
         {
-            System.Diagnostics.Debug.WriteLine("DirectoryListViewModel constructor START");
+            System.Diagnostics.Debug.WriteLine($"DirectoryListViewModel: {repository.GetType().Name}");
 
-            if (repository == null)
-            {
-                System.Diagnostics.Debug.WriteLine("ОШИБКА: repository = null");
-                throw new ArgumentNullException(nameof(repository), "Репозиторий не может быть null");
-            }
-
-            _repository = repository;
-            Items = [];
-            FilteredItems = [];
+            _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+            Items = new ObservableCollection<DirectoryDto>();
+            FilteredItems = new ObservableCollection<DirectoryDto>();
 
             RefreshCommand = new RelayCommand(_ => LoadData());
             AddCommand = new RelayCommand(_ => AddItem());
             EditCommand = new RelayCommand(_ => EditItem(), _ => SelectedItem != null);
             DeleteCommand = new RelayCommand(_ => DeleteItem(), _ => SelectedItem != null);
 
-            System.Diagnostics.Debug.WriteLine("DirectoryListViewModel constructor calling LoadData");
             LoadData();
-            System.Diagnostics.Debug.WriteLine("DirectoryListViewModel constructor END");
         }
 
         private void LoadData()
         {
-            Items.Clear();
-            List<DirectoryDto> list = _repository.GetAll();
-            System.Diagnostics.Debug.WriteLine($"LoadData: got {list.Count} items");
-
-            foreach (DirectoryDto item in list)
+            try
             {
-                Items.Add(item);
-            }
+                Items.Clear();
+                List<DirectoryDto> list = _repository.GetAll();
+                System.Diagnostics.Debug.WriteLine($"LoadData: got {list.Count} items");
 
-            ApplyFilter();
+                foreach (DirectoryDto item in list)
+                {
+                    Items.Add(item);
+                }
+
+                ApplyFilter();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Ошибка LoadData: {ex.Message}");
+                MessageBox.Show($"Ошибка загрузки данных: {ex.Message}", "Ошибка",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void ApplyFilter()
         {
             FilteredItems.Clear();
 
-            ObservableCollection<DirectoryDto> filtered = string.IsNullOrWhiteSpace(SearchText)
+            var filtered = string.IsNullOrWhiteSpace(SearchText)
                 ? Items
-                : [.. Items.Where(i =>
-                        i.Name.Contains(SearchText) ||
-                        (i.Description?.Contains(SearchText) ?? false))];
+                : new ObservableCollection<DirectoryDto>(
+                    Items.Where(i => i.Name.Contains(SearchText) ||
+                                    (i.Description?.Contains(SearchText) ?? false)));
 
             foreach (DirectoryDto item in filtered)
             {
@@ -101,56 +102,83 @@ namespace EnergyMeteringSystem.App.ViewModels.Directories
 
         private void AddItem()
         {
-            DirectoryEditViewModel editViewModel = new();
-            Views.Directories.DirectoryEditView editView = new(editViewModel);
+            var editViewModel = new DirectoryEditViewModel();
+            var editView = new Views.Directories.DirectoryEditView(editViewModel);
+            editView.Owner = Application.Current.MainWindow;
 
             editViewModel.OnDirectorySaved += (s, e) =>
             {
-                // Здесь нужно добавить сохранение через репозиторий
-                DirectoryDto dto = new()
+                var dto = new DirectoryDto
                 {
                     Name = editViewModel.Name,
                     Description = editViewModel.Description,
                     IsActive = true
                 };
-                _repository.Add(dto);
 
-                LoadData();
+                try
+                {
+                    _repository.Add(dto);
+                    LoadData();
+                    editView.Close();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Ошибка при добавлении: {ex.Message}", "Ошибка",
+                        MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             };
 
-            _ = editView.ShowDialog();
+            editView.ShowDialog();
         }
 
         private void EditItem()
         {
-            if (SelectedItem == null)
-            {
-                return;
-            }
+            if (SelectedItem == null) return;
 
-            DirectoryEditViewModel editViewModel = new(SelectedItem);
-            Views.Directories.DirectoryEditView editView = new(editViewModel);
+            var editViewModel = new DirectoryEditViewModel(SelectedItem);
+            var editView = new Views.Directories.DirectoryEditView(editViewModel);
+            editView.Owner = Application.Current.MainWindow;
 
             editViewModel.OnDirectorySaved += (s, e) =>
             {
                 SelectedItem.Name = editViewModel.Name;
                 SelectedItem.Description = editViewModel.Description;
-                _repository.Update(SelectedItem);
 
-                LoadData();
+                try
+                {
+                    _repository.Update(SelectedItem);
+                    LoadData();
+                    editView.Close();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Ошибка при сохранении: {ex.Message}", "Ошибка",
+                        MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             };
 
-            _ = editView.ShowDialog();
+            editView.ShowDialog();
         }
 
         private void DeleteItem()
         {
-            MessageBoxResult result = MessageBox.Show("Удалить запись?", "Подтверждение",
-    MessageBoxButton.YesNo, MessageBoxImage.Question);
-            if (SelectedItem != null && result == MessageBoxResult.Yes)
+            if (SelectedItem == null) return;
+
+            var result = MessageBox.Show($"Удалить запись \"{SelectedItem.Name}\"?", "Подтверждение",
+                MessageBoxButton.YesNo, MessageBoxImage.Question);
+
+            if (result == MessageBoxResult.Yes)
             {
-                _repository.Delete(SelectedItem.Id);
-                LoadData();
+                try
+                {
+                    _repository.Delete(SelectedItem.Id);
+                    LoadData();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Ошибка при удалении: {ex.Message}", "Ошибка",
+                        MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             }
         }
     }

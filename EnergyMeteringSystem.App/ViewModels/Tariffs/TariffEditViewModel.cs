@@ -4,6 +4,7 @@ using EnergyMeteringSystem.Core.Models.DTO;
 using EnergyMeteringSystem.Data.Repositories;
 using System;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Windows;
 
 namespace EnergyMeteringSystem.App.ViewModels.Tariffs
@@ -11,16 +12,49 @@ namespace EnergyMeteringSystem.App.ViewModels.Tariffs
     public class TariffEditViewModel : ViewModelBase
     {
         private readonly TariffRepository _tariffRepository;
+        private readonly TariffTypeRepository _tariffTypeRepository;
         private TariffDto _tariff;
 
         public event EventHandler OnTariffSaved;
 
         public ObservableCollection<TariffTypeDto> TariffTypes { get; set; }
 
-        public TariffTypeDto SelectedTariffType { get; set; }
-        public int ZoneNumber { get; set; }
+        private TariffTypeDto _selectedTariffType;
+        public TariffTypeDto SelectedTariffType
+        {
+            get => _selectedTariffType;
+            set
+            {
+                SetProperty(ref _selectedTariffType, value);
+                OnPropertyChanged(nameof(IsZoneVisible));
+                OnPropertyChanged(nameof(ZoneLabel));
+                SaveCommand.RaiseCanExecuteChanged();
+            }
+        }
+
+        private int _zoneNumber;
+        public int ZoneNumber
+        {
+            get => _zoneNumber;
+            set
+            {
+                SetProperty(ref _zoneNumber, value);
+                SaveCommand.RaiseCanExecuteChanged();
+            }
+        }
+
         public string ZoneName => ZoneNumber == 1 ? "День" : "Ночь";
-        public decimal PricePerUnit { get; set; }
+
+        private decimal _pricePerUnit;
+        public decimal PricePerUnit
+        {
+            get => _pricePerUnit;
+            set
+            {
+                SetProperty(ref _pricePerUnit, value);
+                SaveCommand.RaiseCanExecuteChanged();
+            }
+        }
 
         private DateTime? _startDate;
         public DateTime? StartDate
@@ -61,6 +95,10 @@ namespace EnergyMeteringSystem.App.ViewModels.Tariffs
 
         public Visibility DateErrorVisibility => string.IsNullOrEmpty(DateError) ? Visibility.Collapsed : Visibility.Visible;
 
+        // Свойства для управления видимостью зоны (для двухтарифных тарифов)
+        public bool IsZoneVisible => SelectedTariffType?.ZoneCount > 1;
+        public string ZoneLabel => SelectedTariffType?.ZoneCount == 2 ? "Зона:" : "Тип тарифа:";
+
         private void ValidateDates()
         {
             if (!StartDate.HasValue)
@@ -83,13 +121,16 @@ namespace EnergyMeteringSystem.App.ViewModels.Tariffs
         public RelayCommand SaveCommand { get; }
         public RelayCommand CancelCommand { get; }
 
-        public TariffEditViewModel(ObservableCollection<TariffTypeDto> types, TariffDto existingTariff = null)
+        public TariffEditViewModel(TariffDto existingTariff = null)
         {
             _tariffRepository = new TariffRepository();
-            TariffTypes = types;
+            _tariffTypeRepository = new TariffTypeRepository();
+            TariffTypes = new ObservableCollection<TariffTypeDto>();
 
             SaveCommand = new RelayCommand(_ => Save(), _ => CanSave());
             CancelCommand = new RelayCommand(_ => Cancel());
+
+            LoadTariffTypes();
 
             if (existingTariff != null)
             {
@@ -101,6 +142,41 @@ namespace EnergyMeteringSystem.App.ViewModels.Tariffs
                 IsEditMode = false;
                 StartDate = DateTime.Today;
                 ZoneNumber = 1;
+                PricePerUnit = 0;
+            }
+        }
+
+        private void LoadTariffTypes()
+        {
+            try
+            {
+                // Получаем List<DirectoryDto> из репозитория
+                var types = _tariffTypeRepository.GetAll();
+                TariffTypes.Clear();
+
+                foreach (var type in types)
+                {
+                    // DirectoryDto не имеет ZoneCount, нужно получить его из другого источника
+                    // Пока ставим значение по умолчанию
+                    int zoneCount = 1; // значение по умолчанию
+
+                    // Если нужно реальное значение ZoneCount, нужно создать отдельный репозиторий
+                    // или получить из базы напрямую
+
+                    TariffTypes.Add(new TariffTypeDto
+                    {
+                        Id = type.Id,
+                        Name = type.Name,
+                        ZoneCount = zoneCount,  // временно 1
+                        Description = type.Description
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Ошибка загрузки типов тарифов: {ex.Message}");
+                MessageBox.Show("Ошибка загрузки типов тарифов", "Ошибка",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -117,45 +193,60 @@ namespace EnergyMeteringSystem.App.ViewModels.Tariffs
 
         private TariffTypeDto FindTariffType(int id)
         {
-            foreach (TariffTypeDto type in TariffTypes)
-            {
-                if (type.Id == id)
-                {
-                    return type;
-                }
-            }
-
-            return null;
+            return TariffTypes.FirstOrDefault(t => t.Id == id);
         }
 
         private bool CanSave()
         {
+            // Для двухтарифного тарифа зона обязательна (ZoneNumber должен быть 1 или 2)
+            if (SelectedTariffType != null && SelectedTariffType.ZoneCount > 1 && (ZoneNumber != 1 && ZoneNumber != 2))
+                return false;
+
             return SelectedTariffType != null &&
-                   PricePerUnit > 0;
+                   PricePerUnit > 0 &&
+                   StartDate.HasValue &&
+                   string.IsNullOrEmpty(DateError);
         }
 
         private void Save()
         {
+            // Финальная валидация перед сохранением
+            if (!CanSave())
+            {
+                MessageBox.Show("Заполните все обязательные поля", "Ошибка",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
             TariffDto dto = new()
             {
                 Id = _tariff?.Id ?? 0,
                 TariffTypeId = SelectedTariffType.Id,
                 ZoneNumber = ZoneNumber,
                 PricePerUnit = PricePerUnit,
-                StartDate = (DateTime)StartDate,
+                StartDate = StartDate.Value,
                 EndDate = EndDate
             };
 
-            if (IsEditMode)
+            try
             {
-                _tariffRepository.Update(dto);
-            }
-            else
-            {
-                _tariffRepository.Add(dto);
-            }
+                if (IsEditMode)
+                {
+                    _tariffRepository.Update(dto);
+                }
+                else
+                {
+                    _tariffRepository.Add(dto);
+                }
 
-            OnTariffSaved?.Invoke(this, EventArgs.Empty);
+                OnTariffSaved?.Invoke(this, EventArgs.Empty);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Ошибка сохранения тарифа: {ex.Message}");
+                MessageBox.Show($"Ошибка сохранения: {ex.Message}", "Ошибка",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void Cancel()

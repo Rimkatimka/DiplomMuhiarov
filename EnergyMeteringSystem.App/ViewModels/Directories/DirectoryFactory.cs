@@ -3,65 +3,70 @@
 namespace EnergyMeteringSystem.App.ViewModels.Directories
 {
     public static class DirectoryFactory
-    {    
-
+    {
         public static DirectoryListViewModel CreateReadingStatusViewModel()
         {
-            ReadingStatusRepository repo = new();
+            var repo = new ReadingStatusRepository();
             return new DirectoryListViewModel(repo);
         }
 
         public static DirectoryListViewModel CreatePaymentMethodViewModel()
         {
-            PaymentMethodRepository repo = new();
+            var repo = new PaymentMethodRepository();
             return new DirectoryListViewModel(repo);
         }
 
         public static DirectoryListViewModel CreateObjectTypeViewModel()
         {
-            ObjectTypeRepository repo = new();
+            var repo = new ObjectTypeRepository();
             return new DirectoryListViewModel(repo);
         }
 
         public static DirectoryListViewModel CreateRejectionReasonViewModel()
         {
-            RejectionReasonRepository repo = new();
+            var repo = new RejectionReasonRepository();
             return new DirectoryListViewModel(repo);
         }
 
         public static DirectoryListViewModel CreateMeterStatusViewModel()
         {
-            MeterStatusRepository repo = new();
+            var repo = new MeterStatusRepository();
             return new DirectoryListViewModel(repo);
         }
 
         public static DirectoryListViewModel CreateContractStatusViewModel()
         {
-            ContractStatusRepository repo = new();
+            var repo = new ContractStatusRepository();
             return new DirectoryListViewModel(repo);
         }
 
         public static DirectoryListViewModel CreateTariffTypeViewModel()
         {
-            TariffTypeRepository repo = new();
+            var repo = new TariffTypeRepository();
             return new DirectoryListViewModel(repo);
         }
 
         public static DirectoryListViewModel CreateUnitOfMeasureViewModel()
         {
-            UnitOfMeasureRepository repo = new();
+            var repo = new UnitOfMeasureRepository();
             return new DirectoryListViewModel(repo);
         }
 
         public static DirectoryListViewModel CreateEnergySourceViewModel()
         {
-            EnergySourceRepository repo = new();
+            var repo = new EnergySourceRepository();
             return new DirectoryListViewModel(repo);
         }
 
         public static DirectoryListViewModel CreateVerificationIntervalViewModel()
         {
-            VerificationIntervalRepository repo = new();
+            var repo = new VerificationIntervalRepository();
+            return new DirectoryListViewModel(repo);
+        }
+
+        public static DirectoryListViewModel CreateMeterTypeViewModel()
+        {
+            var repo = new MeterTypeDirectoryRepository();
             return new DirectoryListViewModel(repo);
         }
     }

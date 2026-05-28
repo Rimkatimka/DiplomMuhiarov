@@ -6,11 +6,10 @@ using System.Windows.Input;
 
 namespace EnergyMeteringSystem.App.Views.Auth
 {
-    /// <summary>
-    /// Логика взаимодействия для LoginView.xaml
-    /// </summary>
     public partial class LoginView : Window
     {
+        private bool _isPasswordVisible = false;
+
         public LoginView()
         {
             InitializeComponent();
@@ -22,24 +21,64 @@ namespace EnergyMeteringSystem.App.Views.Auth
             PasswordBox.PasswordChanged += (s, e) =>
             {
                 viewModel.Password = PasswordBox.Password;
-                System.Diagnostics.Debug.WriteLine($"Password set to: '{viewModel.Password}'");
+                if (VisiblePasswordTextBox.Text != PasswordBox.Password)
+                {
+                    VisiblePasswordTextBox.Text = PasswordBox.Password;
+                }
+            };
+
+            // Привязка для видимого поля
+            VisiblePasswordTextBox.TextChanged += (s, e) =>
+            {
+                if (_isPasswordVisible && viewModel.Password != VisiblePasswordTextBox.Text)
+                {
+                    viewModel.Password = VisiblePasswordTextBox.Text;
+                    PasswordBox.Password = VisiblePasswordTextBox.Text;
+                }
             };
         }
+
+        private void TogglePasswordVisibility_Click(object sender, RoutedEventArgs e)
+        {
+            _isPasswordVisible = !_isPasswordVisible;
+            var button = sender as Button;
+            var textBlock = button.Content as TextBlock;
+
+            if (_isPasswordVisible)
+            {
+                // Показываем пароль
+                VisiblePasswordTextBox.Text = PasswordBox.Password;
+                PasswordBox.Visibility = Visibility.Collapsed;
+                VisiblePasswordTextBox.Visibility = Visibility.Visible;
+
+                // Меняем иконку на "глаз перечёркнутый" или меняем текст
+                if (textBlock != null)
+                {
+                    textBlock.Text = "👁‍🗨";
+                }
+                button.ToolTip = "Скрыть пароль";
+            }
+            else
+            {
+                // Скрываем пароль
+                PasswordBox.Password = VisiblePasswordTextBox.Text;
+                VisiblePasswordTextBox.Visibility = Visibility.Collapsed;
+                PasswordBox.Visibility = Visibility.Visible;
+
+                // Возвращаем обычный глаз
+                if (textBlock != null)
+                {
+                    textBlock.Text = "👁";
+                }
+                button.ToolTip = "Показать пароль";
+            }
+        }
+
         private void LoginTextBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
         {
             InputValidator.RestrictLoginInput(sender, e);
         }
-        // Перетаскивание окна
-        private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-        {
-            DragMove();
-        }
 
-        // Закрытие окна
-        private void CloseButton_Click(object sender, RoutedEventArgs e)
-        {
-            Close();
-        }
         private void LoginTextBox_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             InputValidator.BlockSpace(sender, e);
@@ -48,16 +87,6 @@ namespace EnergyMeteringSystem.App.Views.Auth
         private void PasswordBox_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             InputValidator.BlockSpace(sender, e);
-        }
-    }
-    public partial class App : Application
-    {
-        protected override void OnStartup(StartupEventArgs e)
-        {
-            base.OnStartup(e);
-
-            LoginView loginView = new();
-            loginView.Show();
         }
     }
 }

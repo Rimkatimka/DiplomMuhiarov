@@ -17,10 +17,17 @@ namespace EnergyMeteringSystem.Data.Repositories
 
         public List<DirectoryDto> GetAll()
         {
+            // Сначала получаем данные из БД без форматирования
             var data = _context.MeterStatus
-                .Select(s => new { s.Id, s.Name, s.CanAcceptReadings })
+                .Select(s => new
+                {
+                    s.Id,
+                    s.Name,
+                    s.CanAcceptReadings
+                })
                 .ToList();
 
+            // Теперь форматируем в памяти
             return data.Select(s => new DirectoryDto
             {
                 Id = s.Id,
@@ -32,46 +39,52 @@ namespace EnergyMeteringSystem.Data.Repositories
 
         public DirectoryDto GetById(int id)
         {
-            MeterStatus entity = _context.MeterStatus.Find(id);
-            return entity == null
-                ? null
-                : new DirectoryDto
-                {
-                    Id = entity.Id,
-                    Name = entity.Name,
-                    Description = entity.CanAcceptReadings ? "Можно вводить показания" : "Нельзя вводить показания",
-                    IsActive = true
-                };
+            var entity = _context.MeterStatus.Find(id);
+            if (entity == null) return null;
+
+            return new DirectoryDto
+            {
+                Id = entity.Id,
+                Name = entity.Name,
+                Description = entity.CanAcceptReadings ? "Можно вводить показания" : "Нельзя вводить показания",
+                IsActive = true
+            };
         }
 
         public void Add(DirectoryDto dto)
         {
-            MeterStatus entity = new()
+            var entity = new MeterStatus
             {
                 Name = dto.Name,
                 CanAcceptReadings = true
             };
-            _ = _context.MeterStatus.Add(entity);
-            _ = _context.SaveChanges();
+            _context.MeterStatus.Add(entity);
+            _context.SaveChanges();
         }
 
         public void Update(DirectoryDto dto)
         {
-            MeterStatus entity = _context.MeterStatus.Find(dto.Id);
+            var entity = _context.MeterStatus.Find(dto.Id);
             if (entity != null)
             {
                 entity.Name = dto.Name;
-                _ = _context.SaveChanges();
+                _context.SaveChanges();
             }
         }
 
         public void Delete(int id)
         {
-            MeterStatus entity = _context.MeterStatus.Find(id);
+            var entity = _context.MeterStatus.Find(id);
             if (entity != null)
             {
-                _ = _context.MeterStatus.Remove(entity);
-                _ = _context.SaveChanges();
+                bool hasMeters = _context.Meter.Any(m => m.MeterStatusId == id);
+                if (hasMeters)
+                {
+                    throw new System.InvalidOperationException("Нельзя удалить статус, который используется счётчиками");
+                }
+
+                _context.MeterStatus.Remove(entity);
+                _context.SaveChanges();
             }
         }
     }

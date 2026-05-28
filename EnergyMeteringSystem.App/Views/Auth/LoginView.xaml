@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Вход в систему" 
-        Height="375" Width="400"
+        Height="420" Width="400"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize">
 
@@ -37,15 +37,66 @@
                      ToolTip="Только латиница, цифры, . _ -"/>
         </StackPanel>
 
-        <!-- Пароль -->
+        <!-- Пароль с кнопкой показа -->
         <StackPanel Grid.Row="2" Margin="0,0,0,15">
             <TextBlock Text="Пароль" Margin="0,0,0,5"/>
-            <PasswordBox x:Name="PasswordBox" 
-                        Padding="8" 
-                        FontSize="14"
-                        MaxLength="256"
-                        PreviewKeyDown="PasswordBox_PreviewKeyDown"
-                        ToolTip="Пробел запрещён"/>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <PasswordBox x:Name="PasswordBox" 
+                     Grid.Column="0"
+                     Padding="8" 
+                     FontSize="14"
+                     MaxLength="256"
+                     PreviewKeyDown="PasswordBox_PreviewKeyDown"
+                     ToolTip="Пробел запрещён"/>
+
+                <TextBox x:Name="VisiblePasswordTextBox" 
+                 Grid.Column="0"
+                 Padding="8" 
+                 FontSize="14"
+                 Visibility="Collapsed"
+                 MaxLength="256"/>
+
+                <!-- Кнопка глаза - улучшенная версия -->
+                <Border Grid.Column="1"
+                Width="40" Height="35"
+                Margin="5,0,0,0"
+                Background="Transparent"
+                BorderBrush="#CCCCCC"
+                BorderThickness="1"
+                CornerRadius="4"
+                Cursor="Hand">
+
+                    <Button x:Name="TogglePasswordButton"
+                    Background="Transparent"
+                    BorderThickness="0"
+                    Cursor="Hand"
+                    Click="TogglePasswordVisibility_Click"
+                    ToolTip="Показать пароль"
+                    Padding="0"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Center">
+
+                        <Button.Content>
+                            <TextBlock FontSize="16" 
+                               Text="👁" 
+                               VerticalAlignment="Center"
+                               HorizontalAlignment="Center"
+                               Foreground="#555"/>
+                        </Button.Content>
+                    </Button>
+                </Border>
+            </Grid>
+
+            <!-- Подсказка под полем -->
+            <TextBlock Text="Нажмите на глаз, чтобы показать/скрыть пароль"
+                       FontSize="10"
+                       Foreground="Gray"
+                       Margin="0,5,0,0"/>
         </StackPanel>
 
         <!-- Ошибка -->
@@ -66,5 +117,6 @@
                 FontSize="14"
                 FontWeight="Bold"
                 BorderThickness="0"/>
+
     </Grid>
 </Window>

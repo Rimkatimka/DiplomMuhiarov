@@ -1,10 +1,11 @@
-﻿using System.Collections.ObjectModel;
-using System.Windows;
-using EnergyMeteringSystem.App.Commands;
+﻿using EnergyMeteringSystem.App.Commands;
 using EnergyMeteringSystem.App.ViewModels.Base;
 using EnergyMeteringSystem.App.ViewModels.Directories;
 using EnergyMeteringSystem.Core.Models.DTO;
 using EnergyMeteringSystem.Services.Auth;
+using System.Collections.ObjectModel;
+using System.Linq;
+using System.Windows;
 
 namespace EnergyMeteringSystem.App.ViewModels.Main
 {
@@ -32,7 +33,71 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
                 }
             }
         }
+        private string _searchText;
+        private ObservableCollection<MenuItemViewModel> _filteredMenuItems;
 
+        public string SearchText
+        {
+            get => _searchText;
+            set
+            {
+                if (SetProperty(ref _searchText, value))
+                {
+                    FilterMenu();
+                }
+            }
+        }
+
+        public ObservableCollection<MenuItemViewModel> FilteredMenuItems
+        {
+            get => _filteredMenuItems;
+            set => SetProperty(ref _filteredMenuItems, value);
+        }
+
+        private void FilterMenu()
+        {
+            if (string.IsNullOrWhiteSpace(SearchText))
+            {
+                FilteredMenuItems = new ObservableCollection<MenuItemViewModel>(MenuItems);
+                return;
+            }
+
+            var filtered = new ObservableCollection<MenuItemViewModel>();
+            var lowerSearch = SearchText.ToLower();
+
+            foreach (var item in MenuItems)
+            {
+                // Проверяем сам пункт
+                bool itemMatches = item.Title.ToLower().Contains(lowerSearch);
+
+                // Проверяем дочерние пункты
+                var matchingChildren = item.Children.Where(c => c.Title.ToLower().Contains(lowerSearch)).ToList();
+
+                if (itemMatches || matchingChildren.Any())
+                {
+                    var newItem = new MenuItemViewModel { Title = item.Title };
+
+                    if (matchingChildren.Any())
+                    {
+                        foreach (var child in matchingChildren)
+                        {
+                            newItem.Children.Add(child);
+                        }
+                    }
+                    else if (itemMatches)
+                    {
+                        foreach (var child in item.Children)
+                        {
+                            newItem.Children.Add(child);
+                        }
+                    }
+
+                    filtered.Add(newItem);
+                }
+            }
+
+            FilteredMenuItems = filtered;
+        }
         public ShellViewModel(UserDto currentUser)
         {
             System.Diagnostics.Debug.WriteLine("ShellViewModel: конструктор начат");
@@ -175,26 +240,32 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
 
                 dirMenu.Children.Add(new MenuItemViewModel
                 {
-                    Title = "Причины отклонения",
+                    Title = "Причины отклонения показаний",
                     Command = new RelayCommand(_ => OpenDirectory(DirectoryFactory.CreateRejectionReasonViewModel(), "Причины отклонения"))
                 });
 
                 dirMenu.Children.Add(new MenuItemViewModel
                 {
-                    Title = "Статусы счетчиков",
-                    Command = new RelayCommand(_ => OpenDirectory(DirectoryFactory.CreateMeterStatusViewModel(), "Статусы счетчиков"))
+                    Title = "Статусы счётчиков",
+                    Command = new RelayCommand(_ => OpenDirectory(DirectoryFactory.CreateMeterStatusViewModel(), "Статусы счётчиков"))
                 });
 
                 dirMenu.Children.Add(new MenuItemViewModel
                 {
-                    Title = "Статусы договоров",
-                    Command = new RelayCommand(_ => OpenDirectory(DirectoryFactory.CreateContractStatusViewModel(), "Статусы договоров"))
+                    Title = "Типы счётчиков",
+                    Command = new RelayCommand(_ => OpenDirectory(DirectoryFactory.CreateMeterTypeViewModel(), "Типы счётчиков"))
                 });
 
                 dirMenu.Children.Add(new MenuItemViewModel
                 {
                     Title = "Типы тарифов",
                     Command = new RelayCommand(_ => OpenDirectory(DirectoryFactory.CreateTariffTypeViewModel(), "Типы тарифов"))
+                });
+
+                dirMenu.Children.Add(new MenuItemViewModel
+                {
+                    Title = "Статусы договоров",
+                    Command = new RelayCommand(_ => OpenDirectory(DirectoryFactory.CreateContractStatusViewModel(), "Статусы договоров"))
                 });
 
                 dirMenu.Children.Add(new MenuItemViewModel
@@ -225,30 +296,10 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
 
                 // Администрирование
                 MenuItemViewModel adminMenu = new() { Title = "Администрирование" };
-
-                adminMenu.Children.Add(new MenuItemViewModel
-                {
-                    Title = "Пользователи",
-                    Command = new RelayCommand(_ => OpenUserManagement())
-                });
-
-                adminMenu.Children.Add(new MenuItemViewModel
-                {
-                    Title = "Журнал аудита",
-                    Command = new RelayCommand(_ => OpenAuditLog())
-                });
-
-                adminMenu.Children.Add(new MenuItemViewModel
-                {
-                    Title = "Резервное копирование",
-                    Command = new RelayCommand(_ => OpenBackup())
-                });
-
-                MenuItems.Add(adminMenu);
             }
 
-            // Выход - всем
-            MenuItems.Add(new MenuItemViewModel
+                // Выход - всем
+                MenuItems.Add(new MenuItemViewModel
             {
                 Title = "Выход",
                 Command = new RelayCommand(_ => Logout())

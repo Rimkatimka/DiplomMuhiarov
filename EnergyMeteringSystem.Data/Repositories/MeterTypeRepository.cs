@@ -1,10 +1,10 @@
-﻿using EnergyMeteringSystem.Core.Interfaces.Repositories;
+﻿using System.Collections.Generic;
+using System.Linq;
+using EnergyMeteringSystem.Core.Interfaces.Repositories;
 using EnergyMeteringSystem.Core.Models.DTO;
 using EnergyMeteringSystem.Data.Database;
-using System.Collections.Generic;
-using System.Linq;
 
-namespace EnergyMeteringSystem.Data.Repositories.EnergyMeteringSystem.Data.Repositories
+namespace EnergyMeteringSystem.Data.Repositories
 {
     public class MeterTypeRepository : IMeterTypeRepository
     {
@@ -17,45 +17,46 @@ namespace EnergyMeteringSystem.Data.Repositories.EnergyMeteringSystem.Data.Repos
 
         public List<MeterTypeDto> GetAll()
         {
-            var query = from mt in _context.MeterType
-                        join vi in _context.VerificationInterval on mt.Id equals vi.MeterTypeId into viJoin
-                        from vi in viJoin.DefaultIfEmpty()
-                        select new MeterTypeDto
-                        {
-                            Id = mt.Id,
-                            Name = mt.Name,
-                            Voltage = mt.Voltage,
-                            MaxCurrent = mt.MaxCurrent,
-                            AccuracyClass = mt.AccuracyClass,
-                            DigitCount = mt.DigitCount,
-                            DecimalPlaces = mt.DecimalPlaces,
-                            ServiceLifeYears = mt.ServiceLifeYears,
-                            VerificationIntervalYears = vi != null ? vi.Years : 16
-                        };
-
-            return query.ToList();
+            return _context.MeterType
+                .Select(mt => new MeterTypeDto
+                {
+                    Id = mt.Id,
+                    Name = mt.Name,
+                    Voltage = mt.Voltage,
+                    MaxCurrent = mt.MaxCurrent,
+                    AccuracyClass = mt.AccuracyClass,
+                    DigitCount = mt.DigitCount,
+                    DecimalPlaces = mt.DecimalPlaces,
+                    ServiceLifeYears = mt.ServiceLifeYears,
+                    VerificationIntervalYears = GetVerificationInterval(mt.Id)
+                })
+                .ToList();
         }
 
         public MeterTypeDto GetById(int id)
         {
-            var query = from mt in _context.MeterType
-                        join vi in _context.VerificationInterval on mt.Id equals vi.MeterTypeId into viJoin
-                        from vi in viJoin.DefaultIfEmpty()
-                        where mt.Id == id
-                        select new MeterTypeDto
-                        {
-                            Id = mt.Id,
-                            Name = mt.Name,
-                            Voltage = mt.Voltage,
-                            MaxCurrent = mt.MaxCurrent,
-                            AccuracyClass = mt.AccuracyClass,
-                            DigitCount = mt.DigitCount,
-                            DecimalPlaces = mt.DecimalPlaces,
-                            ServiceLifeYears = mt.ServiceLifeYears,
-                            VerificationIntervalYears = vi != null ? vi.Years : 16
-                        };
+            var mt = _context.MeterType.Find(id);
+            if (mt == null) return null;
 
-            return query.FirstOrDefault();
+            return new MeterTypeDto
+            {
+                Id = mt.Id,
+                Name = mt.Name,
+                Voltage = mt.Voltage,
+                MaxCurrent = mt.MaxCurrent,
+                AccuracyClass = mt.AccuracyClass,
+                DigitCount = mt.DigitCount,
+                DecimalPlaces = mt.DecimalPlaces,
+                ServiceLifeYears = mt.ServiceLifeYears,
+                VerificationIntervalYears = GetVerificationInterval(mt.Id)
+            };
+        }
+
+        private int? GetVerificationInterval(int meterTypeId)
+        {
+            var interval = _context.VerificationInterval
+                .FirstOrDefault(vi => vi.MeterTypeId == meterTypeId);
+            return interval?.Years;
         }
     }
 }

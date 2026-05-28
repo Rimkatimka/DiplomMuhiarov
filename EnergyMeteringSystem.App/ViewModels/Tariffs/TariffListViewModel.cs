@@ -41,7 +41,59 @@ namespace EnergyMeteringSystem.App.ViewModels.Tariffs
                 DeactivateCommand.RaiseCanExecuteChanged();
             }
         }
+        private void AddTariff()
+        {
+            var editViewModel = new TariffEditViewModel();  // больше не нужно передавать типы
+            var editView = new Views.Tariffs.TariffEditView
+            {
+                DataContext = editViewModel
+            };
 
+            var window = new Window
+            {
+                Title = "Новый тариф",
+                Content = editView,
+                Width = 500,
+                Height = 450,
+                WindowStartupLocation = WindowStartupLocation.CenterScreen
+            };
+
+            editViewModel.OnTariffSaved += (s, e) =>
+            {
+                LoadData();
+                window.Close();
+            };
+
+            _ = window.ShowDialog();
+        }
+
+        private void EditTariff()
+        {
+            if (SelectedTariff == null) return;
+
+            var editViewModel = new TariffEditViewModel(SelectedTariff);
+            var editView = new Views.Tariffs.TariffEditView
+            {
+                DataContext = editViewModel
+            };
+
+            var window = new Window
+            {
+                Title = "Редактирование тарифа",
+                Content = editView,
+                Width = 500,
+                Height = 450,
+                WindowStartupLocation = WindowStartupLocation.CenterScreen
+            };
+
+            editViewModel.OnTariffSaved += (s, e) =>
+            {
+                LoadData();
+                window.Close();
+            };
+
+            _ = window.ShowDialog();
+        }
         public bool ShowOnlyActive
         {
             get => _showOnlyActive;
@@ -115,93 +167,8 @@ namespace EnergyMeteringSystem.App.ViewModels.Tariffs
         {
             return SelectedTariff != null && SelectedTariff.IsActive;
         }
-
-        private void AddTariff()
-        {
-            System.Collections.Generic.List<DirectoryDto> types = _typeRepository.GetAll(); // List<DirectoryDto>
-
-            // Преобразуем List<DirectoryDto> в ObservableCollection<TariffTypeDto>
-            ObservableCollection<TariffTypeDto> tariffTypes = [];
-            foreach (DirectoryDto item in types)
-            {
-                tariffTypes.Add(new TariffTypeDto
-                {
-                    Id = item.Id,
-                    Name = item.Name,
-                    ZoneCount = 1, // значение по умолчанию
-                    Description = item.Description
-                });
-            }
-
-            TariffEditViewModel editViewModel = new(tariffTypes);
-            Views.Tariffs.TariffEditView editView = new()
-            {
-                DataContext = editViewModel
-            };
-
-            Window window = new()
-            {
-                Title = "Новый тариф",
-                Content = editView,
-                Width = 500,
-                Height = 400,
-                WindowStartupLocation = WindowStartupLocation.CenterScreen
-            };
-
-            editViewModel.OnTariffSaved += (s, e) =>
-            {
-                LoadData();
-                window.Close();
-            };
-
-            _ = window.ShowDialog();
-        }
-
-        private void EditTariff()
-        {
-            if (SelectedTariff == null)
-            {
-                return;
-            }
-
-            System.Collections.Generic.List<DirectoryDto> types = _typeRepository.GetAll(); // List<DirectoryDto>
-
-            // Преобразуем List<DirectoryDto> в ObservableCollection<TariffTypeDto>
-            ObservableCollection<TariffTypeDto> tariffTypes = [];
-            foreach (DirectoryDto item in types)
-            {
-                tariffTypes.Add(new TariffTypeDto
-                {
-                    Id = item.Id,
-                    Name = item.Name,
-                    ZoneCount = 1, // значение по умолчанию
-                    Description = item.Description
-                });
-            }
-
-            TariffEditViewModel editViewModel = new(tariffTypes, SelectedTariff);
-            Views.Tariffs.TariffEditView editView = new()
-            {
-                DataContext = editViewModel
-            };
-
-            Window window = new()
-            {
-                Title = "Редактирование тарифа",
-                Content = editView,
-                Width = 500,
-                Height = 400,
-                WindowStartupLocation = WindowStartupLocation.CenterScreen
-            };
-
-            editViewModel.OnTariffSaved += (s, e) =>
-            {
-                LoadData();
-                window.Close();
-            };
-
-            _ = window.ShowDialog();
-        }
+             
+        
 
         private void DeactivateTariff()
         {

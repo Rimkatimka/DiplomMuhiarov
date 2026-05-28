@@ -2,16 +2,12 @@
 using EnergyMeteringSystem.App.ViewModels.Base;
 using EnergyMeteringSystem.Core.Interfaces.Repositories;
 using EnergyMeteringSystem.Core.Models.DTO;
-using EnergyMeteringSystem.Data.Database;
 using EnergyMeteringSystem.Data.Repositories;
-using EnergyMeteringSystem.Data.Repositories.EnergyMeteringSystem.Data.Repositories;
+using EnergyMeteringSystem.Services;
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
-using EnergyMeteringSystem.Services;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Media;
 
 namespace EnergyMeteringSystem.App.ViewModels.Meters
 {
@@ -49,7 +45,6 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
         public bool IsObjectReadOnly { get; private set; }
         public bool IsEditMode { get; private set; }
 
-        // Ограничения для DatePicker
         public DateTime MinInstallationDate => DateTime.Today.AddYears(-100);
         public DateTime MaxInstallationDate => DateTime.Today;
         public DateTime? MinLastVerificationDate => InstallationDate;
@@ -78,7 +73,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
                 return DateTime.Today.AddYears(1);
             }
         }
-        
+
         public string SerialNumber
         {
             get => _serialNumber;
@@ -105,7 +100,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
                     SetProperty(ref _initialReading, value);
                 }
 
-                SaveCommand.RaiseCanExecuteChanged();
+                SaveCommand?.RaiseCanExecuteChanged();
             }
         }
 
@@ -117,7 +112,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
                 SetProperty(ref _serviceLifeYears, value);
                 CalculateRemovalDate();
                 ValidateDates();
-                SaveCommand.RaiseCanExecuteChanged();
+                SaveCommand?.RaiseCanExecuteChanged();
             }
         }
 
@@ -133,7 +128,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
                     OnPropertyChanged(nameof(MinNextVerificationDate));
                     OnPropertyChanged(nameof(MaxNextVerificationDate));
                     ValidateDates();
-                    SaveCommand.RaiseCanExecuteChanged();
+                    SaveCommand?.RaiseCanExecuteChanged();
                 }
             }
         }
@@ -152,7 +147,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
                     OnPropertyChanged(nameof(MinNextVerificationDate));
                     OnPropertyChanged(nameof(MaxNextVerificationDate));
                     ValidateDates();
-                    SaveCommand.RaiseCanExecuteChanged();
+                    SaveCommand?.RaiseCanExecuteChanged();
                 }
             }
         }
@@ -165,7 +160,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
                 if (SetProperty(ref _nextVerificationDate, value))
                 {
                     ValidateDates();
-                    SaveCommand.RaiseCanExecuteChanged();
+                    SaveCommand?.RaiseCanExecuteChanged();
                 }
             }
         }
@@ -198,6 +193,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
                         NextVerificationDate = LastVerificationDate.Value.AddYears(_verificationIntervalYears);
                     }
                 }
+                SaveCommand?.RaiseCanExecuteChanged();
             }
         }
 
@@ -246,7 +242,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
             }
 
             InstallationDate = DateTime.Today;
-            LastVerificationDate = InstallationDate;  // первая поверка = дата установки
+            LastVerificationDate = InstallationDate;
         }
 
         // Конструктор для редактирования
@@ -327,21 +323,18 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
         {
             DateError = string.Empty;
 
-            // 1. Дата установки не может быть в будущем
             if (InstallationDate > DateTime.Today)
             {
                 DateError = "Дата установки не может быть позже сегодняшнего дня";
                 return;
             }
 
-            // 2. Последняя поверка не может быть в будущем
             if (LastVerificationDate.HasValue && LastVerificationDate > DateTime.Today)
             {
                 DateError = "Дата последней поверки не может быть позже сегодняшнего дня";
                 return;
             }
 
-            // 3. Следующая поверка должна быть ПОСЛЕ последней
             if (LastVerificationDate.HasValue && NextVerificationDate.HasValue &&
                 NextVerificationDate <= LastVerificationDate)
             {
@@ -349,7 +342,6 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
                 return;
             }
 
-            // 4. Следующая поверка не может быть позже даты изъятия
             if (RemovalDate.HasValue && NextVerificationDate.HasValue &&
                 NextVerificationDate > RemovalDate)
             {

@@ -5,45 +5,80 @@
         Height="600" Width="900"
         WindowStartupLocation="CenterScreen"
         MinHeight="650"
-        MinWidth="900"
+        MinWidth="750"
         xmlns:local="clr-namespace:EnergyMeteringSystem.App.ViewModels.Main">
 
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="250"/>
+            <ColumnDefinition Width="Auto"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <!-- Левая панель с меню -->
-        <Border Grid.Column="0" Background="#2D3F5E">
+        <!-- Левая панель с меню (сворачиваемая) -->
+        <Border x:Name="MenuPanel" Grid.Column="0" Background="#2D3F5E" Width="250">
             <Grid>
                 <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
+                <!-- Кнопка сворачивания/разворачивания -->
+                <Button Grid.Row="0" 
+                        x:Name="ToggleMenuButton"
+                        Content="☰"
+                        Width="40" Height="40"
+                        HorizontalAlignment="Left"
+                        Margin="5,5,0,0"
+                        Background="#1F2A40"
+                        Foreground="White"
+                        FontSize="20"
+                        FontWeight="Bold"
+                        BorderThickness="0"
+                        Cursor="Hand"
+                        Click="ToggleMenu_Click"
+                        ToolTip="Свернуть меню (скрыть боковую панель)"/>
+
                 <!-- Имя пользователя -->
-                <StackPanel Grid.Row="0" Background="#1F2A40" Margin="10">
+                <StackPanel x:Name="UserInfoPanel" Grid.Row="1" Background="#1F2A40" Margin="10,20,10,10">
                     <TextBlock Text="Пользователь:" Foreground="#AAAAAA" FontSize="11"/>
                     <TextBlock Text="{Binding CurrentUser.DisplayName}" 
-                               Foreground="White" FontSize="14" FontWeight="Bold"/>
+                               Foreground="White" FontSize="14" FontWeight="Bold"
+                               TextWrapping="Wrap"/>
                     <TextBlock Text="{Binding CurrentUser.RoleText}" 
                                Foreground="#4CAF50" FontSize="12"/>
                 </StackPanel>
 
+                <!-- ПОЛЕ ПОИСКА ПО МЕНЮ -->
+                <Border x:Name="SearchPanel" Grid.Row="2" Background="#1F2A40" Margin="10,0,10,10" CornerRadius="4">
+                    <TextBox x:Name="SearchMenuTextBox"
+                             Height="30"
+                             Padding="8,0,30,0"
+                             Background="#3A4A6A"
+                             Foreground="White"
+                             BorderThickness="0"
+                             FontSize="12"
+                             TextChanged="SearchMenuTextBox_TextChanged"
+                             ToolTip="Поиск по меню"/>
+                </Border>
+
                 <!-- TreeView меню -->
-                <TreeView Grid.Row="1" 
-                          ItemsSource="{Binding MenuItems}"
+                <TreeView x:Name="MainMenuTree" Grid.Row="3" 
+                          ItemsSource="{Binding FilteredMenuItems}"
                           SelectedItemChanged="TreeView_SelectedItemChanged"
                           Background="Transparent"
                           BorderThickness="0"
-                          Foreground="White">
+                          Foreground="White"
+                          Margin="0,0,0,0">
 
                     <TreeView.ItemTemplate>
                         <HierarchicalDataTemplate DataType="{x:Type local:MenuItemViewModel}" 
                                                   ItemsSource="{Binding Children}">
-                            <TextBlock Text="{Binding Title}" Margin="10,5" FontSize="14"/>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="{Binding Title}" Margin="10,5" FontSize="14"/>
+                            </StackPanel>
                         </HierarchicalDataTemplate>
                     </TreeView.ItemTemplate>
 
@@ -66,7 +101,8 @@
                 </TreeView>
 
                 <!-- Кнопка выхода -->
-                <Button Grid.Row="2" 
+                <Button Grid.Row="4" 
+                        x:Name="LogoutButton"
                         Content="Выйти"
                         Command="{Binding LogoutCommand}"
                         Background="#F44336"
@@ -80,7 +116,7 @@
 
         <!-- Правая область - Контейнер для View -->
         <Border Grid.Column="1" Background="#F5F5F5">
-            <ContentControl Content="{Binding CurrentView}"/>
+            <ContentControl x:Name="MainContent" Content="{Binding CurrentView}"/>
         </Border>
     </Grid>
 </Window>
