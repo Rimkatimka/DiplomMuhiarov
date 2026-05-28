@@ -85,7 +85,6 @@ StyleCopReport.xml
 *.rsp
 *.sbr
 *.tlb
-*.tli
 *.tlh
 *.tmp
 *.tmp_proj
@@ -261,10 +260,26 @@ UpgradeLog*.htm
 ServiceFabricBackup/
 *.rptproj.bak
 
-# SQL Server files
-# *.mdf
-# *.ldf
+# SQL Server files - ИГНОРИРУЕМ ВСЕ MDF/LDF ФАЙЛЫ
+*.mdf
+*.ldf
 *.ndf
+
+# НО НЕ ИГНОРИРУЕМ исходную базу в проекте данных
+!**/EnergyMeteringSystem.Data/Database/*.mdf
+!**/EnergyMeteringSystem.Data/Database/*.ldf
+
+# Игнорируем рабочие копии в папках bin и obj
+**/bin/*/Database/
+**/obj/*/Database/
+**/bin/*/Database/*.mdf
+**/bin/*/Database/*.ldf
+**/bin/*/Database/*.ndf
+
+# Временные файлы баз данных
+*.mdf.locked
+*.ldf.locked
+Database_Log.ldf
 
 # Business Intelligence projects
 *.rdl.data

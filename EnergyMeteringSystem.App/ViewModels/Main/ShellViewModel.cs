@@ -63,12 +63,6 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
                 Command = new RelayCommand(_ => OpenDashboard())
             });
 
-            //MenuItems.Add(new MenuItemViewModel
-            //{
-            //    Title = "Счетчики",
-            //    Command = new RelayCommand(_ => OpenMeterList())  // ← вызов здесь
-            //});
-
             // Объекты - всем
             MenuItems.Add(new MenuItemViewModel
             {
@@ -131,6 +125,23 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
                 Title = "Отчёты",
                 Command = new RelayCommand(_ => OpenReports())
             });
+
+            // Аналитика - подменю (ЗАМЕНИТЕ ЭТОТ БЛОК)
+            MenuItemViewModel analyticsMenu = new() { Title = "Аналитика" };
+
+            analyticsMenu.Children.Add(new MenuItemViewModel
+            {
+                Title = "По объектам",
+                Command = new RelayCommand(_ => OpenAnalytics())
+            });
+
+            analyticsMenu.Children.Add(new MenuItemViewModel
+            {
+                Title = "По регионам (иерархия)",
+                Command = new RelayCommand(_ => OpenHierarchyAnalytics())
+            });
+
+            MenuItems.Add(analyticsMenu);
 
             // Договоры - всем
             MenuItems.Add(new MenuItemViewModel
@@ -243,7 +254,6 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
                 Command = new RelayCommand(_ => Logout())
             });
         }
-
         // Методы открытия окон
         private void OpenDashboard()
         {
@@ -258,7 +268,10 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
         {
             CurrentView = new Views.Objects.ConsumptionObjectListView();
         }
-
+        private void OpenAnalytics()
+        {
+            CurrentView = new Views.Analytics.AnalyticsView();
+        }
         private void OpenReadingInput()
         {
             if (CurrentUser == null)
@@ -287,7 +300,10 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
         {
             CurrentView = new Views.Billing.AccrualView();
         }
-
+        private void OpenHierarchyAnalytics()
+        {
+            CurrentView = new Views.Analytics.HierarchyAnalyticsView();
+        }
         private void OpenPayment()
         {
             if (CurrentUser == null)

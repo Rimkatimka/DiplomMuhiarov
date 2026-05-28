@@ -1,11 +1,8 @@
-﻿using EnergyMeteringSystem.App.ViewModels.Main;
-using System.Windows.Controls;
+﻿using System.Windows.Controls;
+using EnergyMeteringSystem.App.ViewModels.Main;
 
 namespace EnergyMeteringSystem.App.Views.Main
 {
-    /// <summary>
-    /// Логика взаимодействия для DashboardView.xaml
-    /// </summary>
     public partial class DashboardView : UserControl
     {
         public DashboardView()

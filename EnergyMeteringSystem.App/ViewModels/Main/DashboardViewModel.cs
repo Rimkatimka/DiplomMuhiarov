@@ -1,8 +1,12 @@
-﻿using System.Collections.ObjectModel;
+﻿using System;
+using System.Collections.ObjectModel;
+using System.Linq;
 using EnergyMeteringSystem.App.Commands;
 using EnergyMeteringSystem.App.ViewModels.Base;
 using EnergyMeteringSystem.Core.Models.DTO;
 using EnergyMeteringSystem.Data.Repositories;
+using LiveCharts;
+using LiveCharts.Wpf;
 
 namespace EnergyMeteringSystem.App.ViewModels.Main
 {
@@ -10,18 +14,27 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
     {
         private readonly DashboardRepository _dashboardRepository;
         private DashboardDto _data;
+        private int _selectedChartYear;
+        private SeriesCollection _chartSeries;
+        private string[] _chartMonths;
 
         public DashboardViewModel()
         {
             _dashboardRepository = new DashboardRepository();
-            TopDebtors = [];
-            ChartData = [];
+            TopDebtors = new ObservableCollection<DebtDto>();
+            ChartYears = new ObservableCollection<int>();
 
             RefreshCommand = new RelayCommand(_ => LoadData());
+
+            for (int i = 2020; i <= DateTime.Today.Year; i++)
+                ChartYears.Add(i);
+
+            _selectedChartYear = DateTime.Today.Year;
+
             LoadData();
+            LoadChartData();
         }
 
-        // Основные показатели
         public int TotalObjects => _data?.TotalObjects ?? 0;
         public int TotalMeters => _data?.TotalMeters ?? 0;
         public int ReadingsToday => _data?.ReadingsToday ?? 0;
@@ -30,18 +43,41 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
         public string PaymentMonth => (_data?.PaymentMonth ?? 0).ToString("F0") + " ₽";
         public int ExpiredMeters => _data?.ExpiredMeters ?? 0;
 
-        // Коллекции
         public ObservableCollection<DebtDto> TopDebtors { get; set; }
-        public ObservableCollection<ChartPoint> ChartData { get; set; }
+        public ObservableCollection<int> ChartYears { get; set; }
 
-        // Команда обновления
+        public int SelectedChartYear
+        {
+            get => _selectedChartYear;
+            set
+            {
+                if (SetProperty(ref _selectedChartYear, value))
+                {
+                    LoadChartData();
+                }
+            }
+        }
+
+        public SeriesCollection ChartSeries
+        {
+            get => _chartSeries;
+            set => SetProperty(ref _chartSeries, value);
+        }
+
+        public string[] ChartMonths
+        {
+            get => _chartMonths;
+            set => SetProperty(ref _chartMonths, value);
+        }
+
+        public Func<double, string> YFormatter => value => $"{value:F0}";
+
         public RelayCommand RefreshCommand { get; }
 
         private void LoadData()
         {
             _data = _dashboardRepository.GetDashboardData();
 
-            // Обновляем свойства
             OnPropertyChanged(nameof(TotalObjects));
             OnPropertyChanged(nameof(TotalMeters));
             OnPropertyChanged(nameof(ReadingsToday));
@@ -50,7 +86,6 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
             OnPropertyChanged(nameof(PaymentMonth));
             OnPropertyChanged(nameof(ExpiredMeters));
 
-            // Обновляем коллекции
             TopDebtors.Clear();
             if (_data?.TopDebtors != null)
             {
@@ -59,15 +94,25 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
                     TopDebtors.Add(debtor);
                 }
             }
+        }
 
-            ChartData.Clear();
-            if (_data?.ConsumptionChart != null)
+        private void LoadChartData()
+        {
+            var data = _dashboardRepository.GetChartData(_selectedChartYear);
+
+            ChartMonths = data.Select(d => d.MonthName).ToArray();
+
+            ChartSeries = new SeriesCollection
             {
-                foreach (ChartPoint point in _data.ConsumptionChart)
+                new LineSeries
                 {
-                    ChartData.Add(point);
+                    Title = "Потребление",
+                    Values = new ChartValues<decimal>(data.Select(d => d.Consumption)),
+                    PointGeometry = DefaultGeometries.Circle,
+                    PointGeometrySize = 10,
+                    LineSmoothness = 0.5
                 }
-            }
+            };
         }
     }
 }

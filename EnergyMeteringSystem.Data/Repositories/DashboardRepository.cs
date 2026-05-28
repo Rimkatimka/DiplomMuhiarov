@@ -24,48 +24,46 @@ namespace EnergyMeteringSystem.Data.Repositories
 
             DashboardDto result = new()
             {
-                // Количество объектов
                 TotalObjects = _context.ConsumptionObject.Count(),
-
-                // Количество счетчиков
                 TotalMeters = _context.Meter.Count(),
-
-                // Показания за сегодня
-                ReadingsToday = _context.MeterReading
-                    .Count(r => r.ReadingDate == today),
-
-                // Показания за неделю
-                ReadingsWeek = _context.MeterReading
-                    .Count(r => r.ReadingDate >= weekAgo),
-
-                // Начисления за текущий месяц
-                AccrualMonth = _context.Accrual
-                    .Where(a => a.PeriodYear == today.Year &&
-                                a.PeriodMonth == today.Month)
-                    .Sum(a => (decimal?)a.Amount) ?? 0,
-
-                // Оплаты за текущий месяц
-                PaymentMonth = _context.Payment
-                    .Where(p => p.PaymentDate >= monthStart)
-                    .Sum(p => (decimal?)p.Amount) ?? 0,
-
-                // Счетчики с истекшей поверкой
-                ExpiredMeters = _context.Meter
-                    .Count(m => m.NextVerificationDate < today)
+                ReadingsToday = _context.MeterReading.Count(r => r.ReadingDate == today),
+                ReadingsWeek = _context.MeterReading.Count(r => r.ReadingDate >= weekAgo),
+                AccrualMonth = _context.Accrual.Where(a => a.PeriodYear == today.Year && a.PeriodMonth == today.Month).Sum(a => (decimal?)a.Amount) ?? 0,
+                PaymentMonth = _context.Payment.Where(p => p.PaymentDate >= monthStart).Sum(p => (decimal?)p.Amount) ?? 0,
+                ExpiredMeters = _context.Meter.Count(m => m.NextVerificationDate < today)
             };
 
-            // ТОП-5 должников
             PaymentRepository paymentRepo = new();
             List<DebtDto> allDebtors = paymentRepo.GetDebtors();
             result.TopDebtors = allDebtors.Take(5).ToList();
-
-            // Данные для графика (последние 6 месяцев)
-            result.ConsumptionChart = GetChartData();
+            result.ConsumptionChart = GetChartDataLegacy();
 
             return result;
         }
 
-        private List<ChartPoint> GetChartData()
+        public List<ChartDataPointDto> GetChartData(int year)
+        {
+            var result = new List<ChartDataPointDto>();
+            string[] months = { "Янв", "Фев", "Мар", "Апр", "Май", "Июн",
+                                "Июл", "Авг", "Сен", "Окт", "Ноя", "Дек" };
+
+            for (int month = 1; month <= 12; month++)
+            {
+                decimal consumption = _context.Accrual
+                    .Where(a => a.PeriodYear == year && a.PeriodMonth == month)
+                    .Sum(a => (decimal?)a.ConsumptionValue) ?? 0;
+
+                result.Add(new ChartDataPointDto
+                {
+                    MonthName = months[month - 1],
+                    Consumption = consumption
+                });
+            }
+
+            return result;
+        }
+
+        private List<ChartPoint> GetChartDataLegacy()
         {
             List<ChartPoint> result = [];
             DateTime today = DateTime.Today;

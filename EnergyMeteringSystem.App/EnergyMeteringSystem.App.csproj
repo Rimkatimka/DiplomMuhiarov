@@ -168,6 +168,7 @@
     <Compile Include="Converters\InverseBooleanConverter.cs" />
     <Compile Include="Converters\MonthIndexConverter.cs" />
     <Compile Include="Converters\ObjectToVisibilityConverter.cs" />
+    <Compile Include="Helpers\DatabasePathHelper.cs" />
     <Compile Include="Helpers\InputValidator.cs" />
     <Compile Include="Helpers\ValidationService.cs" />
     <Compile Include="Services\ExportDialogService.cs" />
@@ -175,6 +176,7 @@
     <Compile Include="ViewModels\Admin\BackupViewModel.cs" />
     <Compile Include="ViewModels\Admin\UserEditViewModel.cs" />
     <Compile Include="ViewModels\Admin\UserManagementViewModel.cs" />
+    <Compile Include="ViewModels\Analytics\AnalyticsViewModel.cs" />
     <Compile Include="ViewModels\Auth\LoginViewModel.cs" />
     <Compile Include="ViewModels\Base\ValidatableViewModel.cs" />
     <Compile Include="ViewModels\Base\ViewModelBase.cs" />
@@ -190,6 +192,7 @@
     <Compile Include="ViewModels\Directories\DirectoryListViewModel.cs" />
     <Compile Include="ViewModels\Directories\RegionEditViewModel.cs" />
     <Compile Include="ViewModels\Directories\StreetEditViewModel.cs" />
+    <Compile Include="ViewModels\HierarchyAnalyticsViewModel.cs" />
     <Compile Include="ViewModels\Main\DashboardViewModel.cs" />
     <Compile Include="ViewModels\Main\MenuItemViewModel.cs" />
     <Compile Include="ViewModels\Main\ShellViewModel.cs" />
@@ -216,6 +219,12 @@
     </Compile>
     <Compile Include="Views\Admin\UserManagementView.xaml.cs">
       <DependentUpon>UserManagementView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Analytics\AnalyticsView.xaml.cs">
+      <DependentUpon>AnalyticsView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Analytics\HierarchyAnalyticsView.xaml.cs">
+      <DependentUpon>HierarchyAnalyticsView.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\Auth\LoginView.xaml.cs">
       <DependentUpon>LoginView.xaml</DependentUpon>
@@ -323,6 +332,14 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Views\Admin\UserManagementView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\Analytics\AnalyticsView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\Analytics\HierarchyAnalyticsView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

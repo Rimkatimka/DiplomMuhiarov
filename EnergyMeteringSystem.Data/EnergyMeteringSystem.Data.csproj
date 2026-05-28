@@ -198,6 +198,7 @@
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Repositories\AccrualRepository.cs" />
+    <Compile Include="Repositories\AnalyticsRepository.cs" />
     <Compile Include="Repositories\AuditRepository.cs" />
     <Compile Include="Repositories\CityRepository.cs" />
     <Compile Include="Repositories\ConsumptionObjectRepository.cs" />
@@ -205,6 +206,7 @@
     <Compile Include="Repositories\ContractStatusRepository.cs" />
     <Compile Include="Repositories\DashboardRepository.cs" />
     <Compile Include="Repositories\EnergySourceRepository.cs" />
+    <Compile Include="Repositories\HierarchyAnalyticsRepository.cs" />
     <Compile Include="Repositories\MeterReadingRepository.cs" />
     <Compile Include="Repositories\MeterRepository.cs" />
     <Compile Include="Repositories\MeterStatusRepository.cs" />
