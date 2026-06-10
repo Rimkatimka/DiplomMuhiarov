@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="3.0" xmlns:edmx="http://schemas.microsoft.com/ado/2009/11/edmx">
+ <!-- EF Designer content (DO NOT EDIT MANUALLY BELOW HERE) -->
+  <edmx:Designer xmlns="http://schemas.microsoft.com/ado/2009/11/edmx">
+    <!-- Diagram content (shape and connector positions) -->
+    <edmx:Diagrams>
+      <Diagram DiagramId="8f820c0c759046b9987c86e016461640" Name="Diagram1">
+        <EntityTypeShape EntityType="EnergyMeteringSystemModel.AuditLog" Width="1.5" PointX="5.25" PointY="28.125" IsExpanded="true" />
+        <EntityTypeShape EntityType="EnergyMeteringSystemModel.City" Width="1.5" PointX="1.5" PointY="21.5" IsExpanded="true" />
+        <EntityTypeShape EntityType="EnergyMeteringSystemModel.ConsumptionObject" Width="1.5" PointX="0.75" PointY="1.625" IsExpanded="true" />
+        <EntityTypeShape EntityType="EnergyMeteringSystemModel.EnergySource" Width="1.5" PointX="1.5" PointY="35.25" IsExpanded="true" />
+        <EntityTypeShape EntityType="EnergyMeteringSystemModel.Meter" Width="1.5" PointX="3" PointY="6.25" IsExpanded="true" />
+        <EntityTypeShape EntityType="EnergyMeteringSystemModel.MeterDataHistory" Width="1.5" PointX="5.25" PointY="7" IsExpanded="true" />
+        <EntityTypeShape EntityType="EnergyMeteringSystemModel.MeterReading" Width="1.5" PointX="8.25" PointY="6.625" IsExpanded="true" />
+        <EntityTypeShape EntityType="EnergyMeteringSystemModel.MeterReplacementHistory" Width="1.5" PointX="5.25" PointY="3" IsExpanded="true" />
+        <EntityTypeShape EntityType="EnergyMeteringSystemModel.MeterStatus" Width="1.5" PointX="0.75" PointY="11.375" IsExpanded="true" />
+        <EntityTypeShape EntityType="EnergyMeteringSystemModel.MeterType" Width="1.5" PointX="0.75" PointY="7.125" IsExpanded="true" />
+        <EntityTypeShape EntityType="EnergyMeteringSystemModel.ObjectType" Width="1.5" PointX="1.5" PointY="15.875" IsExpanded="true" />
+        <EntityTypeShape EntityType="EnergyMeteringSystemModel.ReadingStatus" Width="1.5" PointX="6" PointY="11.125" IsExpanded="true" />
+        <EntityTypeShape EntityType="EnergyMeteringSystemModel.Region" Width="1.5" PointX="1.5" PointY="24.625" IsExpanded="true" />
+        <EntityTypeShape EntityType="EnergyMeteringSystemModel.RejectionReason" Width="1.5" PointX="6" PointY="14.125" IsExpanded="true" />
+        <EntityTypeShape EntityType="EnergyMeteringSystemModel.Street" Width="1.5" PointX="1.5" PointY="18.5" IsExpanded="true" />
+        <EntityTypeShape EntityType="EnergyMeteringSystemModel.SupplyPoint" Width="1.5" PointX="0.75" PointY="32.125" IsExpanded="true" />
+        <EntityTypeShape EntityType="EnergyMeteringSystemModel.SupplyPointConsumptionObject" Width="1.5" PointX="3" PointY="2.125" IsExpanded="true" />
+        <EntityTypeShape EntityType="EnergyMeteringSystemModel.sysdiagrams" Width="1.5" PointX="7.75" PointY="0.75" IsExpanded="true" />
+        <EntityTypeShape EntityType="EnergyMeteringSystemModel.User" Width="1.5" PointX="3" PointY="27.875" IsExpanded="true" />
+        <EntityTypeShape EntityType="EnergyMeteringSystemModel.UserRole" Width="1.5" PointX="0.75" PointY="28.5" IsExpanded="true" />
+        <EntityTypeShape EntityType="EnergyMeteringSystemModel.VerificationInterval" Width="1.5" PointX="3" PointY="12.875" IsExpanded="true" />
+        <AssociationConnector Association="EnergyMeteringSystemModel.FK_AuditLog_User" ManuallyRouted="false" />
+        <AssociationConnector Association="EnergyMeteringSystemModel.FK_City_Region" ManuallyRouted="false" />
+        <AssociationConnector Association="EnergyMeteringSystemModel.FK_Street_City" ManuallyRouted="false" />
+        <AssociationConnector Association="EnergyMeteringSystemModel.FK_ConsumptionObject_ObjectType" ManuallyRouted="false" />
+        <AssociationConnector Association="EnergyMeteringSystemModel.FK_ConsumptionObject_Street" ManuallyRouted="false" />
+        <AssociationConnector Association="EnergyMeteringSystemModel.FK_Meter_ConsumptionObject" ManuallyRouted="false" />
+        <AssociationConnector Association="EnergyMeteringSystemModel.FK_MeterReplacementHistory_ConsumptionObject" ManuallyRouted="false" />
+        <AssociationConnector Association="EnergyMeteringSystemModel.FK_SPCO_ConsumptionObject" ManuallyRouted="false" />
+        <AssociationConnector Association="EnergyMeteringSystemModel.FK_SupplyPoint_EnergySource" ManuallyRouted="false" />
+        <AssociationConnector Association="EnergyMeteringSystemModel.FK_Meter_MeterStatus" ManuallyRouted="false" />
+        <AssociationConnector Association="EnergyMeteringSystemModel.FK_Meter_MeterType" ManuallyRouted="false" />
+        <AssociationConnector Association="EnergyMeteringSystemModel.FK_MeterDataHistory_Meter" ManuallyRouted="false" />
+        <AssociationConnector Association="EnergyMeteringSystemModel.FK_MeterReading_Meter" ManuallyRouted="false" />
+        <AssociationConnector Association="EnergyMeteringSystemModel.FK_MeterReplacementHistory_NewMeter" ManuallyRouted="false" />
+        <AssociationConnector Association="EnergyMeteringSystemModel.FK_MeterReplacementHistory_OldMeter" ManuallyRouted="false" />
+        <AssociationConnector Association="EnergyMeteringSystemModel.FK_MeterDataHistory_User" ManuallyRouted="false" />
+        <AssociationConnector Association="EnergyMeteringSystemModel.FK_MeterReading_ReadingStatus" ManuallyRouted="false" />
+        <AssociationConnector Association="EnergyMeteringSystemModel.FK_MeterReading_RejectionReason" ManuallyRouted="false" />
+        <AssociationConnector Association="EnergyMeteringSystemModel.FK_MeterReading_User" ManuallyRouted="false" />
+        <AssociationConnector Association="EnergyMeteringSystemModel.FK_VerificationInterval_MeterType" ManuallyRouted="false" />
+        <AssociationConnector Association="EnergyMeteringSystemModel.FK_SPCO_SupplyPoint" ManuallyRouted="false" />
+        <AssociationConnector Association="EnergyMeteringSystemModel.FK_User_UserRole" ManuallyRouted="false" />
+      </Diagram>
+    </edmx:Diagrams>
+  </edmx:Designer>
+</edmx:Edmx>
