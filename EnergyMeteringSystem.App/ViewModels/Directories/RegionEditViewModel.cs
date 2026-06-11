@@ -1,26 +1,25 @@
-﻿using System;
-using System.Threading.Tasks;
-using System.Windows;
-using EnergyMeteringSystem.App.Commands;
+﻿using EnergyMeteringSystem.App.Commands;
 using EnergyMeteringSystem.App.ViewModels.Base;
 using EnergyMeteringSystem.Core.Models.DTO;
 using EnergyMeteringSystem.Data.Repositories;
+using System;
+using System.Windows;
 
 namespace EnergyMeteringSystem.App.ViewModels.Directories
 {
-    public class RegionEditViewModel : EditViewModelBase<RegionDto, RegionRepository>
+    public class RegionEditViewModel : ViewModelBase
     {
+        private readonly RegionRepository _regionRepository;
         private string _name;
         private string _code;
+        private string _errorMessage;
+
+        public event EventHandler OnRegionSaved;  // ← ДОБАВЛЕНО!
 
         public string Name
         {
             get => _name;
-            set
-            {
-                SetProperty(ref _name, value);
-                (SaveCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
-            }
+            set => SetProperty(ref _name, value);
         }
 
         public string Code
@@ -29,43 +28,61 @@ namespace EnergyMeteringSystem.App.ViewModels.Directories
             set => SetProperty(ref _code, value);
         }
 
-        public RegionEditViewModel() : base(new RegionRepository(), null)
+        public string ErrorMessage
         {
-            Title = "Добавление региона";
+            get => _errorMessage;
+            set => SetProperty(ref _errorMessage, value);
         }
 
-        public RegionEditViewModel(RegionDto existingRegion) : base(new RegionRepository(), existingRegion)
+        public bool HasError => !string.IsNullOrEmpty(ErrorMessage);
+
+        public RelayCommand SaveCommand { get; }
+        public RelayCommand CancelCommand { get; }
+
+        public RegionEditViewModel()
         {
-            Title = "Редактирование региона";
+            _regionRepository = new RegionRepository();
+            SaveCommand = new RelayCommand(_ => Save(), _ => CanSave());
+            CancelCommand = new RelayCommand(_ => Cancel());
         }
 
-        protected override void LoadItem(RegionDto item)
-        {
-            Name = item.Name;
-            Code = item.Code;
-        }
-
-        protected override RegionDto GetDto()
-        {
-            return new RegionDto
-            {
-                Id = _originalItem?.Id ?? 0,
-                Name = Name?.Trim(),
-                Code = Code?.Trim()
-            };
-        }
-
-        protected override async Task SaveToRepositoryAsync(RegionDto dto)
-        {
-            if (IsEditMode)
-                await _repository.UpdateAsync(dto);
-            else
-                await _repository.AddAsync(dto);
-        }
-
-        protected override bool CanSave()
+        private bool CanSave()
         {
             return !string.IsNullOrWhiteSpace(Name);
+        }
+
+        private void Save()
+        {
+            try
+            {
+                ErrorMessage = string.Empty;
+
+                var dto = new RegionDto
+                {
+                    Name = Name.Trim(),
+                    Code = Code?.Trim()
+                };
+
+                _regionRepository.Add(dto);
+                OnRegionSaved?.Invoke(this, EventArgs.Empty);
+            }
+            catch (InvalidOperationException ex)
+            {
+                ErrorMessage = ex.Message;
+                MessageBox.Show(ErrorMessage, "Ошибка",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Ошибка при сохранении: {ex.Message}";
+                MessageBox.Show(ErrorMessage, "Ошибка",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void Cancel()
+        {
+            OnRegionSaved?.Invoke(this, EventArgs.Empty);
         }
     }
 }

@@ -288,14 +288,14 @@
     <Compile Include="Views\Meters\MeterListView.xaml.cs">
       <DependentUpon>MeterListView.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Views\Meters\MetersForObjectView.xaml.cs">
+      <DependentUpon>MetersForObjectView.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\Objects\ConsumptionObjectEditView.xaml.cs">
       <DependentUpon>ConsumptionObjectEditView.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\Objects\ConsumptionObjectListView.xaml.cs">
       <DependentUpon>ConsumptionObjectListView.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="Views\Meters\MetersForObjectView.xaml.cs">
-      <DependentUpon>MetersForObjectView.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\Objects\ObjectMetersView.xaml.cs">
       <DependentUpon>ObjectMetersView.xaml</DependentUpon>
@@ -391,15 +391,15 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="Views\Meters\MetersForObjectView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Views\Objects\ConsumptionObjectEditView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Views\Objects\ConsumptionObjectListView.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="Views\Meters\MetersForObjectView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

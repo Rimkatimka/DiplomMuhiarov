@@ -77,19 +77,49 @@ namespace EnergyMeteringSystem.Data.Repositories
 
             return await CacheService.GetOrAddAsync(cacheKey, async () =>
             {
-                var s = await Query<Street>()
-                    .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+                try
+                {
+                    System.Diagnostics.Debug.WriteLine($"GetByIdAsync: ищем улицу с ID={id}");
 
-                return s == null
-                    ? null
-                    : new StreetDto
+                    var s = await Query<Street>()
+                        .Include(x => x.City)
+                        .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+
+                    if (s == null)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"GetByIdAsync: улица с ID={id} не найдена");
+                        return null;
+                    }
+
+                    System.Diagnostics.Debug.WriteLine($"GetByIdAsync: найдена улица '{s.Name}', CityId={s.CityId}");
+
+                    string cityName = string.Empty;
+                    if (s.City != null)
+                    {
+                        cityName = s.City.Name;
+                        System.Diagnostics.Debug.WriteLine($"GetByIdAsync: город '{cityName}'");
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine($"GetByIdAsync: City == null, пробуем загрузить отдельно");
+                        var city = await Query<City>().FirstOrDefaultAsync(c => c.Id == s.CityId, cancellationToken);
+                        cityName = city?.Name ?? "Неизвестно";
+                    }
+
+                    return new StreetDto
                     {
                         Id = s.Id,
                         Name = s.Name,
                         CityId = s.CityId,
-                        CityName = s.City.Name,
+                        CityName = cityName,
                         PostalCode = s.PostalCode
                     };
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"GetByIdAsync ОШИБКА: {ex.Message}");
+                    throw;
+                }
             }, CACHE_MINUTES);
         }
 

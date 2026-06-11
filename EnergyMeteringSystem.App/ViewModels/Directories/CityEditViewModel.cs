@@ -1,25 +1,28 @@
-﻿using System;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Threading.Tasks;
-using EnergyMeteringSystem.App.Commands;
+﻿using EnergyMeteringSystem.App.Commands;
 using EnergyMeteringSystem.App.ViewModels.Base;
 using EnergyMeteringSystem.Core.Models.DTO;
 using EnergyMeteringSystem.Data.Repositories;
+using System;
+using System.Collections.ObjectModel;
+using System.Linq;
 
 namespace EnergyMeteringSystem.App.ViewModels.Directories
 {
-    public class CityEditViewModel : EditViewModelBase<CityDto, CityRepository>
+    public class CityEditViewModel : ViewModelBase
     {
+        private readonly CityRepository _cityRepository;
         private readonly RegionRepository _regionRepository;
-        private ObservableCollection<RegionDto> _regions;
+        private string _name;
         private RegionDto _selectedRegion;
+        private ObservableCollection<RegionDto> _regions;
         private int _preselectedRegionId;
 
-        public ObservableCollection<RegionDto> Regions
+        public event EventHandler OnCitySaved;  // ← ЭТО СОБЫТИЕ
+
+        public string Name
         {
-            get => _regions;
-            set => SetProperty(ref _regions, value);
+            get => _name;
+            set => SetProperty(ref _name, value);
         }
 
         public RegionDto SelectedRegion
@@ -28,89 +31,61 @@ namespace EnergyMeteringSystem.App.ViewModels.Directories
             set => SetProperty(ref _selectedRegion, value);
         }
 
-        public string Name
+        public ObservableCollection<RegionDto> Regions
         {
-            get => _originalItem?.Name ?? string.Empty;
-            set
-            {
-                if (_originalItem != null)
-                    _originalItem.Name = value;
-                OnPropertyChanged();
-                (SaveCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
-            }
+            get => _regions;
+            set => SetProperty(ref _regions, value);
         }
 
-        // Конструктор для добавления города
+        public RelayCommand SaveCommand { get; }
+        public RelayCommand CancelCommand { get; }
+
         public CityEditViewModel(int preselectedRegionId = 0)
-            : base(new CityRepository(), null)
         {
+            _cityRepository = new CityRepository();
             _regionRepository = new RegionRepository();
             Regions = new ObservableCollection<RegionDto>();
             _preselectedRegionId = preselectedRegionId;
-            Title = "Добавление города";
 
-            _ = LoadRegionsAsync();
+            SaveCommand = new RelayCommand(_ => Save(), _ => CanSave());
+            CancelCommand = new RelayCommand(_ => Cancel());
+
+            LoadRegions();
         }
 
-        // Конструктор для редактирования (если понадобится)
-        public CityEditViewModel(CityDto existingCity)
-            : base(new CityRepository(), existingCity)
+        private void LoadRegions()
         {
-            _regionRepository = new RegionRepository();
-            Regions = new ObservableCollection<RegionDto>();
-            Title = "Редактирование города";
+            var regions = _regionRepository.GetAll();
+            Regions.Clear();
+            foreach (var region in regions)
+                Regions.Add(region);
 
-            _ = LoadRegionsAsync();
-        }
-
-        private async Task LoadRegionsAsync()
-        {
-            await ExecuteAsync(async () =>
+            if (_preselectedRegionId > 0)
             {
-                var regions = await _regionRepository.GetAllAsync();
-                Regions.Clear();
-                foreach (var region in regions)
-                    Regions.Add(region);
-
-                if (_preselectedRegionId > 0)
-                {
-                    SelectedRegion = Regions.FirstOrDefault(r => r.Id == _preselectedRegionId);
-                }
-                else if (_originalItem != null && _originalItem.RegionId > 0)
-                {
-                    SelectedRegion = Regions.FirstOrDefault(r => r.Id == _originalItem.RegionId);
-                }
-            }, "Ошибка загрузки регионов");
+                SelectedRegion = Regions.FirstOrDefault(r => r.Id == _preselectedRegionId);
+            }
         }
 
-        protected override void LoadItem(CityDto item)
-        {
-            Name = item.Name;
-            // Регион загрузится асинхронно после загрузки списка
-        }
-
-        protected override CityDto GetDto()
-        {
-            return new CityDto
-            {
-                Id = _originalItem?.Id ?? 0,
-                Name = Name,
-                RegionId = SelectedRegion?.Id ?? 0,
-                RegionName = SelectedRegion?.Name
-            };
-        }
-
-        protected override async Task SaveToRepositoryAsync(CityDto dto)
-        {
-            if (IsEditMode)
-                await _repository.UpdateAsync(dto);
-            else
-                await _repository.AddAsync(dto);
-        }
-
-        protected override bool CanSave()
+        private bool CanSave()
         {
             return !string.IsNullOrWhiteSpace(Name) && SelectedRegion != null;
+        }
+
+        private void Save()
+        {
+            var dto = new CityDto
+            {
+                Name = Name,
+                RegionId = SelectedRegion.Id,
+                RegionName = SelectedRegion.Name
+            };
+            _cityRepository.Add(dto);
+            OnCitySaved?.Invoke(this, EventArgs.Empty);  // ← ВЫЗОВ СОБЫТИЯ
+        }
+
+        private void Cancel()
+        {
+            OnCitySaved?.Invoke(this, EventArgs.Empty);  // ← ВЫЗОВ СОБЫТИЯ
         }
     }
 }

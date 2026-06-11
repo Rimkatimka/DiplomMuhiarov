@@ -49,7 +49,6 @@ namespace EnergyMeteringSystem.App.ViewModels.Base
         }
 
         // Свойства для обратной совместимости (ObservableCollection)
-        // Используются в старых ViewModel, которые ожидают ObservableCollection
         public ObservableCollection<TModel> Items => new ObservableCollection<TModel>(ItemsList);
         public ObservableCollection<TModel> FilteredItems => new ObservableCollection<TModel>(FilteredItemsList);
 
@@ -73,8 +72,9 @@ namespace EnergyMeteringSystem.App.ViewModels.Base
             {
                 if (SetProperty(ref _selectedItem, value))
                 {
-                    (EditCommand as RelayCommand)?.RaiseCanExecuteChanged();
-                    (DeleteCommand as RelayCommand)?.RaiseCanExecuteChanged();
+                    System.Diagnostics.Debug.WriteLine($"ListViewModelBase.SelectedItem изменён");
+                    (EditCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
+                    (DeleteCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
                 }
             }
         }
@@ -124,13 +124,13 @@ namespace EnergyMeteringSystem.App.ViewModels.Base
         public bool HasFilteredItems => FilteredItemsList?.Count > 0;
 
         // Команды
-        public ICommand RefreshCommand { get; protected set; }
-        public ICommand AddCommand { get; protected set; }
-        public ICommand EditCommand { get; protected set; }
-        public ICommand DeleteCommand { get; protected set; }
-        public ICommand NextPageCommand { get; protected set; }
-        public ICommand PrevPageCommand { get; protected set; }
-        public ICommand ClearSearchCommand { get; protected set; }
+        public AsyncRelayCommand RefreshCommand { get; protected set; }
+        public AsyncRelayCommand AddCommand { get; protected set; }
+        public AsyncRelayCommand EditCommand { get; protected set; }
+        public AsyncRelayCommand DeleteCommand { get; protected set; }
+        public AsyncRelayCommand NextPageCommand { get; protected set; }
+        public AsyncRelayCommand PrevPageCommand { get; protected set; }
+        public RelayCommand ClearSearchCommand { get; protected set; }
 
         protected ListViewModelBase(TRepository repository)
         {
@@ -148,7 +148,8 @@ namespace EnergyMeteringSystem.App.ViewModels.Base
             PrevPageCommand = new AsyncRelayCommand(async () => { if (HasPreviousPage) CurrentPage--; });
             ClearSearchCommand = new RelayCommand(_ => SearchText = string.Empty);
 
-            System.Diagnostics.Debug.WriteLine("ConsumptionObjectListViewModel конструктор");
+            System.Diagnostics.Debug.WriteLine($"ListViewModelBase конструктор для {typeof(TModel).Name}");
+
             // Асинхронная загрузка данных
             _ = LoadDataAsync();
         }

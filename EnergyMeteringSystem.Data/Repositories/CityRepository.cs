@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
 using System.Threading;
@@ -14,6 +15,7 @@ namespace EnergyMeteringSystem.Data.Repositories
         // Константы для кэширования
         private const string CACHE_KEY_ALL_CITIES = "AllCities";
         private const string CACHE_KEY_CITIES_BY_REGION = "CitiesByRegion_{0}";
+        private const string CACHE_KEY_BY_ID = "City_{0}";  // ← ДОБАВИТЬ ЭТУ СТРОКУ
         private const int CACHE_MINUTES = 60;
 
         // Синхронный (для совместимости)
@@ -43,23 +45,51 @@ namespace EnergyMeteringSystem.Data.Repositories
         // ✅ ОПТИМИЗИРОВАННЫЙ GetById с кэшированием
         public async Task<CityDto> GetByIdAsync(int id, CancellationToken cancellationToken = default)
         {
-            string cacheKey = $"City_{id}";
+            string cacheKey = string.Format(CACHE_KEY_BY_ID, id);
 
             return await CacheService.GetOrAddAsync(cacheKey, async () =>
             {
-                var c = await Query<City>()
-                    .Include(c => c.Region)
-                    .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
-
-                if (c == null) return null;
-
-                return new CityDto
+                try
                 {
-                    Id = c.Id,
-                    Name = c.Name,
-                    RegionId = c.RegionId,
-                    RegionName = c.Region?.Name ?? string.Empty
-                };
+                    System.Diagnostics.Debug.WriteLine($"GetByIdAsync: ищем город с ID={id}");
+
+                    var c = await Query<City>()
+                        .Include(x => x.Region)
+                        .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+
+                    if (c == null)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"GetByIdAsync: город с ID={id} не найден");
+                        return null;
+                    }
+
+                    System.Diagnostics.Debug.WriteLine($"GetByIdAsync: найден город '{c.Name}', RegionId={c.RegionId}");
+
+                    string regionName = string.Empty;
+                    if (c.Region != null)
+                    {
+                        regionName = c.Region.Name;
+                        System.Diagnostics.Debug.WriteLine($"GetByIdAsync: регион '{regionName}'");
+                    }
+                    else
+                    {
+                        var region = await Query<Region>().FirstOrDefaultAsync(r => r.Id == c.RegionId, cancellationToken);
+                        regionName = region?.Name ?? "Неизвестно";
+                    }
+
+                    return new CityDto
+                    {
+                        Id = c.Id,
+                        Name = c.Name,
+                        RegionId = c.RegionId,
+                        RegionName = regionName
+                    };
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"GetByIdAsync ОШИБКА: {ex.Message}");
+                    throw;
+                }
             }, CACHE_MINUTES);
         }
 

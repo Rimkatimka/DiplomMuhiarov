@@ -16,15 +16,11 @@
         public decimal? TotalArea { get; set; }
         public int? ResidentCount { get; set; }
 
-        // Полный адрес с городом
-        public string Address => $"{City}, {Street}, д. {HouseNumber}" +
-            (string.IsNullOrEmpty(ApartmentNumber) ? "" : $", кв. {ApartmentNumber}");
+        public string Address => $"{Region}, {City}, {Street}, д. {HouseNumber}" +
+            (string.IsNullOrEmpty(ApartmentNumber) ? "" : $"/{ApartmentNumber}");
 
         public string ShortAddress => $"{City}, {Street}, {HouseNumber}" +
             (string.IsNullOrEmpty(ApartmentNumber) ? "" : $"-{ApartmentNumber}");
-
-        public string FullAddress => $"{Region}, {City}, {Street}, {HouseNumber}" +
-            (string.IsNullOrEmpty(ApartmentNumber) ? "" : $"/{ApartmentNumber}");
 
         public string FullInfo => $"{ShortAddress} ({ObjectTypeName})";
     }

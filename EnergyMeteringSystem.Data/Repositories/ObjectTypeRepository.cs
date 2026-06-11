@@ -26,18 +26,27 @@ namespace EnergyMeteringSystem.Data.Repositories
         {
             return await CacheService.GetOrAddAsync(CACHE_KEY_ALL, async () =>
             {
+                // ✅ Сначала получаем данные из БД
                 var data = await Query<ObjectType>()
-                    .Select(o => new DirectoryDto
+                    .Select(o => new
                     {
-                        Id = o.Id,
-                        Name = o.Name,
-                        Description = o.NormConsumption.HasValue ? $"Норма: {o.NormConsumption.Value:F2} кВт·ч/мес" : null,
-                        IsActive = true
+                        o.Id,
+                        o.Name,
+                        o.NormConsumption
                     })
                     .OrderBy(o => o.Name)
                     .ToListAsync(cancellationToken);
 
-                return data;
+                // ✅ Форматируем Description уже в памяти (после получения из БД)
+                return data.Select(o => new DirectoryDto
+                {
+                    Id = o.Id,
+                    Name = o.Name,
+                    Description = o.NormConsumption.HasValue
+                        ? "Норма: " + o.NormConsumption.Value.ToString("F2") + " кВт·ч/мес"
+                        : null,
+                    IsActive = true
+                }).ToList();
             }, CACHE_MINUTES);
         }
 
@@ -55,15 +64,17 @@ namespace EnergyMeteringSystem.Data.Repositories
                 var entity = await Query<ObjectType>()
                     .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
 
-                return entity == null
-                    ? null
-                    : new DirectoryDto
-                    {
-                        Id = entity.Id,
-                        Name = entity.Name,
-                        Description = entity.NormConsumption.HasValue ? $"Норма: {entity.NormConsumption.Value:F2} кВт·ч/мес" : null,
-                        IsActive = true
-                    };
+                if (entity == null) return null;
+
+                return new DirectoryDto
+                {
+                    Id = entity.Id,
+                    Name = entity.Name,
+                    Description = entity.NormConsumption.HasValue
+                        ? "Норма: " + entity.NormConsumption.Value.ToString("F2") + " кВт·ч/мес"
+                        : null,
+                    IsActive = true
+                };
             }, CACHE_MINUTES);
         }
 

@@ -136,7 +136,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
             await ExecuteAsync(async () =>
             {
                 // Получаем все данные для графика
-                var chartData = await _dashboardRepository.GetAllChartDataAsync();
+                var chartData = await _dashboardRepository.GetChartDataAsync(DateTime.Today.Year);
 
                 System.Diagnostics.Debug.WriteLine($"GetAllChartDataAsync вернул {chartData?.Count ?? 0} точек");
 
