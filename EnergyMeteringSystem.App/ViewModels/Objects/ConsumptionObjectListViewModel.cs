@@ -3,7 +3,6 @@ using EnergyMeteringSystem.App.ViewModels.Base;
 using EnergyMeteringSystem.Core.Models.DTO;
 using EnergyMeteringSystem.Data.Repositories;
 using System;
-using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using System.Windows;
 
@@ -13,17 +12,9 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
     {
         public AsyncRelayCommand<ConsumptionObjectDto> ShowMetersCommand { get; }
 
-        // Свойства для обратной совместимости с XAML
-        public ObservableCollection<ConsumptionObjectDto> FilteredObjects => FilteredItems;
-        public ConsumptionObjectDto SelectedObject
-        {
-            get => SelectedItem;
-            set => SelectedItem = value;
-        }
-        public ObservableCollection<ConsumptionObjectDto> Objects => Items;
-
         public ConsumptionObjectListViewModel() : base(new ConsumptionObjectRepository())
         {
+            System.Diagnostics.Debug.WriteLine("ConsumptionObjectListViewModel конструктор");
             ShowMetersCommand = new AsyncRelayCommand<ConsumptionObjectDto>(async obj => await ShowMetersAsync(obj));
         }
 
@@ -31,11 +22,33 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
         {
             await ExecuteAsync(async () =>
             {
+                System.Diagnostics.Debug.WriteLine("LoadDataAsync START");
+
                 var list = await _repository.GetAllAsync();
-                Items.Clear();
-                foreach (var obj in list)
-                    Items.Add(obj);
-                ApplyFilter();
+
+                System.Diagnostics.Debug.WriteLine($"Получено {list.Count} объектов");
+
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    // Очищаем и заполняем ItemsList
+                    ItemsList.Clear();
+                    foreach (var obj in list)
+                    {
+                        ItemsList.Add(obj);
+                    }
+
+                    System.Diagnostics.Debug.WriteLine($"ItemsList заполнен: {ItemsList.Count} объектов");
+
+                    // ✅ ВАЖНО: принудительно вызываем ApplyFilter после заполнения
+                    ApplyFilter();
+
+                    System.Diagnostics.Debug.WriteLine($"После ApplyFilter: FilteredItemsList.Count = {FilteredItemsList.Count}");
+
+                    // Принудительно обновляем UI
+                    OnPropertyChanged(nameof(FilteredItemsList));
+                    OnPropertyChanged(nameof(FilteredItems));
+                    OnPropertyChanged(nameof(HasFilteredItems));
+                });
             }, "Ошибка загрузки объектов");
         }
 
@@ -45,7 +58,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
             var editView = new Views.Objects.ConsumptionObjectEditView(editViewModel);
             editView.Owner = Application.Current.MainWindow;
 
-            editViewModel.OnSaved += async (s, e) =>
+            editViewModel.OnObjectSaved += async (s, e) =>
             {
                 await LoadDataAsync();
                 editView.Close();
@@ -62,7 +75,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
             var editView = new Views.Objects.ConsumptionObjectEditView(editViewModel);
             editView.Owner = Application.Current.MainWindow;
 
-            editViewModel.OnSaved += async (s, e) =>
+            editViewModel.OnObjectSaved += async (s, e) =>
             {
                 await LoadDataAsync();
                 editView.Close();
@@ -87,8 +100,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
             if (SelectedItem == null) return;
 
             var result = MessageBox.Show(
-                $"Удалить объект \"{SelectedItem.Address}\"?\n\n" +
-                "Все связанные данные также будут удалены!",
+                $"Удалить объект \"{SelectedItem.Address}\"?\n\nВсе связанные данные также будут удалены!",
                 "Подтверждение удаления",
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Warning);
@@ -105,7 +117,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
 
         protected override bool ItemMatchesSearch(ConsumptionObjectDto item, string searchText)
         {
-            return item.Address.Contains(searchText);
+            return item.Address?.Contains(searchText) == true;
         }
     }
 }

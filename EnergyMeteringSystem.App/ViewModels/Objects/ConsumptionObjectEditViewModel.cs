@@ -19,7 +19,8 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
         private readonly CityRepository _cityRepository;
         private readonly RegionRepository _regionRepository;
 
-        public event EventHandler OnSaved;
+        public event EventHandler OnObjectSaved;
+
         private ConsumptionObjectDto _object;
         private StreetDto _selectedStreet;
         private ObjectTypeDto _selectedObjectType;
@@ -31,31 +32,10 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
         private CityDto _selectedCity;
         private ObservableCollection<CityDto> _cities;
         private ObservableCollection<StreetDto> _streets;
-
-        public event EventHandler OnObjectSaved;
-
-        public ObservableCollection<StreetDto> Streets { get; set; }
-        public ObservableCollection<ObjectTypeDto> ObjectTypes { get; set; }
-
-        public ObservableCollection<CityDto> Cities
-        {
-            get => _cities;
-            set => SetProperty(ref _cities, value);
-        }
-
-        public ObservableCollection<StreetDto> StreetsList
-        {
-            get => _streets;
-            set => SetProperty(ref _streets, value);
-        }
-
-        public bool IsApartmentNumberEnabled => !IsPrivateHouse;
-
-        public AsyncRelayCommand AddCityCommand { get; }
-        public AsyncRelayCommand AddStreetCommand { get; }
-
         private RegionDto _selectedRegion;
         private ObservableCollection<RegionDto> _regions;
+
+        public ObservableCollection<ObjectTypeDto> ObjectTypes { get; set; }
 
         public ObservableCollection<RegionDto> Regions
         {
@@ -68,21 +48,17 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
             get => _selectedRegion;
             set
             {
-                if (SetProperty(ref _selectedRegion, value))
+                if (SetProperty(ref _selectedRegion, value) && value != null)
                 {
-                    if (value != null)
-                    {
-                        _ = LoadCitiesByRegionAsync(value.Id);
-                    }
-                    else
-                    {
-                        Cities?.Clear();
-                        StreetsList?.Clear();
-                        SelectedCity = null;
-                        SelectedStreet = null;
-                    }
+                    _ = LoadCitiesByRegionAsync(value.Id);
                 }
             }
+        }
+
+        public ObservableCollection<CityDto> Cities
+        {
+            get => _cities;
+            set => SetProperty(ref _cities, value);
         }
 
         public CityDto SelectedCity
@@ -90,19 +66,17 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
             get => _selectedCity;
             set
             {
-                if (SetProperty(ref _selectedCity, value))
+                if (SetProperty(ref _selectedCity, value) && value != null)
                 {
-                    if (value != null)
-                    {
-                        _ = LoadStreetsByCityAsync(value.Id);
-                    }
-                    else
-                    {
-                        StreetsList?.Clear();
-                        SelectedStreet = null;
-                    }
+                    _ = LoadStreetsByCityAsync(value.Id);
                 }
             }
+        }
+
+        public ObservableCollection<StreetDto> StreetsList
+        {
+            get => _streets;
+            set => SetProperty(ref _streets, value);
         }
 
         public StreetDto SelectedStreet
@@ -110,32 +84,6 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
             get => _selectedStreet;
             set => SetProperty(ref _selectedStreet, value);
         }
-
-        public bool IsPrivateHouse
-        {
-            get => SelectedObjectType?.Name == "Частный дом";
-        }
-
-        public int? ResidentCount
-        {
-            get => _residentCount;
-            set
-            {
-                if (SetProperty(ref _residentCount, value))
-                {
-                    ValidateResidentCount();
-                    (SaveCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
-                }
-            }
-        }
-
-        public string ResidentCountError
-        {
-            get => _residentCountError;
-            set => SetProperty(ref _residentCountError, value);
-        }
-
-        public bool HasResidentCountError => !string.IsNullOrEmpty(ResidentCountError);
 
         public ObjectTypeDto SelectedObjectType
         {
@@ -146,15 +94,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
                 {
                     OnPropertyChanged(nameof(IsPrivateHouse));
                     OnPropertyChanged(nameof(IsApartmentNumberEnabled));
-
-                    if (IsPrivateHouse)
-                    {
-                        ApartmentNumber = string.Empty;
-                        OnPropertyChanged(nameof(ApartmentNumber));
-                    }
-
                     ValidateResidentCount();
-                    (SaveCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
                 }
             }
         }
@@ -162,11 +102,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
         public string HouseNumber
         {
             get => _houseNumber;
-            set
-            {
-                SetProperty(ref _houseNumber, value);
-                (SaveCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
-            }
+            set => SetProperty(ref _houseNumber, value);
         }
 
         public string ApartmentNumber
@@ -182,15 +118,36 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
             {
                 SetProperty(ref _totalArea, value);
                 ValidateResidentCount();
-                (SaveCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
             }
         }
 
-        public AsyncRelayCommand AddRegionCommand { get; }
+        public int? ResidentCount
+        {
+            get => _residentCount;
+            set
+            {
+                SetProperty(ref _residentCount, value);
+                ValidateResidentCount();
+            }
+        }
+
+        public string ResidentCountError
+        {
+            get => _residentCountError;
+            set => SetProperty(ref _residentCountError, value);
+        }
+
+        public bool HasResidentCountError => !string.IsNullOrEmpty(ResidentCountError);
+        public bool IsPrivateHouse => SelectedObjectType?.Name == "Частный дом";
+        public bool IsApartmentNumberEnabled => !IsPrivateHouse;
+
         public bool IsEditMode { get; private set; }
 
         public AsyncRelayCommand SaveCommand { get; }
         public RelayCommand CancelCommand { get; }
+        public AsyncRelayCommand AddRegionCommand { get; }
+        public AsyncRelayCommand AddCityCommand { get; }
+        public AsyncRelayCommand AddStreetCommand { get; }
 
         public ConsumptionObjectEditViewModel(ConsumptionObjectDto existingObject = null)
         {
@@ -203,7 +160,6 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
             Regions = new ObservableCollection<RegionDto>();
             Cities = new ObservableCollection<CityDto>();
             StreetsList = new ObservableCollection<StreetDto>();
-            Streets = new ObservableCollection<StreetDto>();
             ObjectTypes = new ObservableCollection<ObjectTypeDto>();
 
             SaveCommand = new AsyncRelayCommand(async () => await SaveAsync(), () => CanSave());
@@ -260,7 +216,6 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
             Cities.Clear();
             foreach (var city in cities)
                 Cities.Add(city);
-
             SelectedCity = null;
         }
 
@@ -270,7 +225,6 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
             StreetsList.Clear();
             foreach (var street in streets)
                 StreetsList.Add(street);
-
             SelectedStreet = null;
         }
 
@@ -283,12 +237,10 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
                 if (city != null)
                 {
                     SelectedRegion = Regions.FirstOrDefault(r => r.Id == city.RegionId);
-
                     if (SelectedRegion != null)
                     {
                         await LoadCitiesByRegionAsync(SelectedRegion.Id);
                         SelectedCity = Cities.FirstOrDefault(c => c.Id == city.Id);
-
                         if (SelectedCity != null)
                         {
                             await LoadStreetsByCityAsync(SelectedCity.Id);
@@ -297,7 +249,6 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
                     }
                 }
             }
-
             SelectedObjectType = ObjectTypes.FirstOrDefault(t => t.Id == obj.ObjectTypeId);
             HouseNumber = obj.HouseNumber;
             ApartmentNumber = obj.ApartmentNumber;
@@ -314,15 +265,11 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
             editViewModel.OnSaved += async (s, e) =>
             {
                 await LoadRegionsAsync();
-
                 var addedRegion = Regions.FirstOrDefault(r => r.Name == editViewModel.Name);
                 if (addedRegion != null)
-                {
                     SelectedRegion = addedRegion;
-                }
                 editView.Close();
             };
-
             editView.ShowDialog();
         }
 
@@ -330,8 +277,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
         {
             if (SelectedRegion == null)
             {
-                MessageBox.Show("Сначала выберите регион", "Ошибка",
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("Сначала выберите регион", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
@@ -342,15 +288,11 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
             editViewModel.OnSaved += async (s, e) =>
             {
                 await LoadCitiesByRegionAsync(SelectedRegion.Id);
-
                 var addedCity = Cities.FirstOrDefault(c => c.Name == editViewModel.Name);
                 if (addedCity != null)
-                {
                     SelectedCity = addedCity;
-                }
                 editView.Close();
             };
-
             editView.ShowDialog();
         }
 
@@ -358,8 +300,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
         {
             if (SelectedCity == null)
             {
-                MessageBox.Show("Сначала выберите город", "Ошибка",
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("Сначала выберите город", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
@@ -370,15 +311,11 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
             editViewModel.OnStreetSaved += async (s, e) =>
             {
                 await LoadStreetsByCityAsync(SelectedCity.Id);
-
                 var addedStreet = StreetsList.FirstOrDefault(s => s.Name == editViewModel.Name);
                 if (addedStreet != null)
-                {
                     SelectedStreet = addedStreet;
-                }
                 editView.Close();
             };
-
             editView.ShowDialog();
         }
 
@@ -389,9 +326,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
             if (!ResidentCount.HasValue)
             {
                 if (SelectedObjectType?.Name != "Магазин")
-                {
                     ResidentCountError = "Укажите количество проживающих";
-                }
                 return;
             }
 
@@ -401,59 +336,23 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
                 return;
             }
 
-            decimal? totalArea = TotalArea;
-            if (totalArea.HasValue && totalArea > 0)
+            if (TotalArea > 0)
             {
-                int maxResidents = CalculateMaxResidents(totalArea.Value);
-
-                if (maxResidents < 1)
-                {
-                    if (SelectedObjectType?.Name == "Частный дом")
-                    {
-                        ResidentCountError = $"Для частного дома минимальная площадь должна быть не менее 18 м². " +
-                                             $"Ваша площадь: {totalArea.Value} м². Увеличьте площадь или измените тип объекта.";
-                    }
-                    else
-                    {
-                        ResidentCountError = $"Для данного типа объекта минимальная площадь должна быть не менее 12 м². " +
-                                             $"Ваша площадь: {totalArea.Value} м².";
-                    }
-                    return;
-                }
-
+                int maxResidents = CalculateMaxResidents(TotalArea);
                 if (ResidentCount.Value > maxResidents)
                 {
-                    if (SelectedObjectType?.Name == "Частный дом")
-                    {
-                        ResidentCountError = $"Согласно санитарным нормам, для частного дома требуется не менее 18 м² на человека.\n" +
-                                             $"Ваша площадь: {totalArea.Value} м². Максимум жильцов: {maxResidents}.\n" +
-                                             $"Укажите меньше жильцов или увеличьте площадь.";
-                    }
-                    else
-                    {
-                        ResidentCountError = $"Согласно санитарным нормам, на одного человека требуется не менее 12 м².\n" +
-                                             $"Ваша площадь: {totalArea.Value} м². Максимум жильцов: {maxResidents}.\n" +
-                                             $"Укажите меньше жильцов или увеличьте площадь.";
-                    }
+                    string normText = IsPrivateHouse ? "18 м²" : "12 м²";
+                    ResidentCountError = $"Согласно санитарным нормам, требуется не менее {normText} на человека.\n" +
+                                         $"Ваша площадь: {TotalArea:F1} м². Максимум жильцов: {maxResidents}.\n" +
+                                         $"Укажите меньше жильцов или увеличьте площадь.";
                 }
-            }
-            else if (ResidentCount.Value > 10)
-            {
-                ResidentCountError = $"Указано {ResidentCount.Value} человек. " +
-                                     $"Пожалуйста, укажите общую площадь помещения для проверки санитарных норм.";
             }
         }
 
         private int CalculateMaxResidents(decimal totalArea)
         {
-            if (SelectedObjectType?.Name == "Частный дом")
-            {
-                return Math.Max(1, (int)Math.Floor(totalArea / 18m));
-            }
-            else
-            {
-                return (int)Math.Floor(totalArea / 12m);
-            }
+            decimal normPerPerson = IsPrivateHouse ? 18m : 12m;
+            return Math.Max(1, (int)Math.Floor(totalArea / normPerPerson));
         }
 
         private bool CanSave()
@@ -469,15 +368,13 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
         private async Task SaveAsync()
         {
             ValidateResidentCount();
-
             if (!string.IsNullOrEmpty(ResidentCountError))
             {
-                MessageBox.Show(ResidentCountError, "Ошибка",
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show(ResidentCountError, "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
-            ConsumptionObjectDto dto = new()
+            var dto = new ConsumptionObjectDto
             {
                 Id = _object?.Id ?? 0,
                 StreetId = SelectedStreet.Id,
@@ -489,12 +386,11 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
             };
 
             if (IsEditMode)
-                _objectRepository.Update(dto);
+                await _objectRepository.UpdateAsync(dto);
             else
-                _objectRepository.Add(dto);
+                await _objectRepository.AddAsync(dto);
 
-            // ✅ ДОБАВИТЬ ЭТУ СТРОКУ
-            OnSaved?.Invoke(this, EventArgs.Empty);
+            OnObjectSaved?.Invoke(this, EventArgs.Empty);
         }
 
         private void Cancel()

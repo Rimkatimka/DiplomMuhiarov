@@ -17,14 +17,17 @@ namespace EnergyMeteringSystem.App.ViewModels.Admin
         private UserDto _currentUser;
         public ObservableCollection<UserRoleDto> Roles { get; set; } = new();
 
-        // Свойства для обратной совместимости с XAML
-        public ObservableCollection<UserDto> FilteredUsers => FilteredItems;
+        // ✅ ИСПРАВЛЕНО: используем ItemsList вместо Items
+        public ObservableCollection<UserDto> FilteredUsers => new ObservableCollection<UserDto>(FilteredItemsList);
+
         public UserDto SelectedUser
         {
             get => SelectedItem;
             set => SelectedItem = value;
         }
-        public ObservableCollection<UserDto> Users => Items;
+
+        // ✅ ИСПРАВЛЕНО: используем ItemsList вместо Items
+        public ObservableCollection<UserDto> Users => new ObservableCollection<UserDto>(ItemsList);
 
         public UserDto CurrentUser
         {
@@ -70,9 +73,12 @@ namespace EnergyMeteringSystem.App.ViewModels.Admin
             await ExecuteAsync(async () =>
             {
                 var list = await _repository.GetAllAsync();
-                Items.Clear();
+
+                // ✅ ИСПРАВЛЕНО: используем ItemsList
+                ItemsList.Clear();
                 foreach (var user in list)
-                    Items.Add(user);
+                    ItemsList.Add(user);
+
                 ApplyFilter();
             }, "Ошибка загрузки пользователей");
         }

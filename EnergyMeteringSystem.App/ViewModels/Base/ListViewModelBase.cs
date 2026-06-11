@@ -1,5 +1,7 @@
 ﻿using EnergyMeteringSystem.App.Commands;
+using EnergyMeteringSystem.Core.Models.DTO;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
@@ -29,8 +31,27 @@ namespace EnergyMeteringSystem.App.ViewModels.Base
         private bool _hasNextPage;
         private bool _hasPreviousPage;
 
-        public ObservableCollection<TModel> Items { get; set; } = new();
-        public ObservableCollection<TModel> FilteredItems { get; set; } = new();
+        // Основные коллекции (List - для производительности)
+        private List<TModel> _itemsList = new();
+        private List<TModel> _filteredItemsList = new();
+
+        // Свойства для работы с List
+        public List<TModel> ItemsList
+        {
+            get => _itemsList;
+            set => SetProperty(ref _itemsList, value);
+        }
+
+        public List<TModel> FilteredItemsList
+        {
+            get => _filteredItemsList;
+            set => SetProperty(ref _filteredItemsList, value);
+        }
+
+        // Свойства для обратной совместимости (ObservableCollection)
+        // Используются в старых ViewModel, которые ожидают ObservableCollection
+        public ObservableCollection<TModel> Items => new ObservableCollection<TModel>(ItemsList);
+        public ObservableCollection<TModel> FilteredItems => new ObservableCollection<TModel>(FilteredItemsList);
 
         public string SearchText
         {
@@ -40,7 +61,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Base
                 if (SetProperty(ref _searchText, value))
                 {
                     _currentPage = 1;
-                    _ = LoadDataAsync();
+                    ApplyFilter();
                 }
             }
         }
@@ -99,8 +120,8 @@ namespace EnergyMeteringSystem.App.ViewModels.Base
             set => SetProperty(ref _hasPreviousPage, value);
         }
 
-        public bool HasItems => Items?.Count > 0;
-        public bool HasFilteredItems => FilteredItems?.Count > 0;
+        public bool HasItems => ItemsList?.Count > 0;
+        public bool HasFilteredItems => FilteredItemsList?.Count > 0;
 
         // Команды
         public ICommand RefreshCommand { get; protected set; }
@@ -116,6 +137,9 @@ namespace EnergyMeteringSystem.App.ViewModels.Base
             _repository = repository;
             _cancellationTokenSource = new CancellationTokenSource();
 
+            ItemsList = new List<TModel>();
+            FilteredItemsList = new List<TModel>();
+
             RefreshCommand = new AsyncRelayCommand(async () => await LoadDataAsync());
             AddCommand = new AsyncRelayCommand(async () => await AddAsync());
             EditCommand = new AsyncRelayCommand(async () => await EditAsync(), () => SelectedItem != null);
@@ -123,6 +147,10 @@ namespace EnergyMeteringSystem.App.ViewModels.Base
             NextPageCommand = new AsyncRelayCommand(async () => { if (HasNextPage) CurrentPage++; });
             PrevPageCommand = new AsyncRelayCommand(async () => { if (HasPreviousPage) CurrentPage--; });
             ClearSearchCommand = new RelayCommand(_ => SearchText = string.Empty);
+
+            System.Diagnostics.Debug.WriteLine("ConsumptionObjectListViewModel конструктор");
+            // Асинхронная загрузка данных
+            _ = LoadDataAsync();
         }
 
         protected abstract Task LoadDataAsync();
@@ -130,17 +158,24 @@ namespace EnergyMeteringSystem.App.ViewModels.Base
         protected abstract Task EditAsync();
         protected abstract Task DeleteAsync();
 
+        /// <summary>
+        /// Применяет фильтр к ItemsList и обновляет FilteredItemsList
+        /// </summary>
         protected virtual void ApplyFilter()
         {
-            FilteredItems.Clear();
+            System.Diagnostics.Debug.WriteLine($"ApplyFilter: SearchText='{SearchText}', ItemsList.Count={ItemsList.Count}");
 
             var filtered = string.IsNullOrWhiteSpace(SearchText)
-                ? Items
-                : new ObservableCollection<TModel>(Items.Where(i => ItemMatchesSearch(i, SearchText)));
+                ? ItemsList.ToList()
+                : ItemsList.Where(i => ItemMatchesSearch(i, SearchText)).ToList();
 
-            foreach (var item in filtered)
-                FilteredItems.Add(item);
+            System.Diagnostics.Debug.WriteLine($"ApplyFilter: отфильтровано {filtered.Count} объектов");
 
+            FilteredItemsList = filtered;
+
+            // Уведомляем об изменениях
+            OnPropertyChanged(nameof(FilteredItemsList));
+            OnPropertyChanged(nameof(FilteredItems));
             OnPropertyChanged(nameof(HasFilteredItems));
         }
 

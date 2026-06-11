@@ -72,35 +72,39 @@ namespace EnergyMeteringSystem.Data.Repositories
         // ✅ ОПТИМИЗИРОВАННЫЙ GetAll с кэшированием
         public async Task<List<MeterDto>> GetAllAsync(CancellationToken cancellationToken = default)
         {
-            return await CacheService.GetOrAddAsync(CACHE_KEY_ALL_METERS, async () =>
+            try
             {
-                try
-                {
-                    return await Query<Meter>()
-                        .Select(m => new MeterDto
-                        {
-                            Id = m.Id,
-                            SerialNumber = m.SerialNumber,
-                            MeterTypeId = m.MeterTypeId,
-                            MeterTypeName = m.MeterType.Name,
-                            StatusId = m.MeterStatusId,
-                            StatusName = m.MeterStatus.Name,
-                            InstallationDate = m.InstallationDate,
-                            LastVerificationDate = m.VerificationDate,
-                            NextVerificationDate = m.NextVerificationDate,
-                            InitialReading = m.InitialReading,
-                            ServiceLifeYears = m.ServiceLifeYears,
-                            ConsumptionObjectId = m.ConsumptionObjectId
-                        })
-                        .OrderBy(m => m.SerialNumber)
-                        .ToListAsync(cancellationToken);
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Ошибка в GetAllAsync: {ex.Message}");
-                    return new List<MeterDto>();
-                }
-            }, CACHE_MINUTES);
+                System.Diagnostics.Debug.WriteLine("MeterRepository.GetAllAsync START");
+
+                var result = await _context.Meter
+                    .Include(m => m.MeterType)
+                    .Include(m => m.MeterStatus)
+                    .Select(m => new MeterDto
+                    {
+                        Id = m.Id,
+                        SerialNumber = m.SerialNumber,
+                        MeterTypeId = m.MeterTypeId,
+                        MeterTypeName = m.MeterType.Name,
+                        StatusId = m.MeterStatusId,
+                        StatusName = m.MeterStatus.Name,
+                        InstallationDate = m.InstallationDate,
+                        LastVerificationDate = m.VerificationDate,
+                        NextVerificationDate = m.NextVerificationDate,
+                        InitialReading = m.InitialReading,
+                        ServiceLifeYears = m.ServiceLifeYears,
+                        ConsumptionObjectId = m.ConsumptionObjectId
+                    })
+                    .OrderBy(m => m.SerialNumber)
+                    .ToListAsync(cancellationToken);
+
+                System.Diagnostics.Debug.WriteLine($"MeterRepository.GetAllAsync вернул {result.Count} счетчиков");
+                return result;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"MeterRepository.GetAllAsync ERROR: {ex.Message}");
+                return new List<MeterDto>();
+            }
         }
 
         public MeterDto GetById(int id)

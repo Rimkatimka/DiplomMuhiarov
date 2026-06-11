@@ -4,6 +4,7 @@ using EnergyMeteringSystem.App.ViewModels.Base;
 using System.Threading.Tasks;
 using System;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Windows;
 
 namespace EnergyMeteringSystem.App.ViewModels.Directories
@@ -15,9 +16,9 @@ namespace EnergyMeteringSystem.App.ViewModels.Directories
     {
         private readonly string _directoryName;
 
-        // Свойства для обратной совместимости с XAML
-        public ObservableCollection<DirectoryDto> FilteredItemsDirect => FilteredItems;
-        public ObservableCollection<DirectoryDto> ItemsDirect => Items;
+        // ✅ ИСПРАВЛЕНО: оборачиваем List в ObservableCollection
+        public ObservableCollection<DirectoryDto> FilteredItemsDirect => new ObservableCollection<DirectoryDto>(FilteredItemsList);
+        public ObservableCollection<DirectoryDto> ItemsDirect => new ObservableCollection<DirectoryDto>(ItemsList);
 
         public DirectoryListViewModel(IDirectoryRepository<DirectoryDto> repository, string directoryName)
             : base(repository)
@@ -30,12 +31,15 @@ namespace EnergyMeteringSystem.App.ViewModels.Directories
             await ExecuteAsync(async () =>
             {
                 var items = await Task.Run(() => _repository.GetAll());
-                Items.Clear();
+
+                // ✅ ИСПРАВЛЕНО: используем ItemsList
+                ItemsList.Clear();
                 foreach (var item in items)
-                    Items.Add(item);
+                    ItemsList.Add(item);
+
                 ApplyFilter();
 
-                TotalCount = Items.Count;
+                TotalCount = ItemsList.Count;
                 HasNextPage = false;
                 HasPreviousPage = false;
             }, $"Ошибка загрузки {_directoryName}");

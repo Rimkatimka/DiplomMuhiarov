@@ -16,14 +16,16 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
         private MeterStatusDto _selectedStatus;
         private ObservableCollection<MeterStatusDto> _statuses;
 
-        // Свойства для обратной совместимости с XAML
-        public ObservableCollection<MeterDto> FilteredMeters => FilteredItems;
+        // ✅ ИСПРАВЛЕНО: оборачиваем List в ObservableCollection
+        public ObservableCollection<MeterDto> FilteredMeters => new ObservableCollection<MeterDto>(FilteredItemsList);
+
         public MeterDto SelectedMeter
         {
             get => SelectedItem;
             set => SelectedItem = value;
         }
-        public ObservableCollection<MeterDto> Meters => Items;
+
+        public ObservableCollection<MeterDto> Meters => new ObservableCollection<MeterDto>(ItemsList);
 
         public ObservableCollection<MeterStatusDto> Statuses
         {
@@ -78,9 +80,12 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
             await ExecuteAsync(async () =>
             {
                 var list = await _repository.GetAllAsync();
-                Items.Clear();
+
+                // ✅ ИСПРАВЛЕНО: используем ItemsList
+                ItemsList.Clear();
                 foreach (var meter in list)
-                    Items.Add(meter);
+                    ItemsList.Add(meter);
+
                 ApplyFilter();
             }, "Ошибка загрузки счетчиков");
         }
@@ -145,9 +150,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
 
         protected override void ApplyFilter()
         {
-            FilteredItems.Clear();
-
-            var filtered = Items.AsEnumerable();
+            var filtered = ItemsList.AsEnumerable();
 
             if (!string.IsNullOrWhiteSpace(SearchText))
             {
@@ -159,8 +162,8 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
                 filtered = filtered.Where(m => m.StatusId == SelectedStatus.Id);
             }
 
-            foreach (var meter in filtered)
-                FilteredItems.Add(meter);
+            FilteredItemsList = filtered.ToList();
+            OnPropertyChanged(nameof(FilteredMeters));
         }
 
         protected override bool ItemMatchesSearch(MeterDto item, string searchText)

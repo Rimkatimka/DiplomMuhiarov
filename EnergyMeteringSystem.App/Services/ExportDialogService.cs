@@ -1,5 +1,5 @@
 ﻿using EnergyMeteringSystem.Core.Interfaces.Services;
-using EnergyMeteringSystem.App.Views.Shared;  // ← правильный using
+using EnergyMeteringSystem.App.Views.Shared;
 using System.Windows;
 
 namespace EnergyMeteringSystem.App.Services

@@ -116,44 +116,58 @@ namespace EnergyMeteringSystem.Data.Repositories
             if (string.IsNullOrWhiteSpace(username))
                 return null;
 
-            string cacheKey = string.Format(CACHE_KEY_USER_BY_USERNAME, username.ToLower());
-
-            return await CacheService.GetOrAddAsync(cacheKey, async () =>
+            try
             {
-                try
+                string cacheKey = $"User_Username_{username.ToLower()}";
+
+                // Используем простой вариант без кэша для отладки
+                // TODO: вернуть кэш после исправления
+                // return await CacheService.GetOrAddAsync(cacheKey, async () =>
+                // {
+                var user = await Query<User>()
+                    .Include(u => u.UserRole)
+                    .FirstOrDefaultAsync(u => u.Username == username, cancellationToken);
+
+                if (user == null) return null;
+
+                return new UserDto
                 {
-                    System.Diagnostics.Debug.WriteLine($"UserRepository.GetByUsernameAsync: поиск пользователя '{username}'");
+                    Id = user.Id,
+                    Username = user.Username,
+                    PasswordHash = user.PasswordHash,
+                    FullName = user.FullName,
+                    Email = user.Email,
+                    RoleId = user.RoleId,
+                    RoleName = user.UserRole?.Name,
+                    IsActive = user.IsActive,
+                    CreatedAt = user.CreatedAt
+                };
+                // });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"GetByUsernameAsync error: {ex.Message}");
 
-                    var user = await Query<User>()
-                        .FirstOrDefaultAsync(u => u.Username == username, cancellationToken);
+                // Прямой запрос без кэша
+                var user = await Query<User>()
+                    .Include(u => u.UserRole)
+                    .FirstOrDefaultAsync(u => u.Username == username, cancellationToken);
 
-                    if (user == null)
-                    {
-                        System.Diagnostics.Debug.WriteLine($"UserRepository.GetByUsernameAsync: пользователь '{username}' не найден");
-                        return null;
-                    }
+                if (user == null) return null;
 
-                    System.Diagnostics.Debug.WriteLine($"UserRepository.GetByUsernameAsync: пользователь найден: ID={user.Id}, RoleId={user.RoleId}, IsActive={user.IsActive}");
-
-                    return new UserDto
-                    {
-                        Id = user.Id,
-                        Username = user.Username,
-                        PasswordHash = user.PasswordHash,
-                        FullName = user.FullName,
-                        Email = user.Email,
-                        RoleId = user.RoleId,
-                        RoleName = user.UserRole?.Name,
-                        IsActive = user.IsActive,
-                        CreatedAt = user.CreatedAt
-                    };
-                }
-                catch (Exception ex)
+                return new UserDto
                 {
-                    System.Diagnostics.Debug.WriteLine($"UserRepository.GetByUsernameAsync ошибка: {ex.Message}");
-                    return null;
-                }
-            }, CACHE_MINUTES);
+                    Id = user.Id,
+                    Username = user.Username,
+                    PasswordHash = user.PasswordHash,
+                    FullName = user.FullName,
+                    Email = user.Email,
+                    RoleId = user.RoleId,
+                    RoleName = user.UserRole?.Name,
+                    IsActive = user.IsActive,
+                    CreatedAt = user.CreatedAt
+                };
+            }
         }
 
         public bool IsUsernameExists(string username, int? excludeUserId = null)

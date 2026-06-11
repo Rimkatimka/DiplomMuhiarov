@@ -38,8 +38,9 @@ namespace EnergyMeteringSystem.App.ViewModels.Admin
             }
         }
 
-        // Свойства для обратной совместимости с XAML
-        public ObservableCollection<AuditLogDto> FilteredLogs => FilteredItems;
+        // ✅ ИСПРАВЛЕНО: оборачиваем List в ObservableCollection
+        public ObservableCollection<AuditLogDto> FilteredLogs => new ObservableCollection<AuditLogDto>(FilteredItemsList);
+
         public AuditLogDto SelectedLog
         {
             get => SelectedItem;
@@ -64,15 +65,16 @@ namespace EnergyMeteringSystem.App.ViewModels.Admin
 
                 var list = await _repository.GetByDateAsync(FromDate, ToDate);
 
-                Items.Clear();
+                // ✅ ИСПРАВЛЕНО: используем ItemsList
+                ItemsList.Clear();
                 foreach (var log in list)
                 {
-                    Items.Add(log);
+                    ItemsList.Add(log);
                 }
 
                 ApplyFilter();
 
-                System.Diagnostics.Debug.WriteLine($"AuditLogViewModel: loaded {Items.Count} logs, filtered {FilteredItems.Count}");
+                System.Diagnostics.Debug.WriteLine($"AuditLogViewModel: loaded {ItemsList.Count} logs, filtered {FilteredItemsList.Count}");
             }, "Ошибка загрузки журнала аудита");
         }
 
@@ -82,22 +84,16 @@ namespace EnergyMeteringSystem.App.ViewModels.Admin
 
         protected override void ApplyFilter()
         {
-            FilteredItems.Clear();
-
             var filtered = string.IsNullOrWhiteSpace(SearchText)
-                ? Items
-                : new ObservableCollection<AuditLogDto>(
-                    Items.Where(l =>
-                        (l.UserName?.Contains(SearchText) ?? false) ||
-                        (l.ActionType?.Contains(SearchText) ?? false) ||
-                        (l.TableName?.Contains(SearchText) ?? false) ||
-                        (l.DisplayDetails?.Contains(SearchText) ?? false)));
+                ? ItemsList
+                : ItemsList.Where(l =>
+                    (l.UserName?.Contains(SearchText) ?? false) ||
+                    (l.ActionType?.Contains(SearchText) ?? false) ||
+                    (l.TableName?.Contains(SearchText) ?? false) ||
+                    (l.DisplayDetails?.Contains(SearchText) ?? false)).ToList();
 
-            foreach (var log in filtered)
-            {
-                FilteredItems.Add(log);
-            }
-
+            FilteredItemsList = filtered;
+            OnPropertyChanged(nameof(FilteredLogs));
             OnPropertyChanged(nameof(HasFilteredItems));
         }
 

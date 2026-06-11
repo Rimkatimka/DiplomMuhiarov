@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
 using System.Threading;
@@ -28,32 +29,43 @@ namespace EnergyMeteringSystem.Data.Repositories
         {
             System.Diagnostics.Debug.WriteLine("GetAllAsync() — оптимизированный запрос");
 
-            // ОДИН сложный запрос вместо N+1
-            var result = await Query<ConsumptionObject>()
-                .Select(o => new ConsumptionObjectDto
-                {
-                    Id = o.Id,
-                    StreetId = o.StreetId,
-                    HouseNumber = o.HouseNumber,
-                    ApartmentNumber = o.ApartmentNumber,
-                    ObjectTypeId = o.ObjectTypeId,
-                    TotalArea = o.TotalArea,
-                    ResidentCount = o.ResidentCount,
+            try
+            {
+                // Убираем кэш и делаем прямой запрос
+                var result = await _context.ConsumptionObject
+                    .Include(o => o.Street)
+                    .Include(o => o.Street.City)
+                    .Include(o => o.Street.City.Region)
+                    .Include(o => o.ObjectType)
+                    .Select(o => new ConsumptionObjectDto
+                    {
+                        Id = o.Id,
+                        StreetId = o.StreetId,
+                        HouseNumber = o.HouseNumber,
+                        ApartmentNumber = o.ApartmentNumber,
+                        ObjectTypeId = o.ObjectTypeId,
+                        TotalArea = o.TotalArea,
+                        ResidentCount = o.ResidentCount,
+                        Street = o.Street.Name,
+                        City = o.Street.City.Name,
+                        CityId = o.Street.City.Id,
+                        Region = o.Street.City.Region.Name,
+                        RegionId = o.Street.City.Region.Id,
+                        ObjectTypeName = o.ObjectType.Name
+                    })
+                    .OrderBy(o => o.City)
+                    .ThenBy(o => o.Street)
+                    .ThenBy(o => o.HouseNumber)
+                    .ToListAsync(cancellationToken);
 
-                    // Вложенные запросы выполняются один раз для всех объектов
-                    Street = o.Street.Name,
-                    City = o.Street.City.Name,
-                    CityId = o.Street.City.Id,
-                    Region = o.Street.City.Region.Name,
-                    RegionId = o.Street.City.Region.Id,
-                    ObjectTypeName = o.ObjectType.Name
-                })
-                .OrderBy(o => o.City)
-                .ThenBy(o => o.Street)
-                .ThenBy(o => o.HouseNumber)
-                .ToListAsync(cancellationToken);
-
-            return result;
+                System.Diagnostics.Debug.WriteLine($"GetAllAsync() вернул {result.Count} объектов");
+                return result;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"GetAllAsync() ERROR: {ex.Message}");
+                return new List<ConsumptionObjectDto>();
+            }
         }
 
         // ✅ ОПТИМИЗИРОВАННЫЙ GetById
