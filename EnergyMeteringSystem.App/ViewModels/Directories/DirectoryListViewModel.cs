@@ -3,6 +3,8 @@ using EnergyMeteringSystem.Core.Models.DTO;
 using EnergyMeteringSystem.App.ViewModels.Base;
 using System.Threading.Tasks;
 using System;
+using System.Collections.ObjectModel;
+using System.Windows;
 
 namespace EnergyMeteringSystem.App.ViewModels.Directories
 {
@@ -12,6 +14,10 @@ namespace EnergyMeteringSystem.App.ViewModels.Directories
     public class DirectoryListViewModel : ListViewModelBase<DirectoryDto, IDirectoryRepository<DirectoryDto>>
     {
         private readonly string _directoryName;
+
+        // Свойства для обратной совместимости с XAML
+        public ObservableCollection<DirectoryDto> FilteredItemsDirect => FilteredItems;
+        public ObservableCollection<DirectoryDto> ItemsDirect => Items;
 
         public DirectoryListViewModel(IDirectoryRepository<DirectoryDto> repository, string directoryName)
             : base(repository)
@@ -39,9 +45,8 @@ namespace EnergyMeteringSystem.App.ViewModels.Directories
         {
             var editViewModel = new DirectoryEditViewModel();
             var editView = new Views.Directories.DirectoryEditView(editViewModel);
-            editView.Owner = System.Windows.Application.Current.MainWindow;
+            editView.Owner = Application.Current.MainWindow;
 
-            // ✅ ИСПРАВЛЕНО: OnDirectorySaved → OnSaved
             editViewModel.OnSaved += async (s, e) =>
             {
                 var dto = new DirectoryDto
@@ -68,9 +73,8 @@ namespace EnergyMeteringSystem.App.ViewModels.Directories
 
             var editViewModel = new DirectoryEditViewModel(SelectedItem);
             var editView = new Views.Directories.DirectoryEditView(editViewModel);
-            editView.Owner = System.Windows.Application.Current.MainWindow;
+            editView.Owner = Application.Current.MainWindow;
 
-            // ✅ ИСПРАВЛЕНО: OnDirectorySaved → OnSaved
             editViewModel.OnSaved += async (s, e) =>
             {
                 SelectedItem.Name = editViewModel.Name;
@@ -91,13 +95,13 @@ namespace EnergyMeteringSystem.App.ViewModels.Directories
         {
             if (SelectedItem == null) return;
 
-            var result = System.Windows.MessageBox.Show(
+            var result = MessageBox.Show(
                 $"Удалить запись \"{SelectedItem.Name}\"?",
                 "Подтверждение",
-                System.Windows.MessageBoxButton.YesNo,
-                System.Windows.MessageBoxImage.Question);
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
 
-            if (result == System.Windows.MessageBoxResult.Yes)
+            if (result == MessageBoxResult.Yes)
             {
                 await ExecuteAsync(async () =>
                 {

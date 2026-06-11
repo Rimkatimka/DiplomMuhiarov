@@ -21,11 +21,15 @@ namespace EnergyMeteringSystem.App.Services
             {
                 if (_cache.Get(key) is T doubleCached)
                     return doubleCached;
-
-                var data = factory().Result;
-                _cache.Add(key, data, DateTimeOffset.Now.AddMinutes(minutesToCache));
-                return data;
             }
+            var data = await factory();
+
+            lock (lockObj)
+            {
+                _cache.Add(key, data, DateTimeOffset.Now.AddMinutes(minutesToCache));
+            }
+
+            return data;
         }
 
         public static T GetOrAdd<T>(string key, Func<T> factory, int minutesToCache = 30)

@@ -16,6 +16,15 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
         private MeterStatusDto _selectedStatus;
         private ObservableCollection<MeterStatusDto> _statuses;
 
+        // Свойства для обратной совместимости с XAML
+        public ObservableCollection<MeterDto> FilteredMeters => FilteredItems;
+        public MeterDto SelectedMeter
+        {
+            get => SelectedItem;
+            set => SelectedItem = value;
+        }
+        public ObservableCollection<MeterDto> Meters => Items;
+
         public ObservableCollection<MeterStatusDto> Statuses
         {
             get => _statuses;

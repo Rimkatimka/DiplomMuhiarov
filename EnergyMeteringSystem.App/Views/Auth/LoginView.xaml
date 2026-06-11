@@ -6,6 +6,10 @@
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize">
 
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+    </Window.Resources>
+
     <Grid Margin="30">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -34,7 +38,8 @@
                      MaxLength="50"
                      PreviewTextInput="LoginTextBox_PreviewTextInput"
                      PreviewKeyDown="LoginTextBox_PreviewKeyDown"
-                     ToolTip="Только латиница, цифры, . _ -"/>
+                     ToolTip="Только латиница, цифры, . _ -"
+                     IsEnabled="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"/>
         </StackPanel>
 
         <!-- Пароль с кнопкой показа -->
@@ -47,46 +52,48 @@
                 </Grid.ColumnDefinitions>
 
                 <PasswordBox x:Name="PasswordBox" 
-                     Grid.Column="0"
-                     Padding="8" 
-                     FontSize="14"
-                     MaxLength="256"
-                     PreviewKeyDown="PasswordBox_PreviewKeyDown"
-                     ToolTip="Пробел запрещён"/>
+                             Grid.Column="0"
+                             Padding="8" 
+                             FontSize="14"
+                             MaxLength="256"
+                             PreviewKeyDown="PasswordBox_PreviewKeyDown"
+                             ToolTip="Пробел запрещён"
+                             IsEnabled="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"/>
 
                 <TextBox x:Name="VisiblePasswordTextBox" 
-                 Grid.Column="0"
-                 Padding="8" 
-                 FontSize="14"
-                 Visibility="Collapsed"
-                 MaxLength="256"/>
+                         Grid.Column="0"
+                         Padding="8" 
+                         FontSize="14"
+                         Visibility="Collapsed"
+                         MaxLength="256"/>
 
-                <!-- Кнопка глаза - улучшенная версия -->
+                <!-- Кнопка глаза -->
                 <Border Grid.Column="1"
-                Width="40" Height="35"
-                Margin="5,0,0,0"
-                Background="Transparent"
-                BorderBrush="#CCCCCC"
-                BorderThickness="1"
-                CornerRadius="4"
-                Cursor="Hand">
+                        Width="40" Height="35"
+                        Margin="5,0,0,0"
+                        Background="Transparent"
+                        BorderBrush="#CCCCCC"
+                        BorderThickness="1"
+                        CornerRadius="4"
+                        Cursor="Hand">
 
                     <Button x:Name="TogglePasswordButton"
-                    Background="Transparent"
-                    BorderThickness="0"
-                    Cursor="Hand"
-                    Click="TogglePasswordVisibility_Click"
-                    ToolTip="Показать пароль"
-                    Padding="0"
-                    VerticalAlignment="Center"
-                    HorizontalAlignment="Center">
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Cursor="Hand"
+                            Click="TogglePasswordVisibility_Click"
+                            ToolTip="Показать пароль"
+                            Padding="0"
+                            VerticalAlignment="Center"
+                            HorizontalAlignment="Center"
+                            IsEnabled="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}">
 
                         <Button.Content>
                             <TextBlock FontSize="16" 
-                               Text="👁" 
-                               VerticalAlignment="Center"
-                               HorizontalAlignment="Center"
-                               Foreground="#555"/>
+                                       Text="👁" 
+                                       VerticalAlignment="Center"
+                                       HorizontalAlignment="Center"
+                                       Foreground="#555"/>
                         </Button.Content>
                     </Button>
                 </Border>
@@ -116,7 +123,17 @@
                 Foreground="White"
                 FontSize="14"
                 FontWeight="Bold"
-                BorderThickness="0"/>
+                BorderThickness="0"
+                IsEnabled="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"/>
 
+        <!-- Индикатор загрузки (оверлей) -->
+        <Border Grid.RowSpan="5" 
+                Background="#80000000" 
+                Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                <ProgressBar IsIndeterminate="True" Width="150" Height="20"/>
+                <TextBlock Text="Вход в систему..." Margin="0,10,0,0" Foreground="White"/>
+            </StackPanel>
+        </Border>
     </Grid>
 </Window>

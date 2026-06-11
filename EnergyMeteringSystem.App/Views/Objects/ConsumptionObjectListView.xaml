@@ -1,174 +1,159 @@
-﻿<UserControl x:Class="EnergyMeteringSystem.App.Views.Objects.ConsumptionObjectListView"
-             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+﻿<Window x:Class="EnergyMeteringSystem.App.Views.Objects.ConsumptionObjectEditView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Добавление объекта" 
+        Height="530" Width="600"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize">
 
-    <Grid Margin="10">
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+    </Window.Resources>
+
+    <Grid Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
 
-        <!-- Панель поиска -->
-        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
-            <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" 
-                     Width="300" 
-                     Padding="5"
-                     VerticalAlignment="Center"
-                     ToolTip="Введите адрес для поиска"/>
-            <Button Content="Обновить" 
-                    Command="{Binding RefreshCommand}" 
-                    Margin="10,0,0,0"
-                    Padding="10,5"
-                    ToolTip="Обновить список объектов"/>
+        <!-- Регион -->
+        <TextBlock Grid.Row="0" Grid.Column="0" Text="Регион:" Margin="5" VerticalAlignment="Center"/>
+        <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal">
+            <ComboBox ItemsSource="{Binding Regions}"
+                      SelectedItem="{Binding SelectedRegion}"
+                      DisplayMemberPath="Name"
+                      Width="200"
+                      Margin="5"
+                      IsEnabled="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+            <Button Command="{Binding AddRegionCommand}"
+                    Width="30" Height="30" Margin="0,5,5,5"
+                    ToolTip="Добавить регион" Cursor="Hand" Padding="0"
+                    Content="+" FontSize="18" FontWeight="Bold"
+                    IsEnabled="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"/>
         </StackPanel>
 
-        <!-- Таблица объектов -->
-        <DataGrid Grid.Row="1"
-          ItemsSource="{Binding FilteredObjects}"
-          SelectedItem="{Binding SelectedObject}"
-          AutoGenerateColumns="False"
-          IsReadOnly="True"
-          SelectionMode="Single">
-
-            <DataGrid.Resources>
-                <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource DataGridColumnHeaderStyle}"/>
-                <Style TargetType="DataGridCell" BasedOn="{StaticResource DataGridCellStyle}"/>
-            </DataGrid.Resources>
-
-            <DataGrid.Columns>
-                <!-- Адрес -->
-                <DataGridTextColumn Header="Адрес" Binding="{Binding Address}" Width="1*">
-                    <DataGridTextColumn.HeaderStyle>
-                        <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource DataGridColumnHeaderStyle}">
-                            <Setter Property="ToolTip" Value="Полный адрес объекта"/>
-                        </Style>
-                    </DataGridTextColumn.HeaderStyle>
-                </DataGridTextColumn>
-
-                <!-- Тип объекта -->
-                <DataGridTextColumn Header="Тип" Binding="{Binding ObjectTypeName}" Width="Auto" MinWidth="100"/>
-
-                <!-- Площадь -->
-                <DataGridTextColumn Header="Площадь" Binding="{Binding TotalArea, StringFormat={}{0:F1} м²}" Width="Auto" MinWidth="100"/>
-
-                <!-- Жильцы -->
-                <DataGridTextColumn Header="Жильцы" Binding="{Binding ResidentCount}" Width="Auto" MinWidth="80"/>
-
-                <!-- Кнопка Счетчики -->
-                <DataGridTemplateColumn Header="Счетчики" Width="100" CanUserSort="False">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <Button Content="Просмотр"
-                            Command="{Binding DataContext.ShowMetersCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                            CommandParameter="{Binding}"
-                            Padding="8,3"
-                            Background="#2196F3"
-                            Foreground="White"
-                            BorderThickness="0"
-                            Cursor="Hand">
-                                <Button.Resources>
-                                    <Style TargetType="Button">
-                                        <Setter Property="Template">
-                                            <Setter.Value>
-                                                <ControlTemplate TargetType="Button">
-                                                    <Border Background="{TemplateBinding Background}"
-                                                    CornerRadius="3"
-                                                    Padding="{TemplateBinding Padding}">
-                                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                    </Border>
-                                                </ControlTemplate>
-                                            </Setter.Value>
-                                        </Setter>
-                                    </Style>
-                                </Button.Resources>
-                            </Button>
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
-            </DataGrid.Columns>
-        </DataGrid>
-        
-        <!-- Кнопки управления -->
-        <StackPanel Grid.Row="2" 
-                    Orientation="Horizontal" 
-                    HorizontalAlignment="Right" 
-                    Margin="0,10,0,0">
-
-            <Button Content="Добавить" 
-                    Command="{Binding AddCommand}"
-                    Padding="15,8"
-                    Margin="5"
-                    Background="#4CAF50"
-                    Foreground="White"
-                    BorderThickness="0"
-                    FontWeight="Bold"
-                    ToolTip="Добавить новый объект"
-                    Cursor="Hand">
-                <Button.Resources>
-                    <Style TargetType="Button">
-                        <Setter Property="Template">
-                            <Setter.Value>
-                                <ControlTemplate TargetType="Button">
-                                    <Border Background="{TemplateBinding Background}"
-                                            CornerRadius="3"
-                                            Padding="{TemplateBinding Padding}">
-                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                    </Border>
-                                    <ControlTemplate.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter Property="Background" Value="#45a049"/>
-                                        </Trigger>
-                                    </ControlTemplate.Triggers>
-                                </ControlTemplate>
-                            </Setter.Value>
-                        </Setter>
-                    </Style>
-                </Button.Resources>
-            </Button>
-
-            <Button Content="Редактировать" 
-                    Command="{Binding EditCommand}"
-                    CommandParameter="{Binding SelectedObject}"
-                    Padding="15,8"
-                    Margin="5"
-                    Background="#2196F3"
-                    Foreground="White"
-                    BorderThickness="0"
-                    FontWeight="Bold"
-                    ToolTip="Редактировать выбранный объект"
-                    Cursor="Hand">
-                <Button.Resources>
-                    <Style TargetType="Button">
-                        <Setter Property="Template">
-                            <Setter.Value>
-                                <ControlTemplate TargetType="Button">
-                                    <Border Background="{TemplateBinding Background}"
-                                            CornerRadius="3"
-                                            Padding="{TemplateBinding Padding}">
-                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                    </Border>
-                                    <ControlTemplate.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter Property="Background" Value="#1976D2"/>
-                                        </Trigger>
-                                    </ControlTemplate.Triggers>
-                                </ControlTemplate>
-                            </Setter.Value>
-                        </Setter>
-                    </Style>
-                </Button.Resources>
-            </Button>
-            <Button Content="Удалить" 
-                Command="{Binding DeleteCommand}"
-                Padding="15,8"
-                Margin="5"
-                Background="#F44336"
-                Foreground="White"
-                BorderThickness="0"
-                FontWeight="Bold"
-                ToolTip="Удалить выбранный объект"
-                Cursor="Hand"/>     
+        <!-- Город -->
+        <TextBlock Grid.Row="1" Grid.Column="0" Text="Город:" Margin="5" VerticalAlignment="Center"/>
+        <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal">
+            <ComboBox ItemsSource="{Binding Cities}"
+                      SelectedItem="{Binding SelectedCity}"
+                      DisplayMemberPath="Name"
+                      Width="200"
+                      Margin="5"
+                      IsEnabled="{Binding SelectedRegion, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+            <Button Command="{Binding AddCityCommand}"
+                    Width="30" Height="30" Margin="0,5,5,5"
+                    ToolTip="Добавить город" Cursor="Hand" Padding="0"
+                    Content="+" FontSize="18" FontWeight="Bold"
+                    IsEnabled="{Binding SelectedRegion, Converter={StaticResource BooleanToVisibilityConverter}}"/>
         </StackPanel>
+
+        <!-- Улица -->
+        <TextBlock Grid.Row="2" Grid.Column="0" Text="Улица:" Margin="5" VerticalAlignment="Center"/>
+        <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal">
+            <ComboBox ItemsSource="{Binding StreetsList}"
+                      SelectedItem="{Binding SelectedStreet}"
+                      DisplayMemberPath="Name"
+                      Width="200"
+                      Margin="5"
+                      IsEnabled="{Binding SelectedCity, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+            <Button Command="{Binding AddStreetCommand}"
+                    Width="30" Height="30" Margin="0,5,5,5"
+                    ToolTip="Добавить улицу" Cursor="Hand" Padding="0"
+                    Content="+" FontSize="18" FontWeight="Bold"
+                    IsEnabled="{Binding SelectedCity, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+        </StackPanel>
+
+        <!-- Номер дома -->
+        <TextBlock Grid.Row="3" Grid.Column="0" Text="Номер дома:" Margin="5" VerticalAlignment="Center"/>
+        <TextBox Grid.Row="3" Grid.Column="1" 
+                 Text="{Binding HouseNumber, UpdateSourceTrigger=PropertyChanged}" 
+                 Margin="5" Padding="5"
+                 MaxLength="10"
+                 IsEnabled="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+
+        <!-- Номер квартиры -->
+        <TextBlock Grid.Row="4" Grid.Column="0" Text="Номер квартиры:" Margin="5" VerticalAlignment="Center"/>
+        <TextBox Grid.Row="4" Grid.Column="1" 
+                 Text="{Binding ApartmentNumber}" 
+                 Margin="5" Padding="5"
+                 MaxLength="10"
+                 IsEnabled="{Binding IsApartmentNumberEnabled}"
+                 IsReadOnly="{Binding IsLoading}"/>
+
+        <!-- Тип объекта -->
+        <TextBlock Grid.Row="5" Grid.Column="0" Text="Тип объекта:" Margin="5" VerticalAlignment="Center"/>
+        <ComboBox Grid.Row="5" Grid.Column="1" 
+                  ItemsSource="{Binding ObjectTypes}"
+                  SelectedItem="{Binding SelectedObjectType}"
+                  DisplayMemberPath="Name"
+                  Margin="5" Padding="5"
+                  IsEnabled="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+
+        <!-- Общая площадь -->
+        <TextBlock Grid.Row="6" Grid.Column="0" Text="Общая площадь (м²):" Margin="5" VerticalAlignment="Center"/>
+        <TextBox Grid.Row="6" Grid.Column="1" 
+                 Text="{Binding TotalArea}" 
+                 Margin="5" Padding="5"
+                 IsEnabled="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+
+        <!-- Количество жильцов -->
+        <TextBlock Grid.Row="7" Grid.Column="0" Text="Количество жильцов:" Margin="5" VerticalAlignment="Center"/>
+        <StackPanel Grid.Row="7" Grid.Column="1" Orientation="Vertical">
+            <TextBox Text="{Binding ResidentCount}" 
+                     Margin="5" Padding="5"
+                     MaxLength="3"
+                     PreviewTextInput="TextBox_PreviewTextInput_NumbersOnly"
+                     IsEnabled="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+
+            <Border Background="#FFF0F0" CornerRadius="3" Padding="5" Margin="5,0,5,5"
+                    Visibility="{Binding HasResidentCountError, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <TextBlock Text="{Binding ResidentCountError}"
+                           Foreground="Red"
+                           FontSize="11"
+                           TextWrapping="Wrap"/>
+            </Border>
+
+            <TextBlock Text="💡 Для квартиры: ~12 м² на человека, для частного дома: ~18 м² на человека"
+                       Foreground="Gray"
+                       FontSize="10"
+                       Margin="5,0,5,5"
+                       Visibility="{Binding HasResidentCountError, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+        </StackPanel>
+
+        <!-- Кнопки -->
+        <StackPanel Grid.Row="8" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+            <Button Content="Сохранить" 
+                    Command="{Binding SaveCommand}"
+                    Margin="5" Padding="15,8"
+                    Background="#4CAF50" Foreground="White"
+                    IsEnabled="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+            <Button Content="Отмена" 
+                    Command="{Binding CancelCommand}"
+                    Margin="5" Padding="15,8"
+                    IsEnabled="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+        </StackPanel>
+
+        <!-- Индикатор загрузки -->
+        <Border Grid.RowSpan="10" Grid.ColumnSpan="2" 
+                Background="#80000000" 
+                Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                <ProgressBar IsIndeterminate="True" Width="150" Height="20"/>
+                <TextBlock Text="Сохранение..." Margin="0,10,0,0" Foreground="White"/>
+            </StackPanel>
+        </Border>
     </Grid>
-</UserControl>
+</Window>

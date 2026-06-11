@@ -3,6 +3,10 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              MinHeight="100">
 
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+    </UserControl.Resources>
+
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -16,7 +20,8 @@
                      Width="250" 
                      Padding="5"
                      ToolTip="Поиск по серийному номеру"
-                     VerticalAlignment="Center"/>
+                     VerticalAlignment="Center"
+                     IsEnabled="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"/>
 
             <ComboBox ItemsSource="{Binding Statuses}" 
                       SelectedItem="{Binding SelectedStatus}"
@@ -24,20 +29,17 @@
                       Width="150"
                       Margin="10,0,0,0"
                       Padding="5"
-                      ToolTip="Фильтр по статусу"/>
-
-            <Button Content="Обновить" 
-                    Command="{Binding RefreshCommand}" 
-                    Margin="10,0,0,0"
-                    Padding="10,5"/>
+                      ToolTip="Фильтр по статусу"
+                      IsEnabled="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"/>
         </StackPanel>
 
         <!-- Таблица счетчиков -->
         <DataGrid Grid.Row="1" 
-                  ItemsSource="{Binding FilteredMeters}"
-                  SelectedItem="{Binding SelectedMeter}"
+                  ItemsSource="{Binding FilteredItems}"
+                  SelectedItem="{Binding SelectedItem}"
                   AutoGenerateColumns="False"
-                  IsReadOnly="True">
+                  IsReadOnly="True"
+                  IsEnabled="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Серийный номер" Binding="{Binding SerialNumber}" Width="150"/>
                 <DataGridTextColumn Header="Тип" Binding="{Binding MeterTypeName}" Width="150"/>
@@ -58,14 +60,29 @@
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
             <Button Content="Добавить" 
                     Command="{Binding AddCommand}"
-                    Padding="15,5" Margin="5"/>
+                    Padding="15,5" Margin="5"
+                    Background="#4CAF50" Foreground="White"
+                    IsEnabled="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"/>
             <Button Content="Редактировать" 
                     Command="{Binding EditCommand}"
-                    Padding="15,5" Margin="5"/>
+                    Padding="15,5" Margin="5"
+                    Background="#2196F3" Foreground="White"
+                    IsEnabled="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"/>
             <Button Content="Замена" 
                     Command="{Binding ReplaceCommand}"
                     Padding="15,5" Margin="5"
-                    Background="#FF9800" Foreground="White"/>
+                    Background="#FF9800" Foreground="White"
+                    IsEnabled="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"/>
         </StackPanel>
+
+        <!-- Индикатор загрузки -->
+        <Border Grid.RowSpan="3" 
+                Background="#80000000" 
+                Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                <ProgressBar IsIndeterminate="True" Width="150" Height="20"/>
+                <TextBlock Text="Загрузка счетчиков..." Margin="0,10,0,0" Foreground="White"/>
+            </StackPanel>
+        </Border>
     </Grid>
 </UserControl>

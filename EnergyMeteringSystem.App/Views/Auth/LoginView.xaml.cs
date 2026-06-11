@@ -18,7 +18,7 @@ namespace EnergyMeteringSystem.App.Views.Auth
             _viewModel = new LoginViewModel();
             DataContext = _viewModel;
 
-            // ✅ Привязка пароля из PasswordBox к ViewModel
+            // Привязка пароля из PasswordBox к ViewModel
             PasswordBox.PasswordChanged += (s, e) =>
             {
                 _viewModel.Password = PasswordBox.Password;
@@ -76,6 +76,14 @@ namespace EnergyMeteringSystem.App.Views.Auth
         private void PasswordBox_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             InputValidator.BlockSpace(sender, e);
+        }
+
+        private void OnKeyDownHandler(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter && _viewModel.LoginCommand.CanExecute(null))
+            {
+                _viewModel.LoginCommand.Execute(null);
+            }
         }
     }
 }

@@ -15,7 +15,6 @@
 
         <!-- Панель управления -->
         <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
-            <Button Content="Обновить" Command="{Binding RefreshCommand}" Padding="10,5" Margin="5"/>
             <CheckBox Content="Пакетный режим" IsChecked="{Binding IsBatchMode}" Margin="15,5,5,5"/>
             <Button Content="Выбрать все" Command="{Binding SelectAllCommand}" 
                     Visibility="{Binding IsBatchMode, Converter={StaticResource BooleanToVisibilityConverter}}"

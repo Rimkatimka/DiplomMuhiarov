@@ -17,13 +17,21 @@ namespace EnergyMeteringSystem.App.ViewModels.Admin
         private UserDto _currentUser;
         public ObservableCollection<UserRoleDto> Roles { get; set; } = new();
 
+        // Свойства для обратной совместимости с XAML
+        public ObservableCollection<UserDto> FilteredUsers => FilteredItems;
+        public UserDto SelectedUser
+        {
+            get => SelectedItem;
+            set => SelectedItem = value;
+        }
+        public ObservableCollection<UserDto> Users => Items;
+
         public UserDto CurrentUser
         {
             get => _currentUser;
             set => SetProperty(ref _currentUser, value);
         }
 
-        // Дополнительные команды для пользователей
         public AsyncRelayCommand BlockCommand { get; }
         public AsyncRelayCommand ResetPasswordCommand { get; }
 
@@ -32,10 +40,9 @@ namespace EnergyMeteringSystem.App.ViewModels.Admin
             BlockCommand = new AsyncRelayCommand(async () => await BlockUserAsync(), () => SelectedItem != null);
             ResetPasswordCommand = new AsyncRelayCommand(async () => await ResetPasswordAsync(), () => SelectedItem != null);
 
-            // Удаляем стандартный EditCommand (у нас свой)
             EditCommand = null;
 
-            LoadRoles();
+            _ = LoadRolesAsync();
             LoadCurrentUser();
         }
 
@@ -47,7 +54,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Admin
             }
         }
 
-        private async Task LoadRoles()
+        private async Task LoadRolesAsync()
         {
             await ExecuteAsync(async () =>
             {

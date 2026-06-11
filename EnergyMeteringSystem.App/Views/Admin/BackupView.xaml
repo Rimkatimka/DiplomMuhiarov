@@ -4,6 +4,7 @@
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
     </UserControl.Resources>
+
     <Grid Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -27,13 +28,15 @@
                              IsReadOnly="True"/>
                     <Button Content="Обзор" 
                             Command="{Binding BrowseBackupCommand}"
-                            Padding="15,5" Margin="5"/>
+                            Padding="15,5" Margin="5"
+                            IsEnabled="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                 </StackPanel>
                 <Button Content="Создать резервную копию" 
                         Command="{Binding CreateBackupCommand}"
                         Padding="20,8" Margin="5,10,5,5"
                         Background="#4CAF50" Foreground="White"
-                        Width="200" HorizontalAlignment="Left"/>
+                        Width="200" HorizontalAlignment="Left"
+                        IsEnabled="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"/>
             </StackPanel>
         </Border>
 
@@ -49,13 +52,15 @@
                              IsReadOnly="True"/>
                     <Button Content="Выбрать файл" 
                             Command="{Binding BrowseRestoreCommand}"
-                            Padding="15,5" Margin="5"/>
+                            Padding="15,5" Margin="5"
+                            IsEnabled="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                 </StackPanel>
                 <Button Content="Восстановить из копии" 
                         Command="{Binding RestoreCommand}"
                         Padding="20,8" Margin="5,10,5,5"
                         Background="#FF9800" Foreground="White"
-                        Width="200" HorizontalAlignment="Left"/>
+                        Width="200" HorizontalAlignment="Left"
+                        IsEnabled="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"/>
             </StackPanel>
         </Border>
 
@@ -64,9 +69,19 @@
             <StackPanel>
                 <TextBlock Text="📊 СТАТУС" FontWeight="Bold" Margin="0,0,0,5"/>
                 <TextBlock Text="{Binding StatusMessage}" TextWrapping="Wrap"/>
-                <ProgressBar IsIndeterminate="{Binding IsBusy}" 
+                <ProgressBar IsIndeterminate="{Binding IsLoading}" 
                              Height="5" Margin="0,10,0,0"
-                             Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                             Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Оверлей загрузки (блокирует весь экран) -->
+        <Border Grid.RowSpan="5" 
+                Background="#80000000" 
+                Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                <ProgressBar IsIndeterminate="True" Width="150" Height="20"/>
+                <TextBlock Text="{Binding StatusMessage}" Margin="0,10,0,0" Foreground="White"/>
             </StackPanel>
         </Border>
     </Grid>

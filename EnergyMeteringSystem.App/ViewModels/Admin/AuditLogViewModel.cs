@@ -38,13 +38,19 @@ namespace EnergyMeteringSystem.App.ViewModels.Admin
             }
         }
 
+        // Свойства для обратной совместимости с XAML
+        public ObservableCollection<AuditLogDto> FilteredLogs => FilteredItems;
+        public AuditLogDto SelectedLog
+        {
+            get => SelectedItem;
+            set => SelectedItem = value;
+        }
+
         public AuditLogViewModel() : base(new AuditRepository())
         {
-            // 30 дней назад по сегодня
             _fromDate = DateTime.Today.AddDays(-30);
             _toDate = DateTime.Today;
 
-            // Команды переопределяем, так как у AuditLog нет Add/Edit/Delete
             AddCommand = null;
             EditCommand = null;
             DeleteCommand = null;
@@ -70,7 +76,6 @@ namespace EnergyMeteringSystem.App.ViewModels.Admin
             }, "Ошибка загрузки журнала аудита");
         }
 
-        // Не используются в AuditLog, но требуются интерфейсом
         protected override Task AddAsync() => Task.CompletedTask;
         protected override Task EditAsync() => Task.CompletedTask;
         protected override Task DeleteAsync() => Task.CompletedTask;

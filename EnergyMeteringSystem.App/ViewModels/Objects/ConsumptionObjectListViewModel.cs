@@ -3,6 +3,7 @@ using EnergyMeteringSystem.App.ViewModels.Base;
 using EnergyMeteringSystem.Core.Models.DTO;
 using EnergyMeteringSystem.Data.Repositories;
 using System;
+using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using System.Windows;
 
@@ -11,6 +12,15 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
     public class ConsumptionObjectListViewModel : ListViewModelBase<ConsumptionObjectDto, ConsumptionObjectRepository>
     {
         public AsyncRelayCommand<ConsumptionObjectDto> ShowMetersCommand { get; }
+
+        // Свойства для обратной совместимости с XAML
+        public ObservableCollection<ConsumptionObjectDto> FilteredObjects => FilteredItems;
+        public ConsumptionObjectDto SelectedObject
+        {
+            get => SelectedItem;
+            set => SelectedItem = value;
+        }
+        public ObservableCollection<ConsumptionObjectDto> Objects => Items;
 
         public ConsumptionObjectListViewModel() : base(new ConsumptionObjectRepository())
         {
