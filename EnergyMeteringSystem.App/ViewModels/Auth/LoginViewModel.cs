@@ -1,7 +1,9 @@
 ﻿using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using EnergyMeteringSystem.App.Commands;
 using EnergyMeteringSystem.App.ViewModels.Base;
+using EnergyMeteringSystem.Core.Models.DTO;
 using EnergyMeteringSystem.Services.Auth;
 
 namespace EnergyMeteringSystem.App.ViewModels.Auth
@@ -19,8 +21,8 @@ namespace EnergyMeteringSystem.App.ViewModels.Auth
             get => _username;
             set
             {
-                _ = SetProperty(ref _username, value);
-                LoginCommand?.RaiseCanExecuteChanged();
+                SetProperty(ref _username, value);
+                (LoginCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
             }
         }
 
@@ -29,49 +31,48 @@ namespace EnergyMeteringSystem.App.ViewModels.Auth
             get => _password;
             set
             {
-                _ = SetProperty(ref _password, value);
-                LoginCommand?.RaiseCanExecuteChanged();
+                SetProperty(ref _password, value);
+                (LoginCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
             }
-        }
+        }        
 
-        public string ErrorMessage
-        {
-            get => _errorMessage;
-            set => SetProperty(ref _errorMessage, value);
-        }
-
-        public RelayCommand LoginCommand { get; }
+        public AsyncRelayCommand LoginCommand { get; }
 
         public LoginViewModel()
         {
             _authService = new AuthService();
-            LoginCommand = new RelayCommand(ExecuteLogin, CanExecuteLogin);
+            LoginCommand = new AsyncRelayCommand(ExecuteLoginAsync, CanExecuteLogin);
         }
 
-        private bool CanExecuteLogin(object parameter)
+        private bool CanExecuteLogin()
         {
             return !string.IsNullOrWhiteSpace(Username) &&
-                   !string.IsNullOrWhiteSpace(Password);
+                   !string.IsNullOrWhiteSpace(Password) &&
+                   !IsLoading;
         }
 
-        private void ExecuteLogin(object parameter)
+        private async Task ExecuteLoginAsync()
         {
-            Core.Models.DTO.UserDto user = _authService.Login(Username, Password);
-            
-            if (user != null)
+            await ExecuteAsync(async () =>
             {
-                Views.Auth.LoginView loginWindow = Application.Current.Windows.OfType<Views.Auth.LoginView>().FirstOrDefault();
+                UserDto user = await Task.Run(() => _authService.Login(Username, Password));
 
-                Views.Main.ShellView shellView = new(user);  // ← передаем пользователя
-                shellView.Show();
-                Application.Current.MainWindow = shellView;
-
-                loginWindow?.Close();
-            }
-            else
-            {
-                ErrorMessage = "Неверное имя пользователя или пароль";
-            }
+                if (user != null)
+                {
+                    await Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        var loginWindow = Application.Current.Windows.OfType<Views.Auth.LoginView>().FirstOrDefault();
+                        var shellView = new Views.Main.ShellView(user);
+                        shellView.Show();
+                        Application.Current.MainWindow = shellView;
+                        loginWindow?.Close();
+                    });
+                }
+                else
+                {
+                    ErrorMessage = "Неверное имя пользователя или пароль";
+                }
+            }, "Ошибка входа");
         }
     }
 }

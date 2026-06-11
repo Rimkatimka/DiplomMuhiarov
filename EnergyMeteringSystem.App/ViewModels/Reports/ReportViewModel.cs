@@ -4,12 +4,12 @@ using EnergyMeteringSystem.App.Services.ExcelExport;
 using EnergyMeteringSystem.App.ViewModels.Base;
 using EnergyMeteringSystem.Core.Models.DTO;
 using EnergyMeteringSystem.Data.Repositories;
-using EnergyMeteringSystem.Services;
 using LiveCharts;
 using LiveCharts.Wpf;
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 
 namespace EnergyMeteringSystem.App.ViewModels.Reports
@@ -61,7 +61,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
             Years = new ObservableCollection<int>();
             Months = new ObservableCollection<string>();
 
-            ExportCommand = new RelayCommand(_ => ExportReport());
+            ExportCommand = new AsyncRelayCommand(async () => await ExportReportAsync());
 
             InitializeYearsAndMonths();
 
@@ -78,7 +78,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
             TopObjectsSeries = new SeriesCollection();
             MonthlySeries = new SeriesCollection();
 
-            LoadReport();
+            _ = LoadReportAsync();
         }
 
         public ObservableCollection<int> Years { get; set; }
@@ -91,7 +91,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
             {
                 if (SetProperty(ref _selectedReportType, value))
                 {
-                    LoadReport();
+                    _ = LoadReportAsync();
                     OnPropertyChanged(nameof(CurrentReportTitle));
                     OnPropertyChanged(nameof(ShowPeriodFilter));
                     OnPropertyChanged(nameof(ShowYearFilter));
@@ -143,7 +143,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
                 {
                     _isChartMode = !value;
                     OnPropertyChanged(nameof(IsChartMode));
-                    LoadReport();
+                    _ = LoadReportAsync();
                 }
             }
         }
@@ -159,7 +159,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
                     {
                         _isTableMode = !value;
                         OnPropertyChanged(nameof(IsTableMode));
-                        LoadReport();
+                        _ = LoadReportAsync();
                     }
                 }
                 else if (_isChartMode)
@@ -180,7 +180,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
                 if (SetProperty(ref _startDate, value))
                 {
                     ValidateDates();
-                    LoadReport();
+                    _ = LoadReportAsync();
                 }
             }
         }
@@ -193,7 +193,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
                 if (SetProperty(ref _endDate, value))
                 {
                     ValidateDates();
-                    LoadReport();
+                    _ = LoadReportAsync();
                 }
             }
         }
@@ -213,7 +213,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
                 {
                     _startDate = new DateTime(_startYear, _startMonth, 1);
                     OnPropertyChanged(nameof(StartDate));
-                    LoadReport();
+                    _ = LoadReportAsync();
                 }
             }
         }
@@ -227,7 +227,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
                 {
                     _startDate = new DateTime(_startYear, _startMonth, 1);
                     OnPropertyChanged(nameof(StartDate));
-                    LoadReport();
+                    _ = LoadReportAsync();
                 }
             }
         }
@@ -242,7 +242,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
                     int lastDay = DateTime.DaysInMonth(_endYear, _endMonth);
                     _endDate = new DateTime(_endYear, _endMonth, lastDay);
                     OnPropertyChanged(nameof(EndDate));
-                    LoadReport();
+                    _ = LoadReportAsync();
                 }
             }
         }
@@ -257,7 +257,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
                     int lastDay = DateTime.DaysInMonth(_endYear, _endMonth);
                     _endDate = new DateTime(_endYear, _endMonth, lastDay);
                     OnPropertyChanged(nameof(EndDate));
-                    LoadReport();
+                    _ = LoadReportAsync();
                 }
             }
         }
@@ -368,7 +368,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
         public bool ShowMonthlyFilter => SelectedReportType == 3;
         public bool ShowSummary => SelectedReportType == 0 || SelectedReportType == 1 || SelectedReportType == 2 || SelectedReportType == 3 || SelectedReportType == 4;
 
-        public RelayCommand ExportCommand { get; }
+        public AsyncRelayCommand ExportCommand { get; }
 
         private void InitializeYearsAndMonths()
         {
@@ -406,39 +406,35 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
             }
         }
 
-        private void LoadReport()
+        private async Task LoadReportAsync()
         {
             if (!string.IsNullOrEmpty(DateError)) return;
 
-            try
+            await ExecuteAsync(async () =>
             {
                 switch (SelectedReportType)
                 {
-                    case 0: LoadConsumptionReport(); break;
-                    case 1: LoadTopObjectsReport(); break;
-                    case 2: LoadTypeDistributionReport(); break;
-                    case 3: LoadMonthlyDynamicsReport(); break;
-                    case 4: LoadRegionReport(); break;
-                    case 5: LoadAnomaliesReport(); break;
-                    case 6: LoadExpiringMetersReport(); break;
+                    case 0: await LoadConsumptionReportAsync(); break;
+                    case 1: await LoadTopObjectsReportAsync(); break;
+                    case 2: await LoadTypeDistributionReportAsync(); break;
+                    case 3: await LoadMonthlyDynamicsReportAsync(); break;
+                    case 4: await LoadRegionReportAsync(); break;
+                    case 5: await LoadAnomaliesReportAsync(); break;
+                    case 6: await LoadExpiringMetersReportAsync(); break;
                     case 7: LoadOperatorActivityReport(); break;
-                    case 8: LoadObjectAnalyticsReport(); break;
+                    case 8: await LoadObjectAnalyticsReportAsync(); break;
                 }
 
                 OnPropertyChanged(nameof(CurrentData));
                 OnPropertyChanged(nameof(TotalConsumption));
                 OnPropertyChanged(nameof(TotalObjects));
                 OnPropertyChanged(nameof(TotalRecords));
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error loading report: {ex.Message}");
-            }
+            }, "Ошибка загрузки отчета");
         }
 
-        private void LoadConsumptionReport()
+        private async Task LoadConsumptionReportAsync()
         {
-            var data = _reportRepository.GetConsumptionReport(StartDate, EndDate);
+            var data = await _reportRepository.GetConsumptionReportOptimizedAsync(StartDate, EndDate);
 
             if (data == null || !data.Any())
             {
@@ -473,7 +469,6 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
                 TotalRecords = data.Count
             };
 
-            // Загрузка распределения по типам для графика
             var typeDistribution = data
                 .Where(d => !string.IsNullOrEmpty(d.ObjectType))
                 .GroupBy(d => d.ObjectType)
@@ -495,7 +490,6 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
                 }
             }
 
-            // ТОП-10 для графика
             if (IsChartMode && _consumptionData.Records.Any())
             {
                 var topByObject = _consumptionData.Records
@@ -522,9 +516,9 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
             }
         }
 
-        private void LoadTypeDistributionReport()
+        private async Task LoadTypeDistributionReportAsync()
         {
-            var data = _reportRepository.GetConsumptionReport(StartDate, EndDate);
+            var data = await _reportRepository.GetConsumptionReportOptimizedAsync(StartDate, EndDate);
 
             if (data == null || !data.Any())
             {
@@ -575,9 +569,9 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
             }
         }
 
-        private void LoadTopObjectsReport()
+        private async Task LoadTopObjectsReportAsync()
         {
-            var data = _reportRepository.GetConsumptionReport(StartDate, EndDate);
+            var data = await _reportRepository.GetConsumptionReportOptimizedAsync(StartDate, EndDate);
 
             if (data == null || !data.Any())
             {
@@ -635,7 +629,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
             }
         }
 
-        private void LoadMonthlyDynamicsReport()
+        private async Task LoadMonthlyDynamicsReportAsync()
         {
             try
             {
@@ -652,7 +646,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
                     DateTime monthStart = new DateTime(year, month, 1);
                     DateTime monthEnd = new DateTime(year, month, DateTime.DaysInMonth(year, month));
 
-                    var readings = _reportRepository.GetConsumptionReport(monthStart, monthEnd);
+                    var readings = await _reportRepository.GetConsumptionReportOptimizedAsync(monthStart, monthEnd);
                     decimal consumption = readings.Sum(r => r.Consumption);
 
                     monthlyData.Add(new MonthlyRecord
@@ -697,7 +691,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error in LoadMonthlyDynamicsReport: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Error in LoadMonthlyDynamicsReportAsync: {ex.Message}");
                 _monthlyDynamicsData = new MonthlyDynamicsReport
                 {
                     Title = "Динамика потребления по месяцам",
@@ -706,9 +700,9 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
             }
         }
 
-        private void LoadRegionReport()
+        private async Task LoadRegionReportAsync()
         {
-            var data = _reportRepository.GetConsumptionReport(StartDate, EndDate);
+            var data = await _reportRepository.GetConsumptionReportOptimizedAsync(StartDate, EndDate);
             var regionData = new System.Collections.Generic.Dictionary<string, RegionConsumptionRecord>();
 
             foreach (var item in data)
@@ -742,9 +736,9 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
             };
         }
 
-        private void LoadAnomaliesReport()
+        private async Task LoadAnomaliesReportAsync()
         {
-            var data = _reportRepository.GetConsumptionReport(StartDate, EndDate);
+            var data = await _reportRepository.GetConsumptionReportOptimizedAsync(StartDate, EndDate);
             var anomalies = new System.Collections.Generic.List<AnomalyRecord>();
 
             var byMeter = data.GroupBy(d => d.MeterSerial);
@@ -786,10 +780,10 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
             };
         }
 
-        private void LoadExpiringMetersReport()
+        private async Task LoadExpiringMetersReportAsync()
         {
-            var allMeters = _meterRepository.GetAll();
-            var allObjects = _objectRepository.GetAll().ToDictionary(o => o.Id, o => o.Address);
+            var allMeters = await _meterRepository.GetAllAsync();
+            var allObjects = (await _objectRepository.GetAllAsync()).ToDictionary(o => o.Id, o => o.Address);
 
             _expiringMetersData = new ExpiringMetersReport
             {
@@ -825,10 +819,10 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
             };
         }
 
-        private void LoadObjectAnalyticsReport()
+        private async Task LoadObjectAnalyticsReportAsync()
         {
-            var consumptionData = _reportRepository.GetConsumptionReport(StartDate, EndDate);
-            var objects = _objectRepository.GetAll();
+            var consumptionData = await _reportRepository.GetConsumptionReportOptimizedAsync(StartDate, EndDate);
+            var objects = await _objectRepository.GetAllAsync();
 
             var analytics = new System.Collections.Generic.List<ObjectAnalyticsRecord>();
 
@@ -874,58 +868,50 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
             }
         }
 
-        // В ExportReport() замените на:
-
-        private void ExportReport()
+        private async Task ExportReportAsync()
         {
-            ReportBase reportToExport = null;
-            System.Collections.Generic.List<(string Category, decimal Value)> chartData = null;
-            string chartTitle = null;
-            Microsoft.Office.Interop.Excel.XlChartType chartType = Microsoft.Office.Interop.Excel.XlChartType.xlPie;
-
-            // Для отчета 0 нужно 2 графика
-            System.Collections.Generic.List<(string Category, decimal Value)> secondChartData = null;
-            string secondChartTitle = null;
-            Microsoft.Office.Interop.Excel.XlChartType secondChartType = Microsoft.Office.Interop.Excel.XlChartType.xlColumnClustered;
-
-            switch (SelectedReportType)
+            await ExecuteAsync(async () =>
             {
-                case 0: // Потребление за период - ДВА ГРАФИКА
-                    reportToExport = _consumptionData;
+                ReportBase reportToExport = null;
+                System.Collections.Generic.List<(string Category, decimal Value)> chartData = null;
+                string chartTitle = null;
+                Microsoft.Office.Interop.Excel.XlChartType chartType = Microsoft.Office.Interop.Excel.XlChartType.xlPie;
 
-                    // 1-й график: Распределение по типам (круговая)
-                    if (TypeDistributionSeries != null && TypeDistributionSeries.Any())
-                    {
-                        chartData = new System.Collections.Generic.List<(string, decimal)>();
-                        foreach (var series in TypeDistributionSeries)
+                System.Collections.Generic.List<(string Category, decimal Value)> secondChartData = null;
+                string secondChartTitle = null;
+                Microsoft.Office.Interop.Excel.XlChartType secondChartType = Microsoft.Office.Interop.Excel.XlChartType.xlColumnClustered;
+
+                switch (SelectedReportType)
+                {
+                    case 0:
+                        reportToExport = _consumptionData;
+                        if (TypeDistributionSeries != null && TypeDistributionSeries.Any())
                         {
-                            var pieSeries = series as PieSeries;
-                            if (pieSeries != null)
+                            chartData = new System.Collections.Generic.List<(string, decimal)>();
+                            foreach (var series in TypeDistributionSeries)
                             {
-                                var values = pieSeries.Values as LiveCharts.ChartValues<decimal>;
-                                if (values != null && values.Count > 0)
+                                var pieSeries = series as PieSeries;
+                                if (pieSeries != null)
                                 {
-                                    string category = pieSeries.Title;
-                                    if (category.Length > 25) category = category.Substring(0, 22) + "...";
-                                    chartData.Add((category, values[0]));
+                                    var values = pieSeries.Values as LiveCharts.ChartValues<decimal>;
+                                    if (values != null && values.Count > 0)
+                                    {
+                                        string category = pieSeries.Title;
+                                        if (category.Length > 25) category = category.Substring(0, 22) + "...";
+                                        chartData.Add((category, values[0]));
+                                    }
                                 }
                             }
+                            chartTitle = "Распределение по типам объектов";
+                            chartType = Microsoft.Office.Interop.Excel.XlChartType.xlPie;
                         }
-                        chartTitle = "Распределение по типам объектов";
-                        chartType = Microsoft.Office.Interop.Excel.XlChartType.xlPie;
-                    }
 
-                    // 2-й график: ТОП-10 объектов (столбчатая)
-                    if (TopObjectsSeries != null && TopObjectsSeries.Any())
-                    {
-                        secondChartData = new System.Collections.Generic.List<(string, decimal)>();
-                        var columnSeries = TopObjectsSeries[0] as ColumnSeries;
-                        if (columnSeries != null && columnSeries.Values != null)
+                        if (TopObjectsSeries != null && TopObjectsSeries.Any())
                         {
-                            var values = columnSeries.Values as LiveCharts.ChartValues<decimal>;
-                            if (values != null && _consumptionData != null && _consumptionData.Records != null)
+                            secondChartData = new System.Collections.Generic.List<(string, decimal)>();
+                            var columnSeries = TopObjectsSeries[0] as ColumnSeries;
+                            if (columnSeries != null && columnSeries.Values != null && _consumptionData?.Records != null)
                             {
-                                // Берем реальные адреса объектов из данных
                                 var topObjects = _consumptionData.Records
                                     .GroupBy(r => r.Address)
                                     .Select(g => new { Address = g.Key, Consumption = g.Sum(x => x.Consumption) })
@@ -940,22 +926,18 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
                                     secondChartData.Add((address, topObjects[i].Consumption));
                                 }
                             }
+                            secondChartTitle = "ТОП-10 объектов по потреблению";
+                            secondChartType = Microsoft.Office.Interop.Excel.XlChartType.xlColumnClustered;
                         }
-                        secondChartTitle = "ТОП-10 объектов по потреблению";
-                        secondChartType = Microsoft.Office.Interop.Excel.XlChartType.xlColumnClustered;
-                    }
-                    break;
+                        break;
 
-                case 1: // ТОП-10 объектов
-                    reportToExport = _topObjectsData;
-                    if (TopObjectsSeries != null && TopObjectsSeries.Any())
-                    {
-                        chartData = new System.Collections.Generic.List<(string, decimal)>();
-                        var columnSeries = TopObjectsSeries[0] as ColumnSeries;
-                        if (columnSeries != null && columnSeries.Values != null)
+                    case 1:
+                        reportToExport = _topObjectsData;
+                        if (TopObjectsSeries != null && TopObjectsSeries.Any())
                         {
-                            var values = columnSeries.Values as LiveCharts.ChartValues<decimal>;
-                            if (values != null && _topObjectsData != null && _topObjectsData.Records != null)
+                            chartData = new System.Collections.Generic.List<(string, decimal)>();
+                            var columnSeries = TopObjectsSeries[0] as ColumnSeries;
+                            if (columnSeries != null && columnSeries.Values != null && _topObjectsData?.Records != null)
                             {
                                 foreach (var record in _topObjectsData.Records)
                                 {
@@ -964,93 +946,86 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
                                     chartData.Add((address, record.Consumption));
                                 }
                             }
+                            chartTitle = "ТОП-10 объектов по потреблению";
+                            chartType = Microsoft.Office.Interop.Excel.XlChartType.xlColumnClustered;
                         }
-                        chartTitle = "ТОП-10 объектов по потреблению";
-                        chartType = Microsoft.Office.Interop.Excel.XlChartType.xlColumnClustered;
-                    }
-                    break;
+                        break;
 
-                case 2: // Потребление по типам
-                    reportToExport = _typeDistributionData;
-                    if (TypeDistributionSeries != null && TypeDistributionSeries.Any())
-                    {
-                        chartData = new System.Collections.Generic.List<(string, decimal)>();
-                        foreach (var series in TypeDistributionSeries)
+                    case 2:
+                        reportToExport = _typeDistributionData;
+                        if (TypeDistributionSeries != null && TypeDistributionSeries.Any())
                         {
-                            var pieSeries = series as PieSeries;
-                            if (pieSeries != null)
+                            chartData = new System.Collections.Generic.List<(string, decimal)>();
+                            foreach (var series in TypeDistributionSeries)
                             {
-                                var values = pieSeries.Values as LiveCharts.ChartValues<decimal>;
-                                if (values != null && values.Count > 0)
+                                var pieSeries = series as PieSeries;
+                                if (pieSeries != null)
                                 {
-                                    string category = pieSeries.Title;
-                                    if (category.Length > 25) category = category.Substring(0, 22) + "...";
-                                    chartData.Add((category, values[0]));
+                                    var values = pieSeries.Values as LiveCharts.ChartValues<decimal>;
+                                    if (values != null && values.Count > 0)
+                                    {
+                                        string category = pieSeries.Title;
+                                        if (category.Length > 25) category = category.Substring(0, 22) + "...";
+                                        chartData.Add((category, values[0]));
+                                    }
                                 }
                             }
+                            chartTitle = "Распределение по типам объектов";
+                            chartType = Microsoft.Office.Interop.Excel.XlChartType.xlPie;
                         }
-                        chartTitle = "Распределение по типам объектов";
-                        chartType = Microsoft.Office.Interop.Excel.XlChartType.xlPie;
-                    }
-                    break;
+                        break;
 
-                case 3: // Динамика по месяцам
-                    reportToExport = _monthlyDynamicsData;
-                    if (MonthlySeries != null && MonthlySeries.Any())
-                    {
-                        chartData = new System.Collections.Generic.List<(string, decimal)>();
-                        var columnSeries = MonthlySeries[0] as ColumnSeries;
-                        if (columnSeries != null && columnSeries.Values != null)
+                    case 3:
+                        reportToExport = _monthlyDynamicsData;
+                        if (MonthlySeries != null && MonthlySeries.Any())
                         {
-                            var values = columnSeries.Values as LiveCharts.ChartValues<decimal>;
-                            if (values != null && _monthlyDynamicsData != null && _monthlyDynamicsData.Records != null)
+                            chartData = new System.Collections.Generic.List<(string, decimal)>();
+                            var columnSeries = MonthlySeries[0] as ColumnSeries;
+                            if (columnSeries != null && columnSeries.Values != null && _monthlyDynamicsData?.Records != null)
                             {
                                 foreach (var record in _monthlyDynamicsData.Records)
                                 {
                                     chartData.Add(($"{record.MonthName} {record.Year}", record.Consumption));
                                 }
                             }
+                            chartTitle = "Динамика потребления по месяцам";
+                            chartType = Microsoft.Office.Interop.Excel.XlChartType.xlLine;
                         }
-                        chartTitle = "Динамика потребления по месяцам";
-                        chartType = Microsoft.Office.Interop.Excel.XlChartType.xlLine;
-                    }
-                    break;
+                        break;
 
-                case 4: reportToExport = _regionData; break;
-                case 5: reportToExport = _anomaliesData; break;
-                case 6: reportToExport = _expiringMetersData; break;
-                case 7: reportToExport = _operatorActivityData; break;
-                case 8: reportToExport = _objectAnalyticsData; break;
-            }
-
-            if (reportToExport == null) return;
-
-            string fileName = CurrentReportTitle.Replace("📊 ", "").Replace("🏆 ", "").Replace("📈 ", "").Replace("📉 ", "").Replace("🗺️ ", "").Replace("⚠️ ", "").Replace("🔧 ", "").Replace("👥 ", "").Replace("📐 ", "");
-
-            // Если выбран режим с графиком
-            if (IsChartMode)
-            {
-                // Для отчета 0 - два графика
-                if (SelectedReportType == 0 && (chartData != null || secondChartData != null))
-                {
-                    _excelExport.ExportReportWithTwoCharts(reportToExport, fileName,
-                        chartData, chartTitle, chartType,
-                        secondChartData, secondChartTitle, secondChartType);
+                    case 4: reportToExport = _regionData; break;
+                    case 5: reportToExport = _anomaliesData; break;
+                    case 6: reportToExport = _expiringMetersData; break;
+                    case 7: reportToExport = _operatorActivityData; break;
+                    case 8: reportToExport = _objectAnalyticsData; break;
                 }
-                // Для остальных отчетов - один график
-                else if (chartData != null && chartData.Any())
+
+                if (reportToExport == null) return;
+
+                string fileName = CurrentReportTitle.Replace("📊 ", "").Replace("🏆 ", "").Replace("📈 ", "").Replace("📉 ", "").Replace("🗺️ ", "").Replace("⚠️ ", "").Replace("🔧 ", "").Replace("👥 ", "").Replace("📐 ", "");
+
+                if (IsChartMode)
                 {
-                    _excelExport.ExportReportWithNativeChart(reportToExport, fileName, chartData, chartTitle, chartType);
+                    if (SelectedReportType == 0 && (chartData != null || secondChartData != null))
+                    {
+                        await Task.Run(() => _excelExport.ExportReportWithTwoCharts(reportToExport, fileName,
+                            chartData, chartTitle, chartType,
+                            secondChartData, secondChartTitle, secondChartType));
+                    }
+                    else if (chartData != null && chartData.Any())
+                    {
+                        await Task.Run(() => _excelExport.ExportReportWithNativeChart(reportToExport, fileName, chartData, chartTitle, chartType));
+                    }
+                    else
+                    {
+                        await Task.Run(() => _excelExport.ExportReport(reportToExport, fileName));
+                    }
                 }
                 else
                 {
-                    _excelExport.ExportReport(reportToExport, fileName);
+                    await Task.Run(() => _excelExport.ExportReport(reportToExport, fileName));
                 }
-            }
-            else
-            {
-                _excelExport.ExportReport(reportToExport, fileName);
-            }
+            }, "Ошибка экспорта отчета");
         }
 
         private string ExtractRegionFromAddress(string address)

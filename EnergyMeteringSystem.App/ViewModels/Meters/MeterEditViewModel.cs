@@ -7,48 +7,42 @@ using EnergyMeteringSystem.Services;
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 
 namespace EnergyMeteringSystem.App.ViewModels.Meters
 {
-    public class MeterEditViewModel : ViewModelBase
+    public class MeterEditViewModel : EditViewModelBase<MeterDto, MeterRepository>
     {
-        private readonly MeterRepository _meterRepository;
         private readonly IMeterTypeRepository _meterTypeRepository;
         private readonly ConsumptionObjectRepository _objectRepository;
         private readonly MeterStatusRepository _statusRepository;
+
         private const decimal MAX_INITIAL_READING = 99999.999m;
         private const decimal MIN_INITIAL_READING = 0;
 
-        private MeterDto _meter;
         private MeterTypeDto _selectedMeterType;
         private ConsumptionObjectDto _selectedObject;
         private MeterStatusDto _selectedStatus;
         private string _serialNumber;
         private decimal _initialReading;
         private int? _serviceLifeYears;
-        private int _verificationIntervalYears = 16;
         private DateTime? _installationDate;
         private DateTime? _lastVerificationDate;
         private DateTime? _nextVerificationDate;
         private DateTime? _removalDate;
         private string _dateError;
 
-        public event EventHandler OnMeterSaved;
-
         public ObservableCollection<MeterTypeDto> MeterTypes { get; set; }
         public ObservableCollection<ConsumptionObjectDto> Objects { get; set; }
         public ObservableCollection<MeterStatusDto> Statuses { get; set; }
+
         public bool IsObjectEnabled => !IsObjectReadOnly;
         public bool HasDateError => !string.IsNullOrEmpty(DateError);
-
         public bool IsObjectReadOnly { get; private set; }
-        public bool IsEditMode { get; private set; }
 
         public DateTime MinInstallationDate => DateTime.Today.AddYears(-100);
         public DateTime MaxInstallationDate => DateTime.Today;
-        public DateTime? MinLastVerificationDate => InstallationDate;
-        public DateTime? MaxLastVerificationDate => DateTime.Today;
 
         public DateTime? MinNextVerificationDate
         {
@@ -99,8 +93,6 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
                 {
                     SetProperty(ref _initialReading, value);
                 }
-
-                SaveCommand?.RaiseCanExecuteChanged();
             }
         }
 
@@ -112,7 +104,6 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
                 SetProperty(ref _serviceLifeYears, value);
                 CalculateRemovalDate();
                 ValidateDates();
-                SaveCommand?.RaiseCanExecuteChanged();
             }
         }
 
@@ -124,11 +115,9 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
                 if (SetProperty(ref _installationDate, value))
                 {
                     CalculateRemovalDate();
-                    OnPropertyChanged(nameof(MinLastVerificationDate));
                     OnPropertyChanged(nameof(MinNextVerificationDate));
                     OnPropertyChanged(nameof(MaxNextVerificationDate));
                     ValidateDates();
-                    SaveCommand?.RaiseCanExecuteChanged();
                 }
             }
         }
@@ -140,9 +129,8 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
             {
                 if (SetProperty(ref _lastVerificationDate, value))
                 {
-                    CalculateNextVerificationDate();  // ← ВЫЗОВ
+                    CalculateNextVerificationDate();
                     ValidateDates();
-                    SaveCommand.RaiseCanExecuteChanged();
                 }
             }
         }
@@ -152,11 +140,8 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
             get => _nextVerificationDate;
             set
             {
-                if (SetProperty(ref _nextVerificationDate, value))
-                {
-                    ValidateDates();
-                    SaveCommand?.RaiseCanExecuteChanged();
-                }
+                SetProperty(ref _nextVerificationDate, value);
+                ValidateDates();
             }
         }
 
@@ -181,11 +166,8 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
                 if (value != null)
                 {
                     ServiceLifeYears = value.ServiceLifeYears;
-                    _verificationIntervalYears = value.VerificationIntervalYears ?? 16;
-
-                    CalculateNextVerificationDate();  // ← ВЫЗОВ
+                    CalculateNextVerificationDate();
                 }
-                SaveCommand.RaiseCanExecuteChanged();
             }
         }
 
@@ -201,15 +183,10 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
             set => SetProperty(ref _selectedStatus, value);
         }
 
-        public RelayCommand SaveCommand { get; set; }
-        public RelayCommand CancelCommand { get; set; }
-
         // Конструктор для добавления
         public MeterEditViewModel(ConsumptionObjectDto currentObject = null)
+            : base(new MeterRepository(), null)
         {
-            System.Diagnostics.Debug.WriteLine($"=== КОНСТРУКТОР: currentObject = {(currentObject != null ? currentObject.Address : "null")} ===");
-
-            _meterRepository = new MeterRepository();
             _meterTypeRepository = new MeterTypeRepository();
             _objectRepository = new ConsumptionObjectRepository();
             _statusRepository = new MeterStatusRepository();
@@ -218,31 +195,22 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
             Objects = new ObservableCollection<ConsumptionObjectDto>();
             Statuses = new ObservableCollection<MeterStatusDto>();
 
-            SaveCommand = new RelayCommand(_ => Save(), _ => CanSave());
-            CancelCommand = new RelayCommand(_ => Cancel());
-
-            LoadData();
+            Title = "Регистрация счетчика";
+            InstallationDate = DateTime.Today;
+            LastVerificationDate = InstallationDate;
 
             if (currentObject != null)
             {
-                SelectedObject = Objects.FirstOrDefault(o => o.Id == currentObject.Id);
                 IsObjectReadOnly = true;
             }
-            else
-            {
-                IsObjectReadOnly = false;
-            }
 
-            InstallationDate = DateTime.Today;
-            LastVerificationDate = InstallationDate;
+            _ = LoadDataAsync();
         }
 
         // Конструктор для редактирования
         public MeterEditViewModel(MeterDto existingMeter)
+            : base(new MeterRepository(), existingMeter)
         {
-            System.Diagnostics.Debug.WriteLine($"=== КОНСТРУКТОР РЕДАКТИРОВАНИЯ: MeterId={existingMeter?.Id} ===");
-
-            _meterRepository = new MeterRepository();
             _meterTypeRepository = new MeterTypeRepository();
             _objectRepository = new ConsumptionObjectRepository();
             _statusRepository = new MeterStatusRepository();
@@ -251,58 +219,107 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
             Objects = new ObservableCollection<ConsumptionObjectDto>();
             Statuses = new ObservableCollection<MeterStatusDto>();
 
-            SaveCommand = new RelayCommand(_ => Save(), _ => CanSave());
-            CancelCommand = new RelayCommand(_ => Cancel());
-
-            LoadData();
-
-            _meter = existingMeter;
+            Title = "Редактирование счетчика";
             IsObjectReadOnly = false;
-            IsEditMode = true;
 
-            LoadMeter(existingMeter);
+            _ = LoadDataAsync();
         }
 
-        private void LoadData()
+        private async Task LoadDataAsync()
         {
-            var types = _meterTypeRepository.GetAll();
-            MeterTypes.Clear();
-            foreach (var item in types)
+            await ExecuteAsync(async () =>
             {
-                MeterTypes.Add(item);
-            }
+                var types = await _meterTypeRepository.GetAllAsync();
+                MeterTypes.Clear();
+                foreach (var type in types)
+                    MeterTypes.Add(type);
 
-            var objects = _objectRepository.GetAll();
-            Objects.Clear();
-            foreach (var obj in objects)
-                Objects.Add(obj);
+                var objects = await _objectRepository.GetAllAsync();
+                Objects.Clear();
+                foreach (var obj in objects)
+                    Objects.Add(obj);
 
-            var statuses = _statusRepository.GetAll();
-            Statuses.Clear();
-            foreach (var item in statuses)
-            {
-                Statuses.Add(new MeterStatusDto
+                var statuses = await _statusRepository.GetAllAsync();
+                Statuses.Clear();
+                foreach (var status in statuses)
                 {
-                    Id = item.Id,
-                    Name = item.Name,
-                    Description = item.Description,
-                    CanAcceptReadings = true
-                });
-            }
+                    Statuses.Add(new MeterStatusDto
+                    {
+                        Id = status.Id,
+                        Name = status.Name,
+                        Description = status.Description,
+                        CanAcceptReadings = true
+                    });
+                }
+
+                if (IsEditMode && _originalItem != null)
+                {
+                    LoadItem(_originalItem);
+
+                    // Выбираем объект после загрузки
+                    if (_originalItem.ConsumptionObjectId > 0)
+                    {
+                        SelectedObject = Objects.FirstOrDefault(o => o.Id == _originalItem.ConsumptionObjectId);
+                    }
+                }
+            }, "Ошибка загрузки данных");
         }
 
-        private void LoadMeter(MeterDto meter)
+        protected override void LoadItem(MeterDto item)
         {
-            SerialNumber = meter.SerialNumber;
-            InstallationDate = meter.InstallationDate;
-            InitialReading = meter.InitialReading;
-            LastVerificationDate = meter.LastVerificationDate;
-            NextVerificationDate = meter.NextVerificationDate;  // ← Загружаем дату
-            ServiceLifeYears = meter.ServiceLifeYears;
+            SerialNumber = item.SerialNumber;
+            InstallationDate = item.InstallationDate;
+            InitialReading = item.InitialReading;
+            LastVerificationDate = item.LastVerificationDate;
+            NextVerificationDate = item.NextVerificationDate;
+            ServiceLifeYears = item.ServiceLifeYears;
 
-            SelectedMeterType = MeterTypes.FirstOrDefault(t => t.Id == meter.MeterTypeId);
-            SelectedObject = Objects.FirstOrDefault(o => o.Id == meter.ConsumptionObjectId);
-            SelectedStatus = Statuses.FirstOrDefault(s => s.Id == meter.StatusId);
+            SelectedMeterType = MeterTypes.FirstOrDefault(t => t.Id == item.MeterTypeId);
+            SelectedStatus = Statuses.FirstOrDefault(s => s.Id == item.StatusId);
+        }
+
+        protected override MeterDto GetDto()
+        {
+            return new MeterDto
+            {
+                Id = _originalItem?.Id ?? 0,
+                SerialNumber = SerialNumber,
+                MeterTypeId = SelectedMeterType?.Id ?? 0,
+                ConsumptionObjectId = SelectedObject?.Id ?? 0,
+                InstallationDate = InstallationDate ?? DateTime.Today,
+                InitialReading = InitialReading,
+                LastVerificationDate = LastVerificationDate,
+                NextVerificationDate = NextVerificationDate,
+                ServiceLifeYears = ServiceLifeYears,
+                StatusId = SelectedStatus?.Id ?? 1
+            };
+        }
+
+        protected override async Task SaveToRepositoryAsync(MeterDto dto)
+        {
+            ValidateDates();
+
+            if (!string.IsNullOrEmpty(DateError))
+            {
+                MessageBox.Show("Исправьте ошибки в датах перед сохранением",
+                    "Ошибка валидации", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            if (IsEditMode)
+                await _repository.UpdateAsync(dto);
+            else
+                await _repository.AddAsync(dto);
+        }
+
+        protected override bool CanSave()
+        {
+            return !string.IsNullOrWhiteSpace(SerialNumber) &&
+                   SelectedMeterType != null &&
+                   SelectedObject != null &&
+                   SelectedStatus != null &&
+                   InstallationDate.HasValue &&
+                   string.IsNullOrEmpty(DateError);
         }
 
         private void CalculateRemovalDate()
@@ -310,22 +327,18 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
             if (InstallationDate.HasValue && ServiceLifeYears.HasValue)
                 RemovalDate = InstallationDate.Value.AddYears(ServiceLifeYears.Value);
         }
+
         private void CalculateNextVerificationDate()
         {
             if (LastVerificationDate.HasValue && SelectedMeterType != null)
             {
                 int interval = SelectedMeterType.VerificationIntervalYears ?? 16;
                 NextVerificationDate = LastVerificationDate.Value.AddYears(interval);
-
-                System.Diagnostics.Debug.WriteLine($"CalculateNextVerificationDate: LastVerificationDate={LastVerificationDate}, interval={interval}, Next={NextVerificationDate}");
             }
             else if (InstallationDate.HasValue && SelectedMeterType != null)
             {
-                // Если нет даты поверки, считаем от даты установки
                 int interval = SelectedMeterType.VerificationIntervalYears ?? 16;
                 NextVerificationDate = InstallationDate.Value.AddYears(interval);
-
-                System.Diagnostics.Debug.WriteLine($"CalculateNextVerificationDate (от установки): InstallationDate={InstallationDate}, interval={interval}, Next={NextVerificationDate}");
             }
 
             OnPropertyChanged(nameof(NextVerificationDate));
@@ -360,54 +373,6 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
                 DateError = "Дата следующей поверки не может быть позже даты изъятия счетчика";
                 return;
             }
-        }
-
-        private bool CanSave()
-        {
-            return !string.IsNullOrWhiteSpace(SerialNumber) &&
-                   SelectedMeterType != null &&
-                   SelectedObject != null &&
-                   SelectedStatus != null &&
-                   InstallationDate.HasValue &&
-                   string.IsNullOrEmpty(DateError);
-        }
-
-        private void Save()
-        {
-            ValidateDates();
-
-            if (!string.IsNullOrEmpty(DateError))
-            {
-                MessageBox.Show("Исправьте ошибки в датах перед сохранением",
-                    "Ошибка валидации", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
-            var dto = new MeterDto
-            {
-                Id = _meter?.Id ?? 0,
-                SerialNumber = SerialNumber,
-                MeterTypeId = SelectedMeterType.Id,
-                ConsumptionObjectId = SelectedObject.Id,
-                InstallationDate = InstallationDate.Value,
-                InitialReading = InitialReading,
-                LastVerificationDate = LastVerificationDate,
-                NextVerificationDate = NextVerificationDate,  // ← ПРОВЕРЬТЕ
-                ServiceLifeYears = ServiceLifeYears,
-                StatusId = SelectedStatus.Id
-            };
-
-            if (IsEditMode)
-                _meterRepository.Update(dto);
-            else
-                _meterRepository.Add(dto);
-
-            OnMeterSaved?.Invoke(this, EventArgs.Empty);
-        }
-
-        private void Cancel()
-        {
-            OnMeterSaved?.Invoke(this, EventArgs.Empty);
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using EnergyMeteringSystem.App.Commands;
+﻿
+using EnergyMeteringSystem.App.Commands;
 using System;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -54,7 +55,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Base
         protected abstract void LoadItem(TModel item);
         protected abstract TModel GetDto();
         protected abstract Task SaveToRepositoryAsync(TModel dto);
-        protected abstract bool CanSave();
+        protected new abstract bool CanSave();
 
         protected virtual async Task SaveAsync()
         {

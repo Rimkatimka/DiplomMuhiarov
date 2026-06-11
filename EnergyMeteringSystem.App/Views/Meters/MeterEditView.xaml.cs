@@ -12,7 +12,7 @@ namespace EnergyMeteringSystem.App.Views.Meters
             InitializeComponent();
             DataContext = viewModel;
 
-            viewModel.OnMeterSaved += (s, e) => Close();
+            viewModel.OnSaved += (s, e) => Close();
         }
 
         private void TextBox_PreviewTextInput_Alphanumeric(object sender, TextCompositionEventArgs e)

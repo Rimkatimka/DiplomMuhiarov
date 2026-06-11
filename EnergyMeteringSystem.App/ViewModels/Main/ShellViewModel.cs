@@ -7,6 +7,7 @@ using EnergyMeteringSystem.Data.Repositories;
 using EnergyMeteringSystem.Services.Auth;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 
 namespace EnergyMeteringSystem.App.ViewModels.Main
@@ -14,23 +15,28 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
     public class ShellViewModel : ViewModelBase
     {
         private UserDto _currentUser;
+        private object _currentView;
+        private MenuItemViewModel _selectedMenuItem;
+        private string _searchText;
+        private ObservableCollection<MenuItemViewModel> _filteredMenuItems;
+
         public UserDto CurrentUser
         {
             get => _currentUser;
-            set => SetProperty(ref _currentUser, value);  // ✅ Добавить set
+            set => SetProperty(ref _currentUser, value);
         }
-        public ObservableCollection<MenuItemViewModel> MenuItems { get; set; }
-        public RelayCommand EditProfileCommand { get; }
-        public RelayCommand LogoutCommand { get; }
 
-        private object _currentView;
+        public ObservableCollection<MenuItemViewModel> MenuItems { get; set; }
+
+        public AsyncRelayCommand EditProfileCommand { get; }
+        public AsyncRelayCommand LogoutCommand { get; }
+
         public object CurrentView
         {
             get => _currentView;
             set => SetProperty(ref _currentView, value);
         }
 
-        private MenuItemViewModel _selectedMenuItem;
         public MenuItemViewModel SelectedMenuItem
         {
             get => _selectedMenuItem;
@@ -42,9 +48,6 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
                 }
             }
         }
-
-        private string _searchText;
-        private ObservableCollection<MenuItemViewModel> _filteredMenuItems;
 
         public string SearchText
         {
@@ -62,6 +65,174 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
         {
             get => _filteredMenuItems;
             set => SetProperty(ref _filteredMenuItems, value);
+        }
+
+        public ShellViewModel(UserDto currentUser)
+        {
+            System.Diagnostics.Debug.WriteLine("ShellViewModel: конструктор начат");
+
+            CurrentUser = currentUser;
+
+            System.Diagnostics.Debug.WriteLine($"ShellViewModel: CurrentUser = {CurrentUser?.Username ?? "null"}");
+
+            if (CurrentUser == null)
+            {
+                System.Diagnostics.Debug.WriteLine("ShellViewModel: CurrentUser == null, выход");
+                return;
+            }
+
+            LogoutCommand = new AsyncRelayCommand(async () => await LogoutAsync());
+            EditProfileCommand = new AsyncRelayCommand(async () => await EditProfileAsync());
+            MenuItems = new ObservableCollection<MenuItemViewModel>();
+            FilteredMenuItems = new ObservableCollection<MenuItemViewModel>();
+
+            BuildMenu();
+            FilterMenu();
+            CurrentView = new Views.Main.DashboardView();
+        }
+
+        private void BuildMenu()
+        {
+            MenuItems.Clear();
+
+            // Главная - всем
+            MenuItems.Add(new MenuItemViewModel
+            {
+                Title = "Главная",
+                Command = new RelayCommand(_ => OpenDashboard())
+            });
+
+            // Объекты - всем
+            MenuItems.Add(new MenuItemViewModel
+            {
+                Title = "Объекты",
+                Command = new RelayCommand(_ => OpenObjects())
+            });
+
+            // Показания (главное меню)
+            MenuItemViewModel readingsMenu = new() { Title = "Показания" };
+
+            readingsMenu.Children.Add(new MenuItemViewModel
+            {
+                Title = "Ввод показаний",
+                Command = new RelayCommand(_ => OpenReadingInput())
+            });
+
+            readingsMenu.Children.Add(new MenuItemViewModel
+            {
+                Title = "История показаний",
+                Command = new RelayCommand(_ => OpenReadingHistory())
+            });
+
+            if (CurrentUser.IsInspector || CurrentUser.IsAdmin)
+            {
+                readingsMenu.Children.Add(new MenuItemViewModel
+                {
+                    Title = "Верификация",
+                    Command = new RelayCommand(_ => OpenVerification())
+                });
+            }
+
+            MenuItems.Add(readingsMenu);
+
+            // Отчёты - всем
+            MenuItems.Add(new MenuItemViewModel
+            {
+                Title = "Отчёты",
+                Command = new RelayCommand(_ => OpenReports())
+            });
+
+            // Аналитика - подменю
+            MenuItemViewModel analyticsMenu = new() { Title = "Аналитика" };
+
+            analyticsMenu.Children.Add(new MenuItemViewModel
+            {
+                Title = "По объектам",
+                Command = new RelayCommand(_ => OpenAnalytics())
+            });
+
+            analyticsMenu.Children.Add(new MenuItemViewModel
+            {
+                Title = "По регионам (иерархия)",
+                Command = new RelayCommand(_ => OpenHierarchyAnalytics())
+            });
+
+            MenuItems.Add(analyticsMenu);
+
+            // Справочники - только админ
+            if (CurrentUser.IsAdmin)
+            {
+                MenuItemViewModel dirMenu = new() { Title = "Справочники" };
+
+                dirMenu.Children.Add(new MenuItemViewModel
+                {
+                    Title = "Статусы показаний",
+                    Command = new RelayCommand(_ => OpenDirectory(DirectoryFactory.CreateReadingStatusViewModel(), "Статусы показаний"))
+                });
+
+                dirMenu.Children.Add(new MenuItemViewModel
+                {
+                    Title = "Типы объектов",
+                    Command = new RelayCommand(_ => OpenDirectory(DirectoryFactory.CreateObjectTypeViewModel(), "Типы объектов"))
+                });
+
+                dirMenu.Children.Add(new MenuItemViewModel
+                {
+                    Title = "Причины отклонения показаний",
+                    Command = new RelayCommand(_ => OpenDirectory(DirectoryFactory.CreateRejectionReasonViewModel(), "Причины отклонения"))
+                });
+
+                dirMenu.Children.Add(new MenuItemViewModel
+                {
+                    Title = "Статусы счётчиков",
+                    Command = new RelayCommand(_ => OpenDirectory(DirectoryFactory.CreateMeterStatusViewModel(), "Статусы счётчиков"))
+                });
+
+                dirMenu.Children.Add(new MenuItemViewModel
+                {
+                    Title = "Типы счётчиков",
+                    Command = new RelayCommand(_ => OpenDirectory(DirectoryFactory.CreateMeterTypeViewModel(), "Типы счётчиков"))
+                });
+
+                dirMenu.Children.Add(new MenuItemViewModel
+                {
+                    Title = "Источники энергии",
+                    Command = new RelayCommand(_ => OpenDirectory(DirectoryFactory.CreateEnergySourceViewModel(), "Источники энергии"))
+                });
+
+                dirMenu.Children.Add(new MenuItemViewModel
+                {
+                    Title = "Интервалы поверки",
+                    Command = new RelayCommand(_ => OpenDirectory(DirectoryFactory.CreateVerificationIntervalViewModel(), "Интервалы поверки"))
+                });
+
+                MenuItems.Add(dirMenu);
+
+                // Администрирование
+                MenuItemViewModel adminMenu = new() { Title = "Администрирование" };
+
+                adminMenu.Children.Add(new MenuItemViewModel
+                {
+                    Title = "Пользователи",
+                    Command = new RelayCommand(_ => OpenUserManagement())
+                });
+
+                adminMenu.Children.Add(new MenuItemViewModel
+                {
+                    Title = "Журнал аудита",
+                    Command = new RelayCommand(_ => OpenAuditLog())
+                });
+
+                adminMenu.Children.Add(new MenuItemViewModel
+                {
+                    Title = "Резервное копирование",
+                    Command = new RelayCommand(_ => OpenBackup())
+                });
+
+                MenuItems.Add(adminMenu);
+            }
+
+            System.Diagnostics.Debug.WriteLine($"BuildMenu: добавлено {MenuItems.Count} пунктов меню");
         }
 
         private void FilterMenu()
@@ -116,188 +287,14 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
             System.Diagnostics.Debug.WriteLine($"FilterMenu: отфильтровано {filtered.Count} пунктов");
         }
 
-        public ShellViewModel(UserDto currentUser)
-        {
-            System.Diagnostics.Debug.WriteLine("ShellViewModel: конструктор начат");
-
-            CurrentUser = currentUser;
-
-            System.Diagnostics.Debug.WriteLine($"ShellViewModel: CurrentUser = {CurrentUser?.Username ?? "null"}");
-
-            if (CurrentUser == null)
-            {
-                System.Diagnostics.Debug.WriteLine("ShellViewModel: CurrentUser == null, выход");
-                return;
-            }
-
-            LogoutCommand = new RelayCommand(_ => Logout());
-            EditProfileCommand = new RelayCommand(_ => EditProfile());
-            MenuItems = new ObservableCollection<MenuItemViewModel>();
-            FilteredMenuItems = new ObservableCollection<MenuItemViewModel>();  // ← добавить
-
-            BuildMenu();
-            FilterMenu();  // ← добавить - инициализация отфильтрованного меню
-            CurrentView = new Views.Main.DashboardView();
-        }
-
-        private void BuildMenu()
-        {
-            MenuItems.Clear();  // ← добавить для чистоты
-
-            // Главная - всем
-            MenuItems.Add(new MenuItemViewModel
-            {
-                Title = "Главная",
-                Command = new RelayCommand(_ => OpenDashboard())
-            });
-
-            // Объекты - всем
-            MenuItems.Add(new MenuItemViewModel
-            {
-                Title = "Объекты",
-                Command = new RelayCommand(_ => OpenObjects())
-            });
-
-            // Показания (главное меню)
-            MenuItemViewModel readingsMenu = new() { Title = "Показания" };
-
-            readingsMenu.Children.Add(new MenuItemViewModel
-            {
-                Title = "Ввод показаний",
-                Command = new RelayCommand(_ => OpenReadingInput())
-            });
-
-            readingsMenu.Children.Add(new MenuItemViewModel
-            {
-                Title = "История показаний",
-                Command = new RelayCommand(_ => OpenReadingHistory())
-            });
-
-            if (CurrentUser.IsInspector || CurrentUser.IsAdmin)
-            {
-                readingsMenu.Children.Add(new MenuItemViewModel
-                {
-                    Title = "Верификация",
-                    Command = new RelayCommand(_ => OpenVerification())
-                });
-            }
-
-            MenuItems.Add(readingsMenu);
-                       
-
-            // Отчёты - всем
-            MenuItems.Add(new MenuItemViewModel
-            {
-                Title = "Отчёты",
-                Command = new RelayCommand(_ => OpenReports())
-            });
-
-            // Аналитика - подменю
-            MenuItemViewModel analyticsMenu = new() { Title = "Аналитика" };
-
-            analyticsMenu.Children.Add(new MenuItemViewModel
-            {
-                Title = "По объектам",
-                Command = new RelayCommand(_ => OpenAnalytics())
-            });
-
-            analyticsMenu.Children.Add(new MenuItemViewModel
-            {
-                Title = "По регионам (иерархия)",
-                Command = new RelayCommand(_ => OpenHierarchyAnalytics())
-            });
-
-            MenuItems.Add(analyticsMenu);
-
-
-            // Справочники - только админ
-            if (CurrentUser.IsAdmin)
-            {
-                MenuItemViewModel dirMenu = new() { Title = "Справочники" };
-
-                dirMenu.Children.Add(new MenuItemViewModel
-                {
-                    Title = "Статусы показаний",
-                    Command = new RelayCommand(_ => OpenDirectory(DirectoryFactory.CreateReadingStatusViewModel(), "Статусы показаний"))
-                });
-
-
-                dirMenu.Children.Add(new MenuItemViewModel
-                {
-                    Title = "Типы объектов",
-                    Command = new RelayCommand(_ => OpenDirectory(DirectoryFactory.CreateObjectTypeViewModel(), "Типы объектов"))
-                });
-
-                dirMenu.Children.Add(new MenuItemViewModel
-                {
-                    Title = "Причины отклонения показаний",
-                    Command = new RelayCommand(_ => OpenDirectory(DirectoryFactory.CreateRejectionReasonViewModel(), "Причины отклонения"))
-                });
-
-                dirMenu.Children.Add(new MenuItemViewModel
-                {
-                    Title = "Статусы счётчиков",
-                    Command = new RelayCommand(_ => OpenDirectory(DirectoryFactory.CreateMeterStatusViewModel(), "Статусы счётчиков"))
-                });
-
-                dirMenu.Children.Add(new MenuItemViewModel
-                {
-                    Title = "Типы счётчиков",
-                    Command = new RelayCommand(_ => OpenDirectory(DirectoryFactory.CreateMeterTypeViewModel(), "Типы счётчиков"))
-                });
-
-
-                dirMenu.Children.Add(new MenuItemViewModel
-                {
-                    Title = "Источники энергии",
-                    Command = new RelayCommand(_ => OpenDirectory(DirectoryFactory.CreateEnergySourceViewModel(), "Источники энергии"))
-                });
-
-                dirMenu.Children.Add(new MenuItemViewModel
-                {
-                    Title = "Интервалы поверки",
-                    Command = new RelayCommand(_ => OpenDirectory(DirectoryFactory.CreateVerificationIntervalViewModel(), "Интервалы поверки"))
-                });
-
-
-                MenuItems.Add(dirMenu);
-
-                // Администрирование
-                MenuItemViewModel adminMenu = new() { Title = "Администрирование" };
-
-                adminMenu.Children.Add(new MenuItemViewModel
-                {
-                    Title = "Пользователи",
-                    Command = new RelayCommand(_ => OpenUserManagement())
-                });
-
-                adminMenu.Children.Add(new MenuItemViewModel
-                {
-                    Title = "Журнал аудита",
-                    Command = new RelayCommand(_ => OpenAuditLog())
-                });
-
-                adminMenu.Children.Add(new MenuItemViewModel
-                {
-                    Title = "Резервное копирование",
-                    Command = new RelayCommand(_ => OpenBackup())
-                });
-
-                MenuItems.Add(adminMenu);
-            }
-
-            System.Diagnostics.Debug.WriteLine($"BuildMenu: добавлено {MenuItems.Count} пунктов меню");
-        }
-        private void EditProfile()
+        private async Task EditProfileAsync()
         {
             var userRepository = new UserRepository();
-            var roles = new ObservableCollection<UserRoleDto>(userRepository.GetAllRoles());
+            var roles = new ObservableCollection<UserRoleDto>(await userRepository.GetAllRolesAsync());
 
-            // Создаем ViewModel для редактирования СЕБЯ
             var editViewModel = new UserEditViewModel(roles, CurrentUser, CurrentUser);
             var editView = new Views.Admin.UserEditView(editViewModel);
 
-            // ✅ Создаем ОКНО, а не используем UserControl напрямую
             var window = new Window
             {
                 Title = "Редактирование профиля",
@@ -309,12 +306,11 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
                 Owner = Application.Current.MainWindow
             };
 
-            editViewModel.OnUserSaved += (s, e) =>
+            editViewModel.OnSaved += async (s, e) =>
             {
-                var updatedUser = userRepository.GetById(CurrentUser.Id);
+                var updatedUser = await userRepository.GetByIdAsync(CurrentUser.Id);
                 if (updatedUser != null)
                 {
-                    // Обновляем CurrentUser, если есть setter
                     CurrentUser = updatedUser;
                 }
                 window.Close();
@@ -323,15 +319,31 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
             window.ShowDialog();
         }
 
+        private async Task LogoutAsync()
+        {
+            var result = MessageBox.Show("Вы действительно хотите выйти?", "Подтверждение",
+                MessageBoxButton.YesNo, MessageBoxImage.Question);
+
+            if (result == MessageBoxResult.Yes)
+            {
+                if (CurrentUser != null)
+                {
+                    Core.Helpers.AuditLogger.Log("LOGOUT", "User", CurrentUser.Id, null,
+                        new { CurrentUser.Username }, CurrentUser.Id);
+                }
+
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    new Views.Auth.LoginView().Show();
+                    Application.Current.Windows[0]?.Close();
+                });
+            }
+        }
+
         // Методы открытия окон
         private void OpenDashboard()
         {
             CurrentView = new Views.Main.DashboardView();
-        }
-
-        private void OpenMeterList()
-        {
-            CurrentView = new Views.Meters.MeterListView();
         }
 
         private void OpenObjects()
@@ -372,13 +384,11 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
             CurrentView = new Views.Readings.MeterReadingVerificationView();
         }
 
-
-
-
         private void OpenReports()
         {
             CurrentView = new Views.Reports.ReportView();
         }
+
         private void OpenUserManagement()
         {
             CurrentView = new Views.Admin.UserManagementView();
@@ -403,25 +413,6 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
             }
 
             CurrentView = new Views.Directories.DirectoryListView { DataContext = viewModel };
-        }
-
-        private void Logout()
-        {
-            MessageBoxResult result = MessageBox.Show("Вы действительно хотите выйти?", "Подтверждение",
-                MessageBoxButton.YesNo, MessageBoxImage.Question);
-
-            if (result == MessageBoxResult.Yes)
-            {
-                // ✅ Запись аудита о выходе
-                if (CurrentUser != null)
-                {
-                    Core.Helpers.AuditLogger.Log("LOGOUT", "User", CurrentUser.Id, null,
-                        new { CurrentUser.Username }, CurrentUser.Id);
-                }
-
-                new Views.Auth.LoginView().Show();
-                Application.Current.Windows[0]?.Close();
-            }
         }
     }
 }

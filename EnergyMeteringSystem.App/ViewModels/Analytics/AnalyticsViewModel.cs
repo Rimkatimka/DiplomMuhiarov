@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading.Tasks;
 using EnergyMeteringSystem.App.Commands;
 using EnergyMeteringSystem.App.ViewModels.Base;
 using EnergyMeteringSystem.Core.Models.DTO;
@@ -35,7 +36,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Analytics
             set
             {
                 if (SetProperty(ref _selectedYear, value))
-                    LoadData();
+                    _ = LoadDataAsync();
             }
         }
 
@@ -48,7 +49,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Analytics
                 {
                     int monthIndex = Months.IndexOf(value) + 1;
                     if (monthIndex > 0)
-                        LoadData();
+                        _ = LoadDataAsync();
                 }
             }
         }
@@ -93,7 +94,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Analytics
 
         public Func<double, string> XFormatter => value => $"{value:F0}";
 
-        public RelayCommand RefreshCommand { get; }
+        public AsyncRelayCommand RefreshCommand { get; }
 
         public AnalyticsViewModel()
         {
@@ -114,51 +115,63 @@ namespace EnergyMeteringSystem.App.ViewModels.Analytics
             _selectedYear = DateTime.Today.Year;
             _selectedMonthName = Months[DateTime.Today.Month - 1];
 
-            RefreshCommand = new RelayCommand(_ => LoadData());
-            LoadData();
+            RefreshCommand = new AsyncRelayCommand(async () => await LoadDataAsync());
+
+            _ = LoadDataAsync();
         }
 
-        private void LoadData()
+        private async Task LoadDataAsync()
         {
-            int month = Months.IndexOf(SelectedMonthName) + 1;
-            AnalyticsDataDto data = _repository.GetConsumptionData(_selectedYear, month);
-
-            TopObjects.Clear();
-            foreach (TopObjectDto item in data.TopObjects)
-                TopObjects.Add(item);
-
-            TotalConsumption = data.TotalConsumption;
-            AverageConsumption = data.AverageConsumption;
-            MaxConsumption = data.MaxConsumption;
-
-            var top10 = data.TopObjects.Take(10).ToList();
-            TopObjectsLabels = top10.Select(o => o.Address.Length > 20
-                ? o.Address.Substring(0, 20) + "..."
-                : o.Address).ToArray();
-
-            TopObjectsSeries = new SeriesCollection
-{
-    new ColumnSeries  // ← было RowSeries
-    {
-        Title = "Потребление",
-        Values = new ChartValues<decimal>(top10.Select(o => o.Consumption)),
-        DataLabels = true,
-        LabelPoint = point => $"{point.Y:F0} кВт·ч",
-        FontSize = 7
-    }
-};
-
-            TypeDistributionSeries = new SeriesCollection();
-            foreach (TypeDistributionDto type in data.TypeDistribution)
+            await ExecuteAsync(async () =>
             {
-                TypeDistributionSeries.Add(new PieSeries
+                int month = Months.IndexOf(SelectedMonthName) + 1;
+                var data = await _repository.GetConsumptionDataAsync(_selectedYear, month);
+
+                // Массовое обновление UI
+                BeginBatchUpdate();
+
+                TopObjects.Clear();
+                foreach (TopObjectDto item in data.TopObjects)
+                    TopObjects.Add(item);
+
+                TotalConsumption = data.TotalConsumption;
+                AverageConsumption = data.AverageConsumption;
+                MaxConsumption = data.MaxConsumption;
+
+                var top10 = data.TopObjects.Take(10).ToList();
+
+                // Короткие названия для графика
+                TopObjectsLabels = top10.Select(o => o.Address.Length > 20
+                    ? o.Address.Substring(0, 20) + "..."
+                    : o.Address).ToArray();
+
+                TopObjectsSeries = new SeriesCollection
                 {
-                    Title = type.TypeName,
-                    Values = new ChartValues<decimal> { type.Consumption },
-                    DataLabels = true,
-                    LabelPoint = point => $"{type.TypeName}: {point.Y:F0} кВт·ч"
-                });
-            }
+                    new ColumnSeries
+                    {
+                        Title = "Потребление",
+                        Values = new ChartValues<decimal>(top10.Select(o => o.Consumption)),
+                        DataLabels = true,
+                        LabelPoint = point => $"{point.Y:F0} кВт·ч",
+                        FontSize = 7
+                    }
+                };
+
+                TypeDistributionSeries = new SeriesCollection();
+                foreach (TypeDistributionDto type in data.TypeDistribution)
+                {
+                    TypeDistributionSeries.Add(new PieSeries
+                    {
+                        Title = type.TypeName,
+                        Values = new ChartValues<decimal> { type.Consumption },
+                        DataLabels = true,
+                        LabelPoint = point => $"{type.TypeName}: {point.Y:F0} кВт·ч"
+                    });
+                }
+
+                EndBatchUpdate();
+
+            }, "Ошибка загрузки аналитики");
         }
     }
 }

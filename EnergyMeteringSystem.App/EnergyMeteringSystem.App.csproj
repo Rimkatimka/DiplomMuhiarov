@@ -501,7 +501,6 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="ViewModels\Tariffs\" />
     <Folder Include="Views\Tariffs\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -1,7 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading.Tasks;
 using EnergyMeteringSystem.App.Commands;
 using EnergyMeteringSystem.App.ViewModels.Base;
 using EnergyMeteringSystem.Core.Models.DTO;
@@ -22,12 +22,10 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
         private DateTime _startDate;
         private DateTime _endDate;
 
-        // Коллекции для ComboBox
         public ObservableCollection<ConsumptionObjectDto> Objects { get; set; }
         public ObservableCollection<MeterDto> Meters { get; set; }
         public ObservableCollection<MeterReadingHistoryDto> Readings { get; set; }
 
-        // Для графика
         public SeriesCollection SeriesCollection { get; set; }
         public string[] ChartDates { get; set; }
         public Func<double, string> YFormatter { get; set; }
@@ -37,9 +35,11 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
             get => _selectedObject;
             set
             {
-                _ = SetProperty(ref _selectedObject, value);
-                LoadMeters(); // Загружаем счетчики при выборе объекта
-                LoadHistory();
+                if (SetProperty(ref _selectedObject, value))
+                {
+                    _ = LoadMetersAsync();
+                    _ = LoadHistoryAsync();
+                }
             }
         }
 
@@ -48,8 +48,8 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
             get => _selectedMeter;
             set
             {
-                _ = SetProperty(ref _selectedMeter, value);
-                LoadHistory();
+                if (SetProperty(ref _selectedMeter, value))
+                    _ = LoadHistoryAsync();
             }
         }
 
@@ -58,8 +58,8 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
             get => _startDate;
             set
             {
-                _ = SetProperty(ref _startDate, value);
-                LoadHistory();
+                if (SetProperty(ref _startDate, value))
+                    _ = LoadHistoryAsync();
             }
         }
 
@@ -68,14 +68,14 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
             get => _endDate;
             set
             {
-                _ = SetProperty(ref _endDate, value);
-                LoadHistory();
+                if (SetProperty(ref _endDate, value))
+                    _ = LoadHistoryAsync();
             }
         }
 
-        public bool HasData => Readings != null && Readings.Any();
+        public bool HasData => Readings != null && Readings.Count > 0;
 
-        public RelayCommand RefreshCommand { get; }
+        public AsyncRelayCommand RefreshCommand { get; }
 
         public MeterReadingHistoryViewModel()
         {
@@ -83,112 +83,76 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
             _meterRepository = new MeterRepository();
             _readingRepository = new MeterReadingRepository();
 
-            Objects = [];
-            Meters = [];
-            Readings = [];
+            Objects = new ObservableCollection<ConsumptionObjectDto>();
+            Meters = new ObservableCollection<MeterDto>();
+            Readings = new ObservableCollection<MeterReadingHistoryDto>();
 
-            SeriesCollection = [];
+            SeriesCollection = new SeriesCollection();
             YFormatter = value => value.ToString("N0");
 
             _startDate = DateTime.Today.AddMonths(-6);
             _endDate = DateTime.Today;
 
-            RefreshCommand = new RelayCommand(_ => LoadHistory());
+            RefreshCommand = new AsyncRelayCommand(async () => await LoadHistoryAsync());
 
-            // Загружаем объекты при создании ViewModel
-            LoadObjects();
+            _ = LoadObjectsAsync();
         }
 
-        private void LoadObjects()
+        private async Task LoadObjectsAsync()
         {
-            try
+            await ExecuteAsync(async () =>
             {
+                var list = await _objectRepository.GetAllAsync();
                 Objects.Clear();
-                List<ConsumptionObjectDto> list = _objectRepository.GetAll();
-                System.Diagnostics.Debug.WriteLine($"LoadObjects: загружено {list.Count} объектов");
-
-                foreach (ConsumptionObjectDto obj in list)
-                {
+                foreach (var obj in list)
                     Objects.Add(obj);
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Ошибка загрузки объектов: {ex.Message}");
-            }
+            }, "Ошибка загрузки объектов");
         }
 
-        private void LoadMeters()
+        private async Task LoadMetersAsync()
         {
-            try
+            await ExecuteAsync(async () =>
             {
                 Meters.Clear();
-                if (_selectedObject == null)
-                {
-                    return;
-                }
+                if (_selectedObject == null) return;
 
-                List<MeterDto> list = _meterRepository.GetByObjectId(_selectedObject.Id);
-                System.Diagnostics.Debug.WriteLine($"LoadMeters: загружено {list.Count} счетчиков для объекта {_selectedObject.Id}");
-
-                foreach (MeterDto meter in list)
-                {
+                var list = await _meterRepository.GetByObjectIdAsync(_selectedObject.Id);
+                foreach (var meter in list)
                     Meters.Add(meter);
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Ошибка загрузки счетчиков: {ex.Message}");
-            }
+            }, "Ошибка загрузки счетчиков");
         }
 
-        private void LoadHistory()
+        private async Task LoadHistoryAsync()
         {
-            try
+            await ExecuteAsync(async () =>
             {
                 Readings.Clear();
                 SeriesCollection.Clear();
 
-                if (_selectedMeter == null)
-                {
-                    return;
-                }
+                if (_selectedMeter == null) return;
 
-                List<MeterReadingHistoryDto> history = _readingRepository.GetHistoryByMeterId(_selectedMeter.Id);
+                var history = await _readingRepository.GetHistoryByMeterIdAsync(_selectedMeter.Id);
 
-                List<MeterReadingHistoryDto> filtered = history.Where(h =>
-                    h.ReadingDate >= _startDate &&
-                    h.ReadingDate <= _endDate)
+                var filtered = history
+                    .Where(h => h.ReadingDate >= _startDate && h.ReadingDate <= _endDate)
                     .OrderBy(h => h.ReadingDate)
                     .ToList();
 
-                System.Diagnostics.Debug.WriteLine($"LoadHistory: загружено {filtered.Count} записей");
-
-                foreach (MeterReadingHistoryDto item in filtered)
-                {
+                foreach (var item in filtered)
                     Readings.Add(item);
-                }
 
-                // Обновляем график
                 UpdateChart(filtered);
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Ошибка загрузки истории: {ex.Message}");
-            }
+            }, "Ошибка загрузки истории");
         }
 
-        private void UpdateChart(List<MeterReadingHistoryDto> data)
+        private void UpdateChart(System.Collections.Generic.List<MeterReadingHistoryDto> data)
         {
             SeriesCollection.Clear();
 
-            if (!data.Any())
-            {
-                return;
-            }
+            if (!data.Any()) return;
 
-            double[] values = data.Select(h => (double)h.Value).ToArray();
-            double[] consumptions = data.Select(h => (double)(h.Consumption ?? 0)).ToArray();
+            var values = data.Select(h => (double)h.Value).ToArray();
+            var consumptions = data.Select(h => (double)(h.Consumption ?? 0)).ToArray();
 
             ChartDates = data.Select(h => h.ReadingDate.ToString("dd.MM")).ToArray();
 

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using EnergyMeteringSystem.App.Commands;
 using EnergyMeteringSystem.App.ViewModels.Base;
@@ -13,15 +14,9 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
     {
         private readonly MeterRepository _meterRepository;
         private ConsumptionObjectDto _currentObject;
-
-        private ObservableCollection<MeterDto> _meters;
         private MeterDto _selectedMeter;
 
-        public ObservableCollection<MeterDto> Meters
-        {
-            get => _meters;
-            set => SetProperty(ref _meters, value);
-        }
+        public ObservableCollection<MeterDto> Meters { get; set; }
 
         public MeterDto SelectedMeter
         {
@@ -29,16 +24,17 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
             set
             {
                 SetProperty(ref _selectedMeter, value);
-                EditMeterCommand.RaiseCanExecuteChanged();
-                DeleteMeterCommand.RaiseCanExecuteChanged();
+                (EditMeterCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
+                (DeleteMeterCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
             }
         }
 
         public string ObjectAddress => _currentObject?.Address ?? "Объект не выбран";
 
-        public RelayCommand AddMeterCommand { get; }
-        public RelayCommand EditMeterCommand { get; }
-        public RelayCommand DeleteMeterCommand { get; }
+        public AsyncRelayCommand AddMeterCommand { get; }
+        public AsyncRelayCommand EditMeterCommand { get; }
+        public AsyncRelayCommand DeleteMeterCommand { get; }
+        public RelayCommand CloseCommand { get; }
 
         public MetersForObjectViewModel(ConsumptionObjectDto selectedObject)
         {
@@ -46,43 +42,33 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
             _meterRepository = new MeterRepository();
             Meters = new ObservableCollection<MeterDto>();
 
-            AddMeterCommand = new RelayCommand(_ => AddMeter());
-            EditMeterCommand = new RelayCommand(_ => EditMeter(), _ => SelectedMeter != null);
-            DeleteMeterCommand = new RelayCommand(_ => DeleteMeter(), _ => SelectedMeter != null);
+            AddMeterCommand = new AsyncRelayCommand(async () => await AddMeterAsync());
+            EditMeterCommand = new AsyncRelayCommand(async () => await EditMeterAsync(), () => SelectedMeter != null);
+            DeleteMeterCommand = new AsyncRelayCommand(async () => await DeleteMeterAsync(), () => SelectedMeter != null);
+            CloseCommand = new RelayCommand(_ => Close());
 
-            LoadMeters();
+            _ = LoadMetersAsync();
         }
 
-        private void LoadMeters()
+        private async Task LoadMetersAsync()
         {
-            System.Diagnostics.Debug.WriteLine($"LoadMeters: objectId={_currentObject?.Id}");
-
-            var meters = _meterRepository.GetByObjectId(_currentObject.Id);
-            System.Diagnostics.Debug.WriteLine($"LoadMeters: получили {meters.Count} счетчиков");
-
-            Meters.Clear();
-            foreach (var m in meters)
+            await ExecuteAsync(async () =>
             {
-                // Полная отладка свойств
-                System.Diagnostics.Debug.WriteLine($"  Meter: Id={m.Id}");
-                System.Diagnostics.Debug.WriteLine($"    SerialNumber: {m.SerialNumber}");
-                System.Diagnostics.Debug.WriteLine($"    MeterTypeName: {m.MeterTypeName}");
-                System.Diagnostics.Debug.WriteLine($"    StatusName: {m.StatusName}");
-                System.Diagnostics.Debug.WriteLine($"    InstallationDate: {m.InstallationDate}");
-                System.Diagnostics.Debug.WriteLine($"    NextVerificationDate: {m.NextVerificationDate}");
-                System.Diagnostics.Debug.WriteLine($"    ServiceLifeYears: {m.ServiceLifeYears}");
-                System.Diagnostics.Debug.WriteLine($"    RemovalDate: {m.RemovalDate}");
+                System.Diagnostics.Debug.WriteLine($"LoadMetersAsync: objectId={_currentObject?.Id}");
 
-                Meters.Add(m);
-            }
+                var meters = await _meterRepository.GetByObjectIdAsync(_currentObject.Id);
+                System.Diagnostics.Debug.WriteLine($"LoadMetersAsync: получили {meters.Count} счетчиков");
 
-            OnPropertyChanged(nameof(Meters));
+                Meters.Clear();
+                foreach (var m in meters)
+                {
+                    Meters.Add(m);
+                }
+            }, "Ошибка загрузки счетчиков");
         }
 
-        private void AddMeter()
+        private async Task AddMeterAsync()
         {
-            System.Diagnostics.Debug.WriteLine($"AddMeter: _currentObject = {_currentObject?.Id}");
-
             if (_currentObject == null)
             {
                 System.Diagnostics.Debug.WriteLine("ОШИБКА: _currentObject = null, нельзя добавить счётчик");
@@ -93,16 +79,16 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
             var editView = new Views.Meters.MeterEditView(editViewModel);
             editView.Owner = Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive);
 
-            editViewModel.OnMeterSaved += (s, e) =>
+            editViewModel.OnSaved += async (s, e) =>
             {
-                LoadMeters();
+                await LoadMetersAsync();
                 editView.Close();
             };
 
             editView.ShowDialog();
         }
 
-        private void EditMeter()
+        private async Task EditMeterAsync()
         {
             if (SelectedMeter == null) return;
 
@@ -110,16 +96,16 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
             var editView = new Views.Meters.MeterEditView(editViewModel);
             editView.Owner = Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive);
 
-            editViewModel.OnMeterSaved += (s, e) =>
+            editViewModel.OnSaved += async (s, e) =>
             {
-                LoadMeters();
+                await LoadMetersAsync();
                 editView.Close();
             };
 
             editView.ShowDialog();
         }
 
-        private void DeleteMeter()
+        private async Task DeleteMeterAsync()
         {
             if (SelectedMeter == null) return;
 
@@ -129,9 +115,19 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
                                          MessageBoxImage.Question);
             if (result == MessageBoxResult.Yes)
             {
-                _meterRepository.Delete(SelectedMeter.Id);
-                LoadMeters();
+                await ExecuteAsync(async () =>
+                {
+                    await _meterRepository.DeleteAsync(SelectedMeter.Id);
+                    await LoadMetersAsync();
+                }, "Ошибка при удалении");
             }
+        }
+
+        private void Close()
+        {
+            var window = Application.Current.Windows.OfType<Window>()
+                .FirstOrDefault(w => w.DataContext == this);
+            window?.Close();
         }
     }
 }

@@ -1,8 +1,9 @@
-﻿using EnergyMeteringSystem.App.Commands;
+﻿using System;
+using System.Threading.Tasks;
+using EnergyMeteringSystem.App.Commands;
 using EnergyMeteringSystem.App.ViewModels.Base;
 using EnergyMeteringSystem.Core.Models.DTO;
 using EnergyMeteringSystem.Data.Repositories;
-using System;
 
 namespace EnergyMeteringSystem.App.ViewModels.Directories
 {
@@ -13,12 +14,17 @@ namespace EnergyMeteringSystem.App.ViewModels.Directories
         private string _postalCode;
         private int _cityId;
         private string _cityName;
+
         public event EventHandler OnStreetSaved;
 
         public string Name
         {
             get => _name;
-            set => SetProperty(ref _name, value);
+            set
+            {
+                SetProperty(ref _name, value);
+                (SaveCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
+            }
         }
 
         public string PostalCode
@@ -33,7 +39,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Directories
             set => SetProperty(ref _cityName, value);
         }
 
-        public RelayCommand SaveCommand { get; }
+        public AsyncRelayCommand SaveCommand { get; }
         public RelayCommand CancelCommand { get; }
 
         public StreetEditViewModel(int cityId, string cityName = "")
@@ -42,7 +48,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Directories
             _cityId = cityId;
             _cityName = cityName;
 
-            SaveCommand = new RelayCommand(_ => Save(), _ => CanSave());
+            SaveCommand = new AsyncRelayCommand(async () => await SaveAsync(), () => CanSave());
             CancelCommand = new RelayCommand(_ => Cancel());
         }
 
@@ -51,16 +57,26 @@ namespace EnergyMeteringSystem.App.ViewModels.Directories
             return !string.IsNullOrWhiteSpace(Name);
         }
 
-        private void Save()
+        private async Task SaveAsync()
         {
-            var dto = new StreetDto
+            try
             {
-                Name = Name,
-                CityId = _cityId,
-                PostalCode = PostalCode
-            };
-            _streetRepository.Add(dto);
-            OnStreetSaved?.Invoke(this, EventArgs.Empty);
+                var dto = new StreetDto
+                {
+                    Name = Name?.Trim(),
+                    CityId = _cityId,
+                    PostalCode = PostalCode?.Trim()
+                };
+
+                await Task.Run(() => _streetRepository.Add(dto));
+
+                OnStreetSaved?.Invoke(this, EventArgs.Empty);
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Ошибка при сохранении: {ex.Message}", "Ошибка",
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            }
         }
 
         private void Cancel()

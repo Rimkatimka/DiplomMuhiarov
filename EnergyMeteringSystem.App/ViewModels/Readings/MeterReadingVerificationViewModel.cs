@@ -1,33 +1,31 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using EnergyMeteringSystem.App.Commands;
+using EnergyMeteringSystem.App.ViewModels.Base;
 using EnergyMeteringSystem.Core.Models.DTO;
 using EnergyMeteringSystem.Data.Repositories;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
-using System.Collections.Generic;
 
 namespace EnergyMeteringSystem.App.ViewModels.Readings
 {
-    public class MeterReadingVerificationViewModel : INotifyPropertyChanged
+    public class MeterReadingVerificationViewModel : ViewModelBase
     {
         private readonly MeterReadingRepository _repository;
         private ObservableCollection<MeterReadingVerificationDto> _readings;
         private MeterReadingVerificationDto _selectedReading;
         private bool _isBatchMode;
         private bool _isRejectionMode;
+        private RejectionReason _selectedReason;
+        private string _rejectionComment;
 
         public ObservableCollection<MeterReadingVerificationDto> Readings
         {
             get => _readings;
-            set
-            {
-                _readings = value;
-                OnPropertyChanged();
-            }
+            set => SetProperty(ref _readings, value);
         }
 
         public MeterReadingVerificationDto SelectedReading
@@ -35,10 +33,9 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
             get => _selectedReading;
             set
             {
-                _selectedReading = value;
-                OnPropertyChanged();
-                (VerifyCommand as RelayCommand)?.RaiseCanExecuteChanged();
-                (RejectCommand as RelayCommand)?.RaiseCanExecuteChanged();
+                SetProperty(ref _selectedReading, value);
+                (VerifyCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
+                (RejectCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
             }
         }
 
@@ -47,8 +44,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
             get => _isBatchMode;
             set
             {
-                _isBatchMode = value;
-                OnPropertyChanged();
+                SetProperty(ref _isBatchMode, value);
 
                 if (!value && Readings != null)
                 {
@@ -57,82 +53,65 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
                         reading.IsSelected = false;
                     }
                 }
-                (VerifyCommand as RelayCommand)?.RaiseCanExecuteChanged();
-                (RejectCommand as RelayCommand)?.RaiseCanExecuteChanged();
+                (VerifyCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
+                (RejectCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
             }
         }
 
         public bool IsRejectionMode
         {
             get => _isRejectionMode;
-            set
-            {
-                _isRejectionMode = value;
-                OnPropertyChanged();
-            }
+            set => SetProperty(ref _isRejectionMode, value);
         }
-
-        public ICommand RefreshCommand { get; }
-        public ICommand SelectAllCommand { get; }
-        public ICommand VerifyCommand { get; }
-        public ICommand RejectCommand { get; }
-        public ICommand CancelRejectCommand { get; }
-        public ICommand ConfirmRejectCommand { get; }
 
         public ObservableCollection<RejectionReason> RejectionReasons { get; set; }
 
-        private RejectionReason _selectedReason;
         public RejectionReason SelectedReason
         {
             get => _selectedReason;
             set
             {
-                _selectedReason = value;
-                OnPropertyChanged();
-                (ConfirmRejectCommand as RelayCommand)?.RaiseCanExecuteChanged();
+                SetProperty(ref _selectedReason, value);
+                (ConfirmRejectCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
             }
         }
 
-        private string _rejectionComment;
         public string RejectionComment
         {
             get => _rejectionComment;
-            set
-            {
-                _rejectionComment = value;
-                OnPropertyChanged();
-            }
+            set => SetProperty(ref _rejectionComment, value);
         }
+
+        public AsyncRelayCommand RefreshCommand { get; }
+        public AsyncRelayCommand SelectAllCommand { get; }
+        public AsyncRelayCommand VerifyCommand { get; }
+        public AsyncRelayCommand RejectCommand { get; }
+        public RelayCommand CancelRejectCommand { get; }
+        public AsyncRelayCommand ConfirmRejectCommand { get; }
 
         public MeterReadingVerificationViewModel()
         {
             _repository = new MeterReadingRepository();
 
-            RefreshCommand = new RelayCommand(_ => LoadReadings());
-            SelectAllCommand = new RelayCommand(_ => SelectAll(), _ => IsBatchMode);
-            VerifyCommand = new RelayCommand(_ => Verify(), _ => CanVerify());
-            RejectCommand = new RelayCommand(_ => ShowRejectionMode(), _ => CanReject());
+            RefreshCommand = new AsyncRelayCommand(async () => await LoadReadingsAsync());
+            SelectAllCommand = new AsyncRelayCommand(() => { SelectAll(); return Task.CompletedTask; }, () => IsBatchMode);
+            VerifyCommand = new AsyncRelayCommand(async () => await VerifyAsync(), () => CanVerify());
+            RejectCommand = new AsyncRelayCommand(() => { ShowRejectionMode(); return Task.CompletedTask; }, () => CanReject());
             CancelRejectCommand = new RelayCommand(_ => CancelRejection());
-            ConfirmRejectCommand = new RelayCommand(_ => ConfirmRejection(), _ => CanConfirmRejection());
+            ConfirmRejectCommand = new AsyncRelayCommand(async () => await ConfirmRejectionAsync(), () => CanConfirmRejection());
 
             LoadRejectionReasons();
-            LoadReadings();
+            _ = LoadReadingsAsync();
         }
 
-        private void LoadReadings()
+        private async Task LoadReadingsAsync()
         {
-            try
+            await ExecuteAsync(async () =>
             {
-                var readings = _repository.GetForVerification();
+                var readings = await _repository.GetForVerificationAsync();
                 Readings = new ObservableCollection<MeterReadingVerificationDto>(readings);
                 System.Diagnostics.Debug.WriteLine($"Загружено {readings.Count} показаний");
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"LoadReadings error: {ex.Message}");
-                MessageBox.Show($"Ошибка загрузки показаний: {ex.Message}", "Ошибка",
-                              MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            }, "Ошибка загрузки показаний");
         }
 
         private bool CanVerify()
@@ -143,9 +122,9 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
                 return SelectedReading != null && SelectedReading.Id > 0;
         }
 
-        private void Verify()
+        private async Task VerifyAsync()
         {
-            try
+            await ExecuteAsync(async () =>
             {
                 var readingsToVerify = IsBatchMode
                     ? Readings.Where(r => r.IsSelected).ToList()
@@ -168,7 +147,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
 
                 foreach (var reading in readingsToVerify)
                 {
-                    _repository.UpdateStatus(reading.Id, 2);
+                    await _repository.UpdateStatusAsync(reading.Id, 2);
                     successCount++;
 
                     if (IsBatchMode)
@@ -184,13 +163,9 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
                 MessageBox.Show($"Верифицировано: {successCount}", "Результат",
                               MessageBoxButton.OK, MessageBoxImage.Information);
 
-                (VerifyCommand as RelayCommand)?.RaiseCanExecuteChanged();
-                (RejectCommand as RelayCommand)?.RaiseCanExecuteChanged();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Ошибка: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+                (VerifyCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
+                (RejectCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
+            }, "Ошибка при верификации");
         }
 
         private bool CanReject()
@@ -225,9 +200,9 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
             return SelectedReason != null;
         }
 
-        private void ConfirmRejection()
+        private async Task ConfirmRejectionAsync()
         {
-            try
+            await ExecuteAsync(async () =>
             {
                 var readingsToReject = IsBatchMode
                     ? Readings.Where(r => r.IsSelected).ToList()
@@ -250,7 +225,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
 
                 foreach (var reading in readingsToReject)
                 {
-                    _repository.UpdateStatus(reading.Id, 3, SelectedReason.Id, RejectionComment);
+                    await _repository.UpdateStatusAsync(reading.Id, 3, SelectedReason.Id, RejectionComment);
                     successCount++;
 
                     if (IsBatchMode)
@@ -268,14 +243,9 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
                 MessageBox.Show($"Отклонено показаний: {successCount}", "Результат",
                               MessageBoxButton.OK, MessageBoxImage.Information);
 
-                (VerifyCommand as RelayCommand)?.RaiseCanExecuteChanged();
-                (RejectCommand as RelayCommand)?.RaiseCanExecuteChanged();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Ошибка при отклонении: {ex.Message}", "Ошибка",
-                              MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+                (VerifyCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
+                (RejectCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
+            }, "Ошибка при отклонении");
         }
 
         private void SelectAll()
@@ -302,13 +272,6 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
                 new RejectionReason { Id = 5, Name = "Показания не соответствуют норме" },
                 new RejectionReason { Id = 6, Name = "Другое" }
             };
-        }
-
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
 

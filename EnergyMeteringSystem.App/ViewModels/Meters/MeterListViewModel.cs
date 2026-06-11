@@ -5,43 +5,21 @@ using EnergyMeteringSystem.Data.Repositories;
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 
 namespace EnergyMeteringSystem.App.ViewModels.Meters
 {
-    public class MeterListViewModel : ViewModelBase
+    public class MeterListViewModel : ListViewModelBase<MeterDto, MeterRepository>
     {
-        private readonly MeterRepository _meterRepository;
         private readonly MeterStatusRepository _statusRepository;
-
-        private string _searchText;
-        private MeterDto _selectedMeter;
         private MeterStatusDto _selectedStatus;
+        private ObservableCollection<MeterStatusDto> _statuses;
 
-        public ObservableCollection<MeterDto> Meters { get; set; }
-        public ObservableCollection<MeterDto> FilteredMeters { get; set; }
-        public ObservableCollection<MeterStatusDto> Statuses { get; set; }
-
-
-        public string SearchText
+        public ObservableCollection<MeterStatusDto> Statuses
         {
-            get => _searchText;
-            set
-            {
-                _ = SetProperty(ref _searchText, value);
-                ApplyFilter();
-            }
-        }
-
-        public MeterDto SelectedMeter
-        {
-            get => _selectedMeter;
-            set
-            {
-                _ = SetProperty(ref _selectedMeter, value);
-                EditCommand.RaiseCanExecuteChanged();
-                ReplaceCommand.RaiseCanExecuteChanged();
-            }
+            get => _statuses;
+            set => SetProperty(ref _statuses, value);
         }
 
         public MeterStatusDto SelectedStatus
@@ -49,141 +27,152 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
             get => _selectedStatus;
             set
             {
-                _ = SetProperty(ref _selectedStatus, value);
-                ApplyFilter();
+                if (SetProperty(ref _selectedStatus, value))
+                    ApplyFilter();
             }
         }
 
-        public RelayCommand RefreshCommand { get; }
-        public RelayCommand AddCommand { get; }
-        public RelayCommand EditCommand { get; }
-        public RelayCommand ReplaceCommand { get; }
+        public AsyncRelayCommand ReplaceCommand { get; }
 
-        public MeterListViewModel()
+        public MeterListViewModel() : base(new MeterRepository())
         {
-            _meterRepository = new MeterRepository();
             _statusRepository = new MeterStatusRepository();
+            Statuses = new ObservableCollection<MeterStatusDto>();
+            ReplaceCommand = new AsyncRelayCommand(async () => await ReplaceMeterAsync(), () => SelectedItem != null);
 
-            Meters = [];
-            FilteredMeters = [];
-            Statuses = [];
-
-            RefreshCommand = new RelayCommand(_ => LoadData());
-            AddCommand = new RelayCommand(_ => AddMeter());  // ← должна быть эта строка
-            EditCommand = new RelayCommand(_ => EditMeter(), _ => SelectedMeter != null);
-            ReplaceCommand = new RelayCommand(_ => ReplaceMeter(), _ => SelectedMeter != null);
-
-            LoadData();
-            LoadStatuses();
+            _ = LoadStatusesAsync();
         }
 
-        private void LoadData()
+        private async Task LoadStatusesAsync()
         {
-            Meters.Clear();
-            System.Collections.Generic.List<MeterDto> list = _meterRepository.GetAll();
-            System.Diagnostics.Debug.WriteLine($"MeterListViewModel: загружено {list.Count} счетчиков");
-
-            foreach (MeterDto meter in list)
+            await ExecuteAsync(async () =>
             {
-                Meters.Add(meter);
-            }
+                var statusList = await _statusRepository.GetAllAsync();
+                Statuses.Clear();
 
-            ApplyFilter();
-        }
+                Statuses.Add(new MeterStatusDto { Id = 0, Name = "Все статусы" });
 
-        private void LoadStatuses()
-        {
-            Statuses.Clear();
-
-            // Добавляем "Все статусы" для фильтра
-            Statuses.Add(new MeterStatusDto { Id = 0, Name = "Все статусы" });
-
-            // Получаем список из репозитория (List<DirectoryDto>)
-            System.Collections.Generic.List<DirectoryDto> list = _statusRepository.GetAll();
-
-            // Преобразуем DirectoryDto в MeterStatusDto
-            foreach (DirectoryDto item in list)
-            {
-                Statuses.Add(new MeterStatusDto
+                foreach (var status in statusList)
                 {
-                    Id = item.Id,
-                    Name = item.Name,
-                    Description = item.Description
-                });
-            }
-        }
-        private void AddMeter()
-        {
-            try
-            {
-                System.Diagnostics.Debug.WriteLine("AddMeter: начало");
-
-                var editViewModel = new MeterEditViewModel();  // ← теперь работает!
-                var editView = new Views.Meters.MeterEditView(editViewModel);
-                editView.ShowDialog();
-                LoadData();
-
-                System.Diagnostics.Debug.WriteLine("AddMeter: конец");
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Ошибка в AddMeter: {ex.Message}");
-                MessageBox.Show($"Ошибка: {ex.Message}", "Ошибка",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+                    Statuses.Add(new MeterStatusDto
+                    {
+                        Id = status.Id,
+                        Name = status.Name,
+                        Description = status.Description
+                    });
+                }
+            }, "Ошибка загрузки статусов");
         }
 
-        private void ApplyFilter()
+        protected override async Task LoadDataAsync()
         {
-            FilteredMeters.Clear();
+            await ExecuteAsync(async () =>
+            {
+                var list = await _repository.GetAllAsync();
+                Items.Clear();
+                foreach (var meter in list)
+                    Items.Add(meter);
+                ApplyFilter();
+            }, "Ошибка загрузки счетчиков");
+        }
 
-            System.Collections.Generic.IEnumerable<MeterDto> filtered = Meters.AsEnumerable();
+        protected override async Task AddAsync()
+        {
+            var editViewModel = new MeterEditViewModel();
+            var editView = new Views.Meters.MeterEditView(editViewModel);
+            editView.Owner = Application.Current.MainWindow;
 
-            // Фильтр по тексту (серийный номер)
+            editViewModel.OnSaved += async (s, e) =>
+            {
+                await LoadDataAsync();
+                editView.Close();
+            };
+
+            editView.ShowDialog();
+        }
+
+        protected override async Task EditAsync()
+        {
+            if (SelectedItem == null) return;
+
+            var editViewModel = new MeterEditViewModel(SelectedItem);
+            var editView = new Views.Meters.MeterEditView(editViewModel);
+            editView.Owner = Application.Current.MainWindow;
+
+            editViewModel.OnSaved += async (s, e) =>
+            {
+                await LoadDataAsync();
+                editView.Close();
+            };
+
+            editView.ShowDialog();
+        }
+
+        private async Task ReplaceMeterAsync()
+        {
+            if (SelectedItem == null) return;
+
+            await ShowMessageAsync($"Замена счетчика {SelectedItem.SerialNumber} будет реализована в следующей версии", "Информация");
+        }
+
+        protected override async Task DeleteAsync()
+        {
+            if (SelectedItem == null) return;
+
+            var result = await ShowConfirmationAsync(
+                $"Удалить счетчик {SelectedItem.SerialNumber}?",
+                "Подтверждение удаления");
+
+            if (result)
+            {
+                await ExecuteAsync(async () =>
+                {
+                    await _repository.DeleteAsync(SelectedItem.Id);
+                    await LoadDataAsync();
+                    await ShowMessageAsync("Счетчик удален", "Успех");
+                }, "Ошибка при удалении");
+            }
+        }
+
+        protected override void ApplyFilter()
+        {
+            FilteredItems.Clear();
+
+            var filtered = Items.AsEnumerable();
+
             if (!string.IsNullOrWhiteSpace(SearchText))
             {
-                filtered = filtered.Where(m =>
-                    m.SerialNumber.Contains(SearchText));
+                filtered = filtered.Where(m => m.SerialNumber.Contains(SearchText));
             }
 
-            // Фильтр по статусу
             if (SelectedStatus != null && SelectedStatus.Id > 0)
             {
-                filtered = filtered.Where(m =>
-                    m.StatusId == SelectedStatus.Id);
+                filtered = filtered.Where(m => m.StatusId == SelectedStatus.Id);
             }
 
-            foreach (MeterDto meter in filtered)
-            {
-                FilteredMeters.Add(meter);
-            }
-
-            System.Diagnostics.Debug.WriteLine($"ApplyFilter: {FilteredMeters.Count} счетчиков после фильтра");
+            foreach (var meter in filtered)
+                FilteredItems.Add(meter);
         }
 
-
-        private void EditMeter()
+        protected override bool ItemMatchesSearch(MeterDto item, string searchText)
         {
-            if (SelectedMeter == null)
-            {
-                return;
-            }
-
-            // TODO: открыть форму редактирования счетчика
-            _ = System.Windows.MessageBox.Show($"Редактирование счетчика {SelectedMeter.SerialNumber}", "Информация",
-                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+            return item.SerialNumber.Contains(searchText);
         }
 
-        private void ReplaceMeter()
+        private async Task ShowMessageAsync(string message, string title)
         {
-            if (SelectedMeter == null)
+            await Application.Current.Dispatcher.InvokeAsync(() =>
             {
-                return;
-            }
+                MessageBox.Show(message, title, MessageBoxButton.OK, MessageBoxImage.Information);
+            });
+        }
 
-            // TODO: открыть форму замены счетчика
-            _ = System.Windows.MessageBox.Show($"Замена счетчика {SelectedMeter.SerialNumber}", "Информация",
-                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+        private async Task<bool> ShowConfirmationAsync(string message, string title)
+        {
+            return await Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                return MessageBox.Show(message, title, MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes;
+            });
         }
     }
 }

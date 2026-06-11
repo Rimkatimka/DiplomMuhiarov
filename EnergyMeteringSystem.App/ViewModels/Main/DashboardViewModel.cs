@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading.Tasks;
 using EnergyMeteringSystem.App.Commands;
 using EnergyMeteringSystem.App.ViewModels.Base;
 using EnergyMeteringSystem.Core.Models.DTO;
@@ -23,15 +24,15 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
             _dashboardRepository = new DashboardRepository();
             ChartYears = new ObservableCollection<int>();
 
-            RefreshCommand = new RelayCommand(_ => LoadData());
+            RefreshCommand = new AsyncRelayCommand(async () => await LoadDataAsync());
 
             for (int i = 2020; i <= DateTime.Today.Year; i++)
                 ChartYears.Add(i);
 
             _selectedChartYear = DateTime.Today.Year;
 
-            LoadData();
-            LoadChartData();
+            _ = LoadDataAsync();
+            _ = LoadChartDataAsync();
         }
 
         public int TotalObjects => _data?.TotalObjects ?? 0;
@@ -49,7 +50,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
             {
                 if (SetProperty(ref _selectedChartYear, value))
                 {
-                    LoadChartData();
+                    _ = LoadChartDataAsync();
                 }
             }
         }
@@ -68,36 +69,42 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
 
         public Func<double, string> YFormatter => value => $"{value:F0}";
 
-        public RelayCommand RefreshCommand { get; }
+        public AsyncRelayCommand RefreshCommand { get; }
 
-        private void LoadData()
+        private async Task LoadDataAsync()
         {
-            _data = _dashboardRepository.GetDashboardData();
+            await ExecuteAsync(async () =>
+            {
+                _data = await _dashboardRepository.GetDashboardDataAsync();
 
-            OnPropertyChanged(nameof(TotalObjects));
-            OnPropertyChanged(nameof(TotalMeters));
-            OnPropertyChanged(nameof(ReadingsToday));
-            OnPropertyChanged(nameof(ReadingsWeek));
-            OnPropertyChanged(nameof(ExpiredMeters));
+                OnPropertyChanged(nameof(TotalObjects));
+                OnPropertyChanged(nameof(TotalMeters));
+                OnPropertyChanged(nameof(ReadingsToday));
+                OnPropertyChanged(nameof(ReadingsWeek));
+                OnPropertyChanged(nameof(ExpiredMeters));
+            }, "Ошибка загрузки дашборда");
         }
 
-        private void LoadChartData()
+        private async Task LoadChartDataAsync()
         {
-            var data = _dashboardRepository.GetChartData(_selectedChartYear);
-
-            ChartMonths = data.Select(d => d.MonthName).ToArray();
-
-            ChartSeries = new SeriesCollection
+            await ExecuteAsync(async () =>
             {
-                new LineSeries
+                var data = await _dashboardRepository.GetChartDataAsync(_selectedChartYear);
+
+                ChartMonths = data.Select(d => d.MonthName).ToArray();
+
+                ChartSeries = new SeriesCollection
                 {
-                    Title = "Потребление",
-                    Values = new ChartValues<decimal>(data.Select(d => d.Consumption)),
-                    PointGeometry = DefaultGeometries.Circle,
-                    PointGeometrySize = 10,
-                    LineSmoothness = 0.5
-                }
-            };
+                    new LineSeries
+                    {
+                        Title = "Потребление",
+                        Values = new ChartValues<decimal>(data.Select(d => d.Consumption)),
+                        PointGeometry = DefaultGeometries.Circle,
+                        PointGeometrySize = 10,
+                        LineSmoothness = 0.5
+                    }
+                };
+            }, "Ошибка загрузки графика");
         }
     }
 }

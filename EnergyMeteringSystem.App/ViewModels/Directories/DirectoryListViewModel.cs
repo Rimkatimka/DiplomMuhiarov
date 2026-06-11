@@ -23,7 +23,6 @@ namespace EnergyMeteringSystem.App.ViewModels.Directories
         {
             await ExecuteAsync(async () =>
             {
-                // Временное решение - оборачиваем синхронный метод в Task.Run
                 var items = await Task.Run(() => _repository.GetAll());
                 Items.Clear();
                 foreach (var item in items)
@@ -42,7 +41,8 @@ namespace EnergyMeteringSystem.App.ViewModels.Directories
             var editView = new Views.Directories.DirectoryEditView(editViewModel);
             editView.Owner = System.Windows.Application.Current.MainWindow;
 
-            editViewModel.OnDirectorySaved += async (s, e) =>
+            // ✅ ИСПРАВЛЕНО: OnDirectorySaved → OnSaved
+            editViewModel.OnSaved += async (s, e) =>
             {
                 var dto = new DirectoryDto
                 {
@@ -70,7 +70,8 @@ namespace EnergyMeteringSystem.App.ViewModels.Directories
             var editView = new Views.Directories.DirectoryEditView(editViewModel);
             editView.Owner = System.Windows.Application.Current.MainWindow;
 
-            editViewModel.OnDirectorySaved += async (s, e) =>
+            // ✅ ИСПРАВЛЕНО: OnDirectorySaved → OnSaved
+            editViewModel.OnSaved += async (s, e) =>
             {
                 SelectedItem.Name = editViewModel.Name;
                 SelectedItem.Description = editViewModel.Description;
