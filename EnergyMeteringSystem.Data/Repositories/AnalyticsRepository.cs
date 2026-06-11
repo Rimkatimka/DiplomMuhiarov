@@ -16,7 +16,7 @@ namespace EnergyMeteringSystem.Data.Repositories
             return GetConsumptionDataAsync(year, month).Result;
         }
 
-        // ✅ НОВЫЙ АСИНХРОННЫЙ МЕТОД
+        // ✅ ОПТИМИЗИРОВАННЫЙ АСИНХРОННЫЙ МЕТОД
         public async Task<AnalyticsDataDto> GetConsumptionDataAsync(int year, int month)
         {
             var result = new AnalyticsDataDto();
@@ -24,23 +24,56 @@ namespace EnergyMeteringSystem.Data.Repositories
             DateTime startDate = new DateTime(year, month, 1);
             DateTime endDate = startDate.AddMonths(1).AddDays(-1);
 
-            // Асинхронная загрузка показаний
+            // ========== 1. Получаем все показания за месяц одним запросом ==========
             var readingsForMonth = await Query<MeterReading>()
                 .Where(r => r.ReadingDate >= startDate && r.ReadingDate <= endDate)
                 .GroupBy(r => r.MeterId)
                 .Select(g => g.OrderByDescending(r => r.ReadingDate).FirstOrDefault())
                 .ToListAsync();
 
+            if (!readingsForMonth.Any())
+                return result;
+
+            // ========== 2. Получаем ВСЕ предыдущие показания одним запросом ==========
+            var meterIds = readingsForMonth.Select(r => r.MeterId).Distinct().ToList();
+
+            var previousReadings = await Query<MeterReading>()
+                .Where(r => meterIds.Contains(r.MeterId) && readingsForMonth.Any(rm => rm.ReadingDate > r.ReadingDate))
+                .GroupBy(r => r.MeterId)
+                .Select(g => g.OrderByDescending(r => r.ReadingDate).FirstOrDefault())
+                .ToDictionaryAsync(r => r.MeterId, r => r);
+
+            // ========== 3. Получаем информацию о счетчиках одним запросом ==========
+            var meterInfos = await Query<Meter>()
+                .Where(m => meterIds.Contains(m.Id))
+                .Select(m => new { m.Id, m.ConsumptionObjectId })
+                .ToDictionaryAsync(m => m.Id, m => m.ConsumptionObjectId);
+
+            // ========== 4. Получаем информацию об объектах одним запросом ==========
+            var objectIds = meterInfos.Values.Distinct().ToList();
+
+            var objectInfos = await Query<ConsumptionObject>()
+                .Where(o => objectIds.Contains(o.Id))
+                .Select(o => new {
+                    o.Id,
+                    o.HouseNumber,
+                    o.ApartmentNumber,
+                    o.StreetId,
+                    o.ObjectTypeId,
+                    StreetName = o.Street.Name,
+                    ObjectTypeName = o.ObjectType.Name
+                })
+                .ToDictionaryAsync(o => o.Id, o => o);
+
+            // ========== 5. Формируем результат без дополнительных запросов ==========
             var consumptionByObject = new List<ConsumptionTemp>();
 
             foreach (var reading in readingsForMonth)
             {
                 if (reading == null) continue;
 
-                var prevReading = await Query<MeterReading>()
-                    .Where(r => r.MeterId == reading.MeterId && r.ReadingDate < reading.ReadingDate)
-                    .OrderByDescending(r => r.ReadingDate)
-                    .FirstOrDefaultAsync();
+                // Получаем предыдущее показание из словаря
+                previousReadings.TryGetValue(reading.MeterId, out var prevReading);
 
                 decimal consumption = prevReading != null
                     ? reading.Value - prevReading.Value
@@ -48,40 +81,25 @@ namespace EnergyMeteringSystem.Data.Repositories
 
                 if (consumption <= 0) continue;
 
-                var meterInfo = await Query<Meter>()
-                    .Where(m => m.Id == reading.MeterId)
-                    .Select(m => new { m.ConsumptionObjectId })
-                    .FirstOrDefaultAsync();
+                // Получаем ID объекта из словаря
+                if (!meterInfos.TryGetValue(reading.MeterId, out var objectId))
+                    continue;
 
-                if (meterInfo == null) continue;
-
-                var objectInfo = await Query<ConsumptionObject>()
-                    .Where(o => o.Id == meterInfo.ConsumptionObjectId)
-                    .Select(o => new { o.Id, o.HouseNumber, o.ApartmentNumber, o.StreetId, o.ObjectTypeId })
-                    .FirstOrDefaultAsync();
-
-                if (objectInfo == null) continue;
-
-                var street = await Query<Street>()
-                    .Where(s => s.Id == objectInfo.StreetId)
-                    .Select(s => s.Name)
-                    .FirstOrDefaultAsync();
-
-                var objectType = await Query<ObjectType>()
-                    .Where(t => t.Id == objectInfo.ObjectTypeId)
-                    .Select(t => t.Name)
-                    .FirstOrDefaultAsync();
+                // Получаем информацию об объекте из словаря
+                if (!objectInfos.TryGetValue(objectId, out var objectInfo))
+                    continue;
 
                 consumptionByObject.Add(new ConsumptionTemp
                 {
                     ObjectId = objectInfo.Id,
-                    Address = (street ?? "") + ", д. " + objectInfo.HouseNumber +
+                    Address = (objectInfo.StreetName ?? "") + ", д. " + objectInfo.HouseNumber +
                               (!string.IsNullOrEmpty(objectInfo.ApartmentNumber) ? ", кв. " + objectInfo.ApartmentNumber : ""),
-                    ObjectType = objectType ?? "Неизвестно",
+                    ObjectType = objectInfo.ObjectTypeName ?? "Неизвестно",
                     Consumption = consumption
                 });
             }
 
+            // ========== 6. Формируем результат ==========
             result.TotalConsumption = consumptionByObject.Sum(x => x.Consumption);
             result.MaxConsumption = consumptionByObject.Any()
                 ? consumptionByObject.Max(x => x.Consumption)

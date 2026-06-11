@@ -2,33 +2,43 @@
 using EnergyMeteringSystem.Core.Interfaces.Repositories;
 using EnergyMeteringSystem.Core.Models.DTO;
 using EnergyMeteringSystem.Data.Database;
+using System;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace EnergyMeteringSystem.Data.Repositories
 {
     public class MeterTypeDirectoryRepository : BaseRepository, IDirectoryRepository<DirectoryDto>
     {
+        private const string CACHE_KEY_ALL = "MeterTypesDirectory_All";
+        private const string CACHE_KEY_BY_ID = "MeterTypeDirectory_{0}";
+        private const int CACHE_MINUTES = 60;
+
         public List<DirectoryDto> GetAll()
         {
             return GetAllAsync().Result;
         }
 
-        public async Task<List<DirectoryDto>> GetAllAsync()
+        public async Task<List<DirectoryDto>> GetAllAsync(CancellationToken cancellationToken = default)
         {
-            var data = await Query<MeterType>()
-                .Select(mt => new { mt.Id, mt.Name, mt.Voltage, mt.MaxCurrent, mt.AccuracyClass })
-                .ToListAsync();
-
-            return data.Select(mt => new DirectoryDto
+            return await CacheService.GetOrAddAsync(CACHE_KEY_ALL, async () =>
             {
-                Id = mt.Id,
-                Name = mt.Name,
-                Description = $"{mt.Voltage}В, {mt.MaxCurrent}А, кл.{mt.AccuracyClass}",
-                IsActive = true
-            }).ToList();
+                var data = await Query<MeterType>()
+                    .Select(mt => new DirectoryDto
+                    {
+                        Id = mt.Id,
+                        Name = mt.Name,
+                        Description = $"{mt.Voltage}В, {mt.MaxCurrent}А, кл.{mt.AccuracyClass}",
+                        IsActive = true
+                    })
+                    .OrderBy(mt => mt.Name)
+                    .ToListAsync(cancellationToken);
+
+                return data;
+            }, CACHE_MINUTES);
         }
 
         public DirectoryDto GetById(int id)
@@ -36,25 +46,35 @@ namespace EnergyMeteringSystem.Data.Repositories
             return GetByIdAsync(id).Result;
         }
 
-        public async Task<DirectoryDto> GetByIdAsync(int id)
+        public async Task<DirectoryDto> GetByIdAsync(int id, CancellationToken cancellationToken = default)
         {
-            var mt = await Query<MeterType>().FirstOrDefaultAsync(m => m.Id == id);
-            if (mt == null) return null;
+            string cacheKey = string.Format(CACHE_KEY_BY_ID, id);
 
-            return new DirectoryDto
+            return await CacheService.GetOrAddAsync(cacheKey, async () =>
             {
-                Id = mt.Id,
-                Name = mt.Name,
-                Description = $"{mt.Voltage}В, {mt.MaxCurrent}А, кл.{mt.AccuracyClass}",
-                IsActive = true
-            };
+                var mt = await Query<MeterType>()
+                    .FirstOrDefaultAsync(m => m.Id == id, cancellationToken);
+
+                if (mt == null) return null;
+
+                return new DirectoryDto
+                {
+                    Id = mt.Id,
+                    Name = mt.Name,
+                    Description = $"{mt.Voltage}В, {mt.MaxCurrent}А, кл.{mt.AccuracyClass}",
+                    IsActive = true
+                };
+            }, CACHE_MINUTES);
         }
 
-        public void Add(DirectoryDto dto)
+        public async Task<int> AddAsync(DirectoryDto dto, CancellationToken cancellationToken = default)
         {
+            if (string.IsNullOrWhiteSpace(dto.Name))
+                throw new ArgumentException("Название типа счетчика не может быть пустым");
+
             var entity = new MeterType
             {
-                Name = dto.Name,
+                Name = dto.Name.Trim(),
                 Voltage = 220,
                 MaxCurrent = 60,
                 AccuracyClass = "1.0",
@@ -63,42 +83,79 @@ namespace EnergyMeteringSystem.Data.Repositories
                 ServiceLifeYears = 32
             };
             _context.MeterType.Add(entity);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync(cancellationToken);
+
+            InvalidateCache();
+
+            AuditLogger.Log("INSERT", "MeterType", entity.Id, null, new { dto.Name });
+
+            return entity.Id;
+        }
+
+        public void Add(DirectoryDto dto)
+        {
+            AddAsync(dto).Wait();
+        }
+
+        public async Task<bool> UpdateAsync(DirectoryDto dto, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(dto.Name))
+                throw new ArgumentException("Название типа счетчика не может быть пустым");
+
+            var entity = await _context.MeterType.FindAsync(cancellationToken, dto.Id);
+            if (entity == null) return false;
+
+            var oldValues = new { entity.Name };
+            var newValues = new { dto.Name };
+
+            entity.Name = dto.Name.Trim();
+            await _context.SaveChangesAsync(cancellationToken);
+
+            InvalidateCache();
+            CacheService.Remove(string.Format(CACHE_KEY_BY_ID, dto.Id));
+
+            AuditLogger.Log("UPDATE", "MeterType", entity.Id, oldValues, newValues);
+
+            return true;
         }
 
         public void Update(DirectoryDto dto)
         {
-            var entity = _context.MeterType.Find(dto.Id);
-            if (entity != null)
+            UpdateAsync(dto).Wait();
+        }
+
+        public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
+        {
+            var entity = await _context.MeterType.FindAsync(cancellationToken, id);
+            if (entity == null) return false;
+
+            bool hasMeters = await Query<Meter>().AnyAsync(m => m.MeterTypeId == id, cancellationToken);
+            if (hasMeters)
             {
-                var oldValues = new { entity.Name };
-                var newValues = new { dto.Name };
-
-                entity.Name = dto.Name;
-                _context.SaveChanges();
-
-                AuditLogger.Log("UPDATE", "MeterType", entity.Id, oldValues, newValues);
+                throw new InvalidOperationException("Нельзя удалить тип счётчика, который используется");
             }
+
+            var oldValues = new { entity.Name };
+
+            _context.MeterType.Remove(entity);
+            await _context.SaveChangesAsync(cancellationToken);
+
+            InvalidateCache();
+            CacheService.Remove(string.Format(CACHE_KEY_BY_ID, id));
+
+            AuditLogger.Log("DELETE", "MeterType", id, oldValues, null);
+
+            return true;
         }
 
         public void Delete(int id)
         {
-            var entity = _context.MeterType.Find(id);
-            if (entity != null)
-            {
-                bool hasMeters = _context.Meter.Any(m => m.MeterTypeId == id);
-                if (hasMeters)
-                {
-                    throw new System.InvalidOperationException("Нельзя удалить тип счётчика, который используется");
-                }
+            DeleteAsync(id).Wait();
+        }
 
-                var oldValues = new { entity.Name };
-
-                _context.MeterType.Remove(entity);
-                _context.SaveChanges();
-
-                AuditLogger.Log("DELETE", "MeterType", id, oldValues, null);
-            }
+        private void InvalidateCache()
+        {
+            CacheService.Remove(CACHE_KEY_ALL);
         }
     }
 }

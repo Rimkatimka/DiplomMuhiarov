@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using EnergyMeteringSystem.Core.Models.DTO;
 using EnergyMeteringSystem.Data.Database;
@@ -10,68 +11,73 @@ namespace EnergyMeteringSystem.Data.Repositories
 {
     public class ReportRepository : BaseRepository
     {
+        private static readonly string[] MonthNames = {
+            "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
+            "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"
+        };
+
+        // Константы для кэширования
+        private const string CACHE_KEY_CONSUMPTION_REPORT = "ConsumptionReport_{0}_{1}_{2}_{3}";
+        private const int CACHE_MINUTES = 15;
+
         public List<MonthlyConsumptionDto> GetMonthlyConsumption(int year)
         {
             return GetMonthlyConsumptionAsync(year).Result;
         }
 
-        public async Task<List<MonthlyConsumptionDto>> GetMonthlyConsumptionAsync(int year)
+        // ✅ ОПТИМИЗИРОВАННЫЙ метод - ОДИН ЗАПРОС для всех месяцев
+        public async Task<List<MonthlyConsumptionDto>> GetMonthlyConsumptionOptimizedAsync(int year, CancellationToken cancellationToken = default)
         {
-            var result = new List<MonthlyConsumptionDto>();
+            var startDate = new DateTime(year, 1, 1);
+            var endDate = new DateTime(year, 12, 31);
 
-            for (int month = 1; month <= 12; month++)
+            // Получаем все показания за год
+            var allReadings = await Query<MeterReading>()
+                .Where(r => r.ReadingDate >= startDate && r.ReadingDate <= endDate)
+                .OrderBy(r => r.MeterId)
+                .ThenBy(r => r.ReadingDate)
+                .ToListAsync(cancellationToken);
+
+            // Группируем по счетчикам
+            var readingsByMeter = allReadings
+                .GroupBy(r => r.MeterId)
+                .ToDictionary(g => g.Key, g => g.ToList());
+
+            var monthlyTotals = new Dictionary<int, decimal>();
+            for (int m = 1; m <= 12; m++)
+                monthlyTotals[m] = 0;
+
+            foreach (var meterReadings in readingsByMeter.Values)
             {
-                DateTime startDate = new DateTime(year, month, 1);
-                DateTime endDate = startDate.AddMonths(1).AddDays(-1);
+                if (meterReadings.Count < 2) continue;
 
-                var readings = await Query<MeterReading>()
-                    .Where(r => r.ReadingDate >= startDate && r.ReadingDate <= endDate)
-                    .ToListAsync();
-
-                var meterGroups = readings.GroupBy(r => r.MeterId);
-                decimal monthlyConsumption = 0;
-
-                foreach (var meterGroup in meterGroups)
+                for (int i = 1; i < meterReadings.Count; i++)
                 {
-                    var ordered = meterGroup.OrderBy(r => r.ReadingDate).ToList();
-                    if (ordered.Count >= 2)
-                    {
-                        var first = ordered.First();
-                        var last = ordered.Last();
-                        monthlyConsumption += last.Value - first.Value;
-                    }
-                    else if (ordered.Count == 1)
-                    {
-                        var prevMonth = startDate.AddMonths(-1);
-                        var prevReading = await Query<MeterReading>()
-                            .Where(r => r.MeterId == meterGroup.Key && r.ReadingDate >= prevMonth && r.ReadingDate < startDate)
-                            .OrderByDescending(r => r.ReadingDate)
-                            .FirstOrDefaultAsync();
+                    var prev = meterReadings[i - 1];
+                    var curr = meterReadings[i];
+                    var consumption = curr.Value - prev.Value;
 
-                        if (prevReading != null)
-                        {
-                            monthlyConsumption += ordered.First().Value - prevReading.Value;
-                        }
+                    if (consumption > 0)
+                    {
+                        int month = curr.ReadingDate.Month;
+                        monthlyTotals[month] += consumption;
                     }
                 }
-
-                result.Add(new MonthlyConsumptionDto
-                {
-                    Year = year,
-                    Month = month,
-                    MonthName = GetMonthName(month),
-                    Consumption = monthlyConsumption
-                });
             }
 
-            return result;
+            return monthlyTotals.Select(m => new MonthlyConsumptionDto
+            {
+                Year = year,
+                Month = m.Key,
+                MonthName = MonthNames[m.Key - 1],
+                Consumption = m.Value
+            }).ToList();
         }
 
-        private string GetMonthName(int month)
+        [Obsolete("Используйте GetMonthlyConsumptionOptimizedAsync")]
+        public async Task<List<MonthlyConsumptionDto>> GetMonthlyConsumptionAsync(int year)
         {
-            string[] months = { "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
-                        "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь" };
-            return months[month - 1];
+            return await GetMonthlyConsumptionOptimizedAsync(year);
         }
 
         public List<ConsumptionReportDto> GetConsumptionReport(DateTime startDate, DateTime endDate)
@@ -79,93 +85,106 @@ namespace EnergyMeteringSystem.Data.Repositories
             return GetConsumptionReportAsync(startDate, endDate).Result;
         }
 
-        public async Task<List<ConsumptionReportDto>> GetConsumptionReportAsync(DateTime startDate, DateTime endDate)
+        // ✅ ОПТИМИЗИРОВАННЫЙ метод - ОДИН ЗАПРОС!
+        public async Task<List<ConsumptionReportDto>> GetConsumptionReportOptimizedAsync(DateTime startDate, DateTime endDate, CancellationToken cancellationToken = default)
         {
             try
             {
-                var result = new List<ConsumptionReportDto>();
-                var objects = await Query<ConsumptionObject>().ToListAsync();
+                string cacheKey = string.Format(CACHE_KEY_CONSUMPTION_REPORT,
+                    startDate.ToString("yyyyMMdd"), endDate.ToString("yyyyMMdd"));
 
-                foreach (var obj in objects)
+                return await CacheService.GetOrAddAsync(cacheKey, async () =>
                 {
-                    var meters = await Query<Meter>()
-                        .Where(m => m.ConsumptionObjectId == obj.Id)
-                        .ToListAsync();
+                    // 🚀 ОДИН ГИГАНТСКИЙ JOIN запрос - ИСПРАВЛЕННЫЙ
+                    var query = await (from r in Query<MeterReading>()
+                                       join m in Query<Meter>() on r.MeterId equals m.Id
+                                       join o in Query<ConsumptionObject>() on m.ConsumptionObjectId equals o.Id
+                                       join s in Query<Street>() on o.StreetId equals s.Id
+                                       join c in Query<City>() on s.CityId equals c.Id
+                                       join ot in Query<ObjectType>() on o.ObjectTypeId equals ot.Id
+                                       where r.ReadingDate >= startDate && r.ReadingDate <= endDate
+                                       orderby r.ReadingDate
+                                       select new ConsumptionReportTemp
+                                       {
+                                           MeterId = r.MeterId,
+                                           Value = r.Value,
+                                           ReadingDate = r.ReadingDate,
+                                           ObjectId = o.Id,
+                                           HouseNumber = o.HouseNumber,
+                                           ApartmentNumber = o.ApartmentNumber,
+                                           StreetName = s.Name,
+                                           CityName = c.Name,
+                                           ObjectTypeName = ot.Name,
+                                           SerialNumber = m.SerialNumber,
+                                           InitialReading = m.InitialReading,
+                                           InstallationDate = m.InstallationDate
+                                       })
+                                       .ToListAsync(cancellationToken);
 
-                    decimal totalConsumption = 0;
-                    DateTime? firstReadingDate = null;
-                    DateTime? lastReadingDate = null;
-                    decimal firstValue = 0;
-                    decimal lastValue = 0;
+                    // Группируем по объектам
+                    var result = new List<ConsumptionReportDto>();
 
-                    foreach (var meter in meters)
+                    foreach (var objGroup in query.GroupBy(x => x.ObjectId))
                     {
-                        var readings = await Query<MeterReading>()
-                            .Where(r => r.MeterId == meter.Id && r.ReadingDate >= startDate && r.ReadingDate <= endDate)
-                            .OrderBy(r => r.ReadingDate)
-                            .ToListAsync();
+                        var firstReading = objGroup.OrderBy(x => x.ReadingDate).First();
+                        var lastReading = objGroup.OrderByDescending(x => x.ReadingDate).First();
 
-                        if (readings.Count >= 2)
-                        {
-                            var first = readings.First();
-                            var last = readings.Last();
-                            totalConsumption += last.Value - first.Value;
+                        var consumption = lastReading.Value - firstReading.Value;
+                        if (consumption <= 0) continue;
 
-                            if (firstReadingDate == null) firstReadingDate = first.ReadingDate;
-                            if (lastReadingDate == null) lastReadingDate = last.ReadingDate;
-                            firstValue = first.Value;
-                            lastValue = last.Value;
-                        }
-                        else if (readings.Count == 1)
-                        {
-                            var single = readings.First();
-                            totalConsumption += single.Value - meter.InitialReading;
+                        var meterReadings = objGroup.GroupBy(x => x.MeterId);
+                        var meterSerial = meterReadings.First().First().SerialNumber;
 
-                            if (firstReadingDate == null) firstReadingDate = meter.InstallationDate;
-                            if (lastReadingDate == null) lastReadingDate = single.ReadingDate;
-                            firstValue = meter.InitialReading;
-                            lastValue = single.Value;
-                        }
-                    }
-
-                    if (totalConsumption > 0)
-                    {
-                        var street = await Query<Street>()
-                            .FirstOrDefaultAsync(s => s.Id == obj.StreetId);
-
-                        var city = street != null ? await Query<City>()
-                            .FirstOrDefaultAsync(c => c.Id == street.CityId) : null;
-
-                        var objectType = await Query<ObjectType>()
-                            .FirstOrDefaultAsync(t => t.Id == obj.ObjectTypeId);
-
-                        string fullAddress = $"{city?.Name}, {street?.Name}, {obj.HouseNumber}";
-                        if (!string.IsNullOrEmpty(obj.ApartmentNumber))
-                            fullAddress += $"/{obj.ApartmentNumber}";
+                        string fullAddress = $"{firstReading.CityName}, {firstReading.StreetName}, {firstReading.HouseNumber}";
+                        if (!string.IsNullOrEmpty(firstReading.ApartmentNumber))
+                            fullAddress += $"/{firstReading.ApartmentNumber}";
 
                         result.Add(new ConsumptionReportDto
                         {
-                            ObjectId = obj.Id,
+                            ObjectId = objGroup.Key,
                             Address = fullAddress,
-                            MeterSerial = meters.FirstOrDefault()?.SerialNumber ?? "Нет счетчика",
-                            StartDate = firstReadingDate ?? startDate,
-                            EndDate = lastReadingDate ?? endDate,
-                            StartValue = firstValue,
-                            EndValue = lastValue,
-                            Consumption = totalConsumption,
-                            ObjectType = objectType?.Name ?? "Не указан"
+                            MeterSerial = meterSerial ?? "Нет счетчика",
+                            StartDate = firstReading.ReadingDate,
+                            EndDate = lastReading.ReadingDate,
+                            StartValue = firstReading.Value,
+                            EndValue = lastReading.Value,
+                            Consumption = consumption,
+                            ObjectType = firstReading.ObjectTypeName ?? "Не указан"
                         });
                     }
-                }
 
-                System.Diagnostics.Debug.WriteLine($"GetConsumptionReportAsync: loaded {result.Count} records");
-                return result.OrderByDescending(r => r.Consumption).ToList();
+                    System.Diagnostics.Debug.WriteLine($"GetConsumptionReportOptimizedAsync: loaded {result.Count} records");
+                    return result.OrderByDescending(r => r.Consumption).ToList();
+                }, CACHE_MINUTES);
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"ERROR in GetConsumptionReportAsync: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"ERROR in GetConsumptionReportOptimizedAsync: {ex.Message}");
                 return new List<ConsumptionReportDto>();
             }
+        }
+
+        // Временный класс для данных
+        private class ConsumptionReportTemp
+        {
+            public int MeterId { get; set; }
+            public decimal Value { get; set; }
+            public DateTime ReadingDate { get; set; }
+            public int ObjectId { get; set; }
+            public string HouseNumber { get; set; }
+            public string ApartmentNumber { get; set; }
+            public string StreetName { get; set; }
+            public string CityName { get; set; }
+            public string ObjectTypeName { get; set; }
+            public string SerialNumber { get; set; }
+            public decimal InitialReading { get; set; }
+            public DateTime InstallationDate { get; set; }
+        }
+
+        [Obsolete("Используйте GetConsumptionReportOptimizedAsync")]
+        public async Task<List<ConsumptionReportDto>> GetConsumptionReportAsync(DateTime startDate, DateTime endDate)
+        {
+            return await GetConsumptionReportOptimizedAsync(startDate, endDate);
         }
 
         public class MonthlyConsumptionDto

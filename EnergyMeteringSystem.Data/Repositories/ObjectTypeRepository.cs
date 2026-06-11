@@ -2,33 +2,43 @@
 using EnergyMeteringSystem.Core.Interfaces.Repositories;
 using EnergyMeteringSystem.Core.Models.DTO;
 using EnergyMeteringSystem.Data.Database;
+using System;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace EnergyMeteringSystem.Data.Repositories
 {
     public class ObjectTypeRepository : BaseRepository, IDirectoryRepository<DirectoryDto>
     {
+        private const string CACHE_KEY_ALL = "ObjectTypes_All";
+        private const string CACHE_KEY_BY_ID = "ObjectType_{0}";
+        private const int CACHE_MINUTES = 60;
+
         public List<DirectoryDto> GetAll()
         {
             return GetAllAsync().Result;
         }
 
-        public async Task<List<DirectoryDto>> GetAllAsync()
+        public async Task<List<DirectoryDto>> GetAllAsync(CancellationToken cancellationToken = default)
         {
-            var data = await Query<ObjectType>()
-                .Select(o => new { o.Id, o.Name, o.NormConsumption })
-                .ToListAsync();
-
-            return data.Select(o => new DirectoryDto
+            return await CacheService.GetOrAddAsync(CACHE_KEY_ALL, async () =>
             {
-                Id = o.Id,
-                Name = o.Name,
-                Description = o.NormConsumption.HasValue ? "Норма: " + o.NormConsumption.Value.ToString() : null,
-                IsActive = true
-            }).ToList();
+                var data = await Query<ObjectType>()
+                    .Select(o => new DirectoryDto
+                    {
+                        Id = o.Id,
+                        Name = o.Name,
+                        Description = o.NormConsumption.HasValue ? $"Норма: {o.NormConsumption.Value:F2} кВт·ч/мес" : null,
+                        IsActive = true
+                    })
+                    .OrderBy(o => o.Name)
+                    .ToListAsync(cancellationToken);
+
+                return data;
+            }, CACHE_MINUTES);
         }
 
         public DirectoryDto GetById(int id)
@@ -36,57 +46,110 @@ namespace EnergyMeteringSystem.Data.Repositories
             return GetByIdAsync(id).Result;
         }
 
-        public async Task<DirectoryDto> GetByIdAsync(int id)
+        public async Task<DirectoryDto> GetByIdAsync(int id, CancellationToken cancellationToken = default)
         {
-            var entity = await Query<ObjectType>()
-                .FirstOrDefaultAsync(o => o.Id == id);
+            string cacheKey = string.Format(CACHE_KEY_BY_ID, id);
 
-            return entity == null
-                ? null
-                : new DirectoryDto
-                {
-                    Id = entity.Id,
-                    Name = entity.Name,
-                    Description = entity.NormConsumption.HasValue ? $"Норма: {entity.NormConsumption}" : null,
-                    IsActive = true
-                };
+            return await CacheService.GetOrAddAsync(cacheKey, async () =>
+            {
+                var entity = await Query<ObjectType>()
+                    .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
+
+                return entity == null
+                    ? null
+                    : new DirectoryDto
+                    {
+                        Id = entity.Id,
+                        Name = entity.Name,
+                        Description = entity.NormConsumption.HasValue ? $"Норма: {entity.NormConsumption.Value:F2} кВт·ч/мес" : null,
+                        IsActive = true
+                    };
+            }, CACHE_MINUTES);
+        }
+
+        public async Task<int> AddAsync(DirectoryDto dto, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(dto.Name))
+                throw new ArgumentException("Название типа объекта не может быть пустым");
+
+            var entity = new ObjectType { Name = dto.Name.Trim() };
+            _context.ObjectType.Add(entity);
+            await _context.SaveChangesAsync(cancellationToken);
+
+            InvalidateCache();
+
+            AuditLogger.Log("INSERT", "ObjectType", entity.Id, null, new { dto.Name });
+
+            return entity.Id;
         }
 
         public void Add(DirectoryDto dto)
         {
-            var entity = new ObjectType { Name = dto.Name };
-            _context.ObjectType.Add(entity);
-            _context.SaveChanges();
+            AddAsync(dto).Wait();
+        }
 
-            AuditLogger.Log("INSERT", "ObjectType", entity.Id, null, new { dto.Name });
+        public async Task<bool> UpdateAsync(DirectoryDto dto, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(dto.Name))
+                throw new ArgumentException("Название типа объекта не может быть пустым");
+
+            var entity = await _context.ObjectType.FindAsync(cancellationToken, dto.Id);
+            if (entity == null) return false;
+
+            var oldValues = new { entity.Name };
+            var newValues = new { dto.Name };
+
+            entity.Name = dto.Name.Trim();
+            await _context.SaveChangesAsync(cancellationToken);
+
+            InvalidateCache();
+            CacheService.Remove(string.Format(CACHE_KEY_BY_ID, dto.Id));
+
+            AuditLogger.Log("UPDATE", "ObjectType", entity.Id, oldValues, newValues);
+
+            return true;
         }
 
         public void Update(DirectoryDto dto)
         {
-            var entity = _context.ObjectType.Find(dto.Id);
-            if (entity != null)
+            UpdateAsync(dto).Wait();
+        }
+
+        public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
+        {
+            var entity = await _context.ObjectType.FindAsync(cancellationToken, id);
+            if (entity == null) return false;
+
+            // Проверяем, есть ли связанные объекты
+            bool hasObjects = await Query<ConsumptionObject>()
+                .AnyAsync(o => o.ObjectTypeId == id, cancellationToken);
+
+            if (hasObjects)
             {
-                var oldValues = new { entity.Name };
-                var newValues = new { dto.Name };
-
-                entity.Name = dto.Name;
-                _context.SaveChanges();
-
-                AuditLogger.Log("UPDATE", "ObjectType", entity.Id, oldValues, newValues);
+                throw new InvalidOperationException("Нельзя удалить тип объекта, который используется");
             }
+
+            var oldValues = new { entity.Name };
+
+            _context.ObjectType.Remove(entity);
+            await _context.SaveChangesAsync(cancellationToken);
+
+            InvalidateCache();
+            CacheService.Remove(string.Format(CACHE_KEY_BY_ID, id));
+
+            AuditLogger.Log("DELETE", "ObjectType", id, oldValues, null);
+
+            return true;
         }
 
         public void Delete(int id)
         {
-            var entity = _context.ObjectType.Find(id);
-            if (entity != null)
-            {
-                var oldValues = new { entity.Name };
-                _context.ObjectType.Remove(entity);
-                _context.SaveChanges();
+            DeleteAsync(id).Wait();
+        }
 
-                AuditLogger.Log("DELETE", "ObjectType", id, oldValues, null);
-            }
+        private void InvalidateCache()
+        {
+            CacheService.Remove(CACHE_KEY_ALL);
         }
     }
 }

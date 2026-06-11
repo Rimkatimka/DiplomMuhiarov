@@ -1,112 +1,48 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Windows;
-using EnergyMeteringSystem.App.Commands;
-using EnergyMeteringSystem.App.ViewModels.Base;
-using EnergyMeteringSystem.Core.Interfaces.Repositories;
+﻿using EnergyMeteringSystem.Core.Interfaces.Repositories;
 using EnergyMeteringSystem.Core.Models.DTO;
+using EnergyMeteringSystem.App.ViewModels.Base;
+using System.Threading.Tasks;
+using System;
 
 namespace EnergyMeteringSystem.App.ViewModels.Directories
 {
-    public class DirectoryListViewModel : ViewModelBase
+    /// <summary>
+    /// ViewModel для справочников - наследник от ListViewModelBase
+    /// </summary>
+    public class DirectoryListViewModel : ListViewModelBase<DirectoryDto, IDirectoryRepository<DirectoryDto>>
     {
-        private readonly IDirectoryRepository<DirectoryDto> _repository;
-        private DirectoryDto _selectedItem;
-        private string _searchText;
+        private readonly string _directoryName;
 
-        public ObservableCollection<DirectoryDto> Items { get; set; }
-        public ObservableCollection<DirectoryDto> FilteredItems { get; set; }
-
-        public DirectoryDto SelectedItem
+        public DirectoryListViewModel(IDirectoryRepository<DirectoryDto> repository, string directoryName)
+            : base(repository)
         {
-            get => _selectedItem;
-            set
-            {
-                _ = SetProperty(ref _selectedItem, value);
-                EditCommand?.RaiseCanExecuteChanged();
-                DeleteCommand?.RaiseCanExecuteChanged();
-            }
+            _directoryName = directoryName;
         }
 
-        public string SearchText
+        protected override async Task LoadDataAsync()
         {
-            get => _searchText;
-            set
+            await ExecuteAsync(async () =>
             {
-                _ = SetProperty(ref _searchText, value);
-                ApplyFilter();
-            }
-        }
-
-        public RelayCommand RefreshCommand { get; }
-        public RelayCommand AddCommand { get; }
-        public RelayCommand EditCommand { get; }
-        public RelayCommand DeleteCommand { get; }
-
-        public DirectoryListViewModel(IDirectoryRepository<DirectoryDto> repository)
-        {
-            System.Diagnostics.Debug.WriteLine($"DirectoryListViewModel: {repository.GetType().Name}");
-
-            _repository = repository ?? throw new ArgumentNullException(nameof(repository));
-            Items = new ObservableCollection<DirectoryDto>();
-            FilteredItems = new ObservableCollection<DirectoryDto>();
-
-            RefreshCommand = new RelayCommand(_ => LoadData());
-            AddCommand = new RelayCommand(_ => AddItem());
-            EditCommand = new RelayCommand(_ => EditItem(), _ => SelectedItem != null);
-            DeleteCommand = new RelayCommand(_ => DeleteItem(), _ => SelectedItem != null);
-
-            LoadData();
-        }
-
-        private void LoadData()
-        {
-            try
-            {
+                // Временное решение - оборачиваем синхронный метод в Task.Run
+                var items = await Task.Run(() => _repository.GetAll());
                 Items.Clear();
-                List<DirectoryDto> list = _repository.GetAll();
-                System.Diagnostics.Debug.WriteLine($"LoadData: got {list.Count} items");
-
-                foreach (DirectoryDto item in list)
-                {
+                foreach (var item in items)
                     Items.Add(item);
-                }
-
                 ApplyFilter();
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Ошибка LoadData: {ex.Message}");
-                MessageBox.Show($"Ошибка загрузки данных: {ex.Message}", "Ошибка",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+
+                TotalCount = Items.Count;
+                HasNextPage = false;
+                HasPreviousPage = false;
+            }, $"Ошибка загрузки {_directoryName}");
         }
 
-        private void ApplyFilter()
-        {
-            FilteredItems.Clear();
-
-            var filtered = string.IsNullOrWhiteSpace(SearchText)
-                ? Items
-                : new ObservableCollection<DirectoryDto>(
-                    Items.Where(i => i.Name.Contains(SearchText) ||
-                                    (i.Description?.Contains(SearchText) ?? false)));
-
-            foreach (DirectoryDto item in filtered)
-            {
-                FilteredItems.Add(item);
-            }
-        }
-
-        private void AddItem()
+        protected override async Task AddAsync()
         {
             var editViewModel = new DirectoryEditViewModel();
             var editView = new Views.Directories.DirectoryEditView(editViewModel);
-            editView.Owner = Application.Current.MainWindow;
+            editView.Owner = System.Windows.Application.Current.MainWindow;
 
-            editViewModel.OnDirectorySaved += (s, e) =>
+            editViewModel.OnDirectorySaved += async (s, e) =>
             {
                 var dto = new DirectoryDto
                 {
@@ -115,71 +51,65 @@ namespace EnergyMeteringSystem.App.ViewModels.Directories
                     IsActive = true
                 };
 
-                try
+                await ExecuteAsync(async () =>
                 {
-                    _repository.Add(dto);
-                    LoadData();
+                    await Task.Run(() => _repository.Add(dto));
+                    await LoadDataAsync();
                     editView.Close();
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Ошибка при добавлении: {ex.Message}", "Ошибка",
-                        MessageBoxButton.OK, MessageBoxImage.Error);
-                }
+                }, "Ошибка при добавлении");
             };
 
             editView.ShowDialog();
         }
 
-        private void EditItem()
+        protected override async Task EditAsync()
         {
             if (SelectedItem == null) return;
 
             var editViewModel = new DirectoryEditViewModel(SelectedItem);
             var editView = new Views.Directories.DirectoryEditView(editViewModel);
-            editView.Owner = Application.Current.MainWindow;
+            editView.Owner = System.Windows.Application.Current.MainWindow;
 
-            editViewModel.OnDirectorySaved += (s, e) =>
+            editViewModel.OnDirectorySaved += async (s, e) =>
             {
                 SelectedItem.Name = editViewModel.Name;
                 SelectedItem.Description = editViewModel.Description;
 
-                try
+                await ExecuteAsync(async () =>
                 {
-                    _repository.Update(SelectedItem);
-                    LoadData();
+                    await Task.Run(() => _repository.Update(SelectedItem));
+                    await LoadDataAsync();
                     editView.Close();
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Ошибка при сохранении: {ex.Message}", "Ошибка",
-                        MessageBoxButton.OK, MessageBoxImage.Error);
-                }
+                }, "Ошибка при сохранении");
             };
 
             editView.ShowDialog();
         }
 
-        private void DeleteItem()
+        protected override async Task DeleteAsync()
         {
             if (SelectedItem == null) return;
 
-            var result = MessageBox.Show($"Удалить запись \"{SelectedItem.Name}\"?", "Подтверждение",
-                MessageBoxButton.YesNo, MessageBoxImage.Question);
+            var result = System.Windows.MessageBox.Show(
+                $"Удалить запись \"{SelectedItem.Name}\"?",
+                "Подтверждение",
+                System.Windows.MessageBoxButton.YesNo,
+                System.Windows.MessageBoxImage.Question);
 
-            if (result == MessageBoxResult.Yes)
+            if (result == System.Windows.MessageBoxResult.Yes)
             {
-                try
+                await ExecuteAsync(async () =>
                 {
-                    _repository.Delete(SelectedItem.Id);
-                    LoadData();
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Ошибка при удалении: {ex.Message}", "Ошибка",
-                        MessageBoxButton.OK, MessageBoxImage.Error);
-                }
+                    await Task.Run(() => _repository.Delete(SelectedItem.Id));
+                    await LoadDataAsync();
+                }, "Ошибка при удалении");
             }
+        }
+
+        protected override bool ItemMatchesSearch(DirectoryDto item, string searchText)
+        {
+            return item.Name.Contains(searchText) ||
+                   (item.Description?.Contains(searchText) ?? false);
         }
     }
 }

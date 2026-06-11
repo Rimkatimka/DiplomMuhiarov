@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="..\packages\EntityFramework.6.5.1\build\EntityFramework.props" Condition="Exists('..\packages\EntityFramework.6.5.1\build\EntityFramework.props')" />
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
@@ -177,6 +177,7 @@
     <Compile Include="Repositories\AnalyticsRepository.cs" />
     <Compile Include="Repositories\AuditRepository.cs" />
     <Compile Include="Repositories\BaseRepository.cs" />
+    <Compile Include="Repositories\CacheService.cs" />
     <Compile Include="Repositories\CityRepository.cs" />
     <Compile Include="Repositories\ConsumptionObjectRepository.cs" />
     <Compile Include="Repositories\DashboardRepository.cs" />
@@ -195,8 +196,6 @@
     <Compile Include="Repositories\StreetRepository.cs" />
     <Compile Include="Repositories\UserRepository.cs" />
     <Compile Include="Repositories\VerificationIntervalRepository.cs" />
-    <Compile Include="Tests\LoadTest.cs" />
-    <Compile Include="Tests\LoadTestRunner.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\EnergyMeteringSystem.Core\EnergyMeteringSystem.Core.csproj">
@@ -220,7 +219,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Helpers\" />
-    <Folder Include="UnitOfWork\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Database\Model1.Context.tt">

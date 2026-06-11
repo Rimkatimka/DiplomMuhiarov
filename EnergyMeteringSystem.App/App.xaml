@@ -16,10 +16,6 @@
             <Setter Property="BorderThickness" Value="0,0,1,1"/>
         </Style>
 
-        <Style x:Key="DataGridTextStyle" TargetType="TextBlock">
-            <Setter Property="Margin" Value="10,0"/>
-        </Style>
-
         <Style x:Key="DataGridCellStyle" TargetType="DataGridCell">
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="Padding" Value="0"/>
@@ -28,11 +24,9 @@
             <Setter Property="BorderThickness" Value="0,0,1,1"/>
         </Style>
 
-        <Style TargetType="TextBlock" x:Key="DataGridCellTextBlock">
-            <Setter Property="Margin" Value="10,0"/>
-        </Style>
-
+        <!-- Глобальный стиль для всех DataGrid -->
         <Style TargetType="DataGrid">
+            <!-- Визуальные настройки -->
             <Setter Property="Background" Value="White"/>
             <Setter Property="BorderBrush" Value="#CCCCCC"/>
             <Setter Property="BorderThickness" Value="1"/>
@@ -44,13 +38,25 @@
             <Setter Property="ColumnHeaderStyle" Value="{StaticResource DataGridColumnHeaderStyle}"/>
             <Setter Property="CellStyle" Value="{StaticResource DataGridCellStyle}"/>
 
+            <!-- ✅ ВИРТУАЛИЗАЦИЯ - для быстрой работы с 3000+ записей -->
             <Setter Property="VirtualizingPanel.IsVirtualizing" Value="True"/>
             <Setter Property="VirtualizingPanel.VirtualizationMode" Value="Recycling"/>
             <Setter Property="VirtualizingPanel.ScrollUnit" Value="Pixel"/>
             <Setter Property="EnableColumnVirtualization" Value="True"/>
             <Setter Property="ScrollViewer.CanContentScroll" Value="True"/>
+
+            <!-- ✅ ДОПОЛНИТЕЛЬНЫЕ НАСТРОЙКИ ПРОИЗВОДИТЕЛЬНОСТИ -->
+            <Setter Property="RowHeight" Value="35"/>
+            <Setter Property="MaxHeight" Value="600"/>
+            <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto"/>
+            <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto"/>
+
+            <!-- ✅ ОПТИМИЗАЦИЯ ПАМЯТИ -->
+            <Setter Property="VirtualizingPanel.CacheLengthUnit" Value="Page"/>
+            <Setter Property="VirtualizingPanel.CacheLength" Value="2,2"/>
         </Style>
 
+        <!-- Стиль для кнопок -->
         <Style TargetType="Button">
             <Setter Property="Background" Value="#1976D2"/>
             <Setter Property="Foreground" Value="White"/>
@@ -81,6 +87,21 @@
                     <Setter Property="Opacity" Value="0.5"/>
                 </Trigger>
             </Style.Triggers>
+        </Style>
+
+        <!-- ✅ Стиль для ProgressBar (индикатор загрузки) -->
+        <Style TargetType="ProgressBar">
+            <Setter Property="Height" Value="4"/>
+            <Setter Property="Foreground" Value="#1976D2"/>
+            <Setter Property="Background" Value="#E0E0E0"/>
+            <Setter Property="IsIndeterminate" Value="True"/>
+            <Setter Property="Visibility" Value="Collapsed"/>
+        </Style>
+
+        <!-- ✅ Стиль для ScrollViewer -->
+        <Style TargetType="ScrollViewer">
+            <Setter Property="PanningMode" Value="VerticalOnly"/>
+            <Setter Property="ScrollViewer.CanContentScroll" Value="True"/>
         </Style>
     </Application.Resources>
 </Application>

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using EnergyMeteringSystem.App.Commands;
 using EnergyMeteringSystem.App.ViewModels.Base;
@@ -11,39 +12,10 @@ using EnergyMeteringSystem.Data.Repositories;
 
 namespace EnergyMeteringSystem.App.ViewModels.Admin
 {
-    public class UserManagementViewModel : ViewModelBase
+    public class UserManagementViewModel : ListViewModelBase<UserDto, UserRepository>
     {
-        private readonly UserRepository _userRepository;
-        private string _searchText;
-        private UserDto _selectedUser;
         private UserDto _currentUser;
-
-        public ObservableCollection<UserDto> Users { get; set; }
-        public ObservableCollection<UserDto> FilteredUsers { get; set; }
-        public ObservableCollection<UserRoleDto> Roles { get; set; }
-
-        public string SearchText
-        {
-            get => _searchText;
-            set
-            {
-                SetProperty(ref _searchText, value);
-                ApplyFilter();
-            }
-        }
-
-        public UserDto SelectedUser
-        {
-            get => _selectedUser;
-            set
-            {
-                SetProperty(ref _selectedUser, value);
-                EditCommand?.RaiseCanExecuteChanged();
-                BlockCommand?.RaiseCanExecuteChanged();
-                ResetPasswordCommand?.RaiseCanExecuteChanged();
-                DeleteCommand?.RaiseCanExecuteChanged();
-            }
-        }
+        public ObservableCollection<UserRoleDto> Roles { get; set; } = new();
 
         public UserDto CurrentUser
         {
@@ -51,234 +23,206 @@ namespace EnergyMeteringSystem.App.ViewModels.Admin
             set => SetProperty(ref _currentUser, value);
         }
 
-        public RelayCommand RefreshCommand { get; }
-        public RelayCommand AddCommand { get; }
-        public RelayCommand EditCommand { get; }
-        public RelayCommand BlockCommand { get; }
-        public RelayCommand ResetPasswordCommand { get; }
-        public RelayCommand DeleteCommand { get; }
+        // Дополнительные команды для пользователей
+        public AsyncRelayCommand BlockCommand { get; }
+        public AsyncRelayCommand ResetPasswordCommand { get; }
 
-        public UserManagementViewModel()
+        public UserManagementViewModel() : base(new UserRepository())
         {
-            _userRepository = new UserRepository();
+            BlockCommand = new AsyncRelayCommand(async () => await BlockUserAsync(), () => SelectedItem != null);
+            ResetPasswordCommand = new AsyncRelayCommand(async () => await ResetPasswordAsync(), () => SelectedItem != null);
 
-            Users = new ObservableCollection<UserDto>();
-            FilteredUsers = new ObservableCollection<UserDto>();
-            Roles = new ObservableCollection<UserRoleDto>();
+            // Удаляем стандартный EditCommand (у нас свой)
+            EditCommand = null;
 
-            RefreshCommand = new RelayCommand(_ => LoadData());
-            AddCommand = new RelayCommand(_ => AddUser());
-            EditCommand = new RelayCommand(_ => EditUser(), _ => SelectedUser != null);
-            BlockCommand = new RelayCommand(_ => BlockUser(), _ => SelectedUser != null);
-            ResetPasswordCommand = new RelayCommand(_ => ResetPassword(), _ => SelectedUser != null);
-            DeleteCommand = new RelayCommand(_ => DeleteUser(), _ => CanDeleteUser());
-
-            LoadData();
             LoadRoles();
             LoadCurrentUser();
         }
 
         private void LoadCurrentUser()
         {
-            // Получаем текущего пользователя из ShellViewModel
             if (Application.Current.MainWindow?.DataContext is ShellViewModel shell)
             {
                 CurrentUser = shell.CurrentUser;
             }
         }
 
-        private bool CanDeleteUser()
+        private async Task LoadRoles()
         {
-            if (SelectedUser == null) return false;
-            if (CurrentUser == null) return false;
-            if (!CurrentUser.IsAdmin) return false;      // Только админ может удалять
-            if (SelectedUser.IsAdmin) return false;      // Нельзя удалять админа
-            if (CurrentUser.Id == SelectedUser.Id) return false; // Нельзя удалять себя
-            return true;
+            await ExecuteAsync(async () =>
+            {
+                var list = await _repository.GetAllRolesAsync();
+                Roles.Clear();
+                foreach (var role in list)
+                    Roles.Add(role);
+            }, "Ошибка загрузки ролей");
         }
 
-        private void LoadData()
+        protected override async Task LoadDataAsync()
         {
-            Users.Clear();
-            var list = _userRepository.GetAll();
-            foreach (var user in list)
+            await ExecuteAsync(async () =>
             {
-                Users.Add(user);
-            }
-            ApplyFilter();
+                var list = await _repository.GetAllAsync();
+                Items.Clear();
+                foreach (var user in list)
+                    Items.Add(user);
+                ApplyFilter();
+            }, "Ошибка загрузки пользователей");
         }
 
-        private void LoadRoles()
+        protected override async Task AddAsync()
         {
-            Roles.Clear();
-            var list = _userRepository.GetAllRoles();
-            foreach (var role in list)
+            var addViewModel = new UserEditViewModel(Roles, CurrentUser);
+            var addView = new Views.Admin.UserEditView(addViewModel);
+
+            var window = new Window
             {
-                Roles.Add(role);
-            }
+                Title = "Новый пользователь",
+                Content = addView,
+                Width = 500,
+                Height = 500,
+                WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                ResizeMode = ResizeMode.NoResize,
+                Owner = Application.Current.MainWindow
+            };
+
+            addViewModel.OnSaved += async (s, e) =>
+            {
+                await LoadDataAsync();
+                window.Close();
+            };
+
+            window.ShowDialog();
         }
 
-        private void ApplyFilter()
+        protected override async Task EditAsync()
         {
-            FilteredUsers.Clear();
+            if (SelectedItem == null) return;
 
-            var filtered = string.IsNullOrWhiteSpace(SearchText)
-                ? Users
-                : new ObservableCollection<UserDto>(
-                    Users.Where(u =>
-                        u.FullName.Contains(SearchText) ||
-                        u.Username.Contains(SearchText) ||
-                        u.Email.Contains(SearchText)));
+            var editViewModel = new UserEditViewModel(Roles, SelectedItem, CurrentUser);
+            var editView = new Views.Admin.UserEditView(editViewModel);
 
-            foreach (var user in filtered)
+            var window = new Window
             {
-                FilteredUsers.Add(user);
-            }
+                Title = editViewModel.IsSelfEdit ? "Редактирование профиля" : "Редактирование пользователя",
+                Content = editView,
+                Width = 500,
+                Height = 500,
+                WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                ResizeMode = ResizeMode.NoResize,
+                Owner = Application.Current.MainWindow
+            };
+
+            editViewModel.OnSaved += async (s, e) =>
+            {
+                await LoadDataAsync();
+                window.Close();
+            };
+
+            window.ShowDialog();
         }
 
-        private void AddUser()
+        protected override async Task DeleteAsync()
         {
-            try
+            if (SelectedItem == null) return;
+
+            if (!CanDeleteUser())
             {
-                var addViewModel = new UserEditViewModel(Roles);
-                var addView = new Views.Admin.UserEditView(addViewModel);
-
-                var window = new Window
-                {
-                    Title = "Новый пользователь",
-                    Content = addView,
-                    Width = 500,
-                    Height = 500,
-                    WindowStartupLocation = WindowStartupLocation.CenterScreen,
-                    ResizeMode = ResizeMode.NoResize,
-                    Owner = Application.Current.MainWindow
-                };
-
-                addViewModel.OnUserSaved += (s, e) =>
-                {
-                    LoadData();
-                    window.Close();
-                };
-
-                window.ShowDialog();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Ошибка: {ex.Message}", "Ошибка",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-
-        private void EditUser()
-        {
-            if (SelectedUser == null) return;
-
-            try
-            {
-                var editViewModel = new UserEditViewModel(Roles, SelectedUser, CurrentUser);
-                var editView = new Views.Admin.UserEditView(editViewModel);
-
-                var window = new Window
-                {
-                    Title = "Редактирование пользователя",
-                    Content = editView,
-                    Width = 500,
-                    Height = 500,
-                    WindowStartupLocation = WindowStartupLocation.CenterScreen,
-                    ResizeMode = ResizeMode.NoResize,
-                    Owner = Application.Current.MainWindow
-                };
-
-                editViewModel.OnUserSaved += (s, e) =>
-                {
-                    LoadData();
-                    window.Close();
-                };
-
-                window.ShowDialog();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Ошибка: {ex.Message}", "Ошибка",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-
-        // ✅ МЕТОД BlockUser
-        private void BlockUser()
-        {
-            if (SelectedUser == null) return;
-
-            // Нельзя заблокировать себя
-            if (CurrentUser != null && CurrentUser.Id == SelectedUser.Id)
-            {
-                MessageBox.Show("Нельзя заблокировать свою учетную запись", "Предупреждение",
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                await ShowMessageAsync("Нельзя удалить этого пользователя", "Предупреждение");
                 return;
             }
 
-            bool newStatus = !SelectedUser.IsActive;
+            var result = await ShowConfirmationAsync(
+                $"Удалить пользователя {SelectedItem.FullName}?\n\nВНИМАНИЕ: Это действие нельзя отменить!",
+                "Подтверждение удаления");
+
+            if (result)
+            {
+                await ExecuteAsync(async () =>
+                {
+                    await _repository.DeleteAsync(SelectedItem.Id);
+                    await LoadDataAsync();
+                    await ShowMessageAsync("Пользователь удален", "Успех");
+                }, "Ошибка при удалении");
+            }
+        }
+
+        private async Task BlockUserAsync()
+        {
+            if (SelectedItem == null) return;
+
+            if (CurrentUser != null && CurrentUser.Id == SelectedItem.Id)
+            {
+                await ShowMessageAsync("Нельзя заблокировать свою учетную запись", "Предупреждение");
+                return;
+            }
+
+            bool newStatus = !SelectedItem.IsActive;
             string action = newStatus ? "Разблокировать" : "Заблокировать";
-            string message = $"{action} пользователя {SelectedUser.FullName}?";
 
-            var result = MessageBox.Show(message, "Подтверждение",
-                MessageBoxButton.YesNo, MessageBoxImage.Question);
+            var result = await ShowConfirmationAsync($"{action} пользователя {SelectedItem.FullName}?", "Подтверждение");
 
-            if (result == MessageBoxResult.Yes)
+            if (result)
             {
-                _userRepository.SetActiveStatus(SelectedUser.Id, newStatus);
-                LoadData();
-
-                MessageBox.Show($"Пользователь {action}н", "Успех",
-                    MessageBoxButton.OK, MessageBoxImage.Information);
+                await ExecuteAsync(async () =>
+                {
+                    await _repository.SetActiveStatusAsync(SelectedItem.Id, newStatus);
+                    await LoadDataAsync();
+                    await ShowMessageAsync($"Пользователь {action}н", "Успех");
+                }, $"Ошибка при {action.ToLower()} пользователя");
             }
         }
 
-        private void ResetPassword()
+        private async Task ResetPasswordAsync()
         {
-            if (SelectedUser == null) return;
+            if (SelectedItem == null) return;
 
-            var result = MessageBox.Show(
-                $"Сбросить пароль для {SelectedUser.FullName}?\nНовый пароль: 12345",
-                "Подтверждение",
-                MessageBoxButton.YesNo,
-                MessageBoxImage.Question);
+            var result = await ShowConfirmationAsync(
+                $"Сбросить пароль для {SelectedItem.FullName}?\nНовый пароль: 12345",
+                "Подтверждение");
 
-            if (result == MessageBoxResult.Yes)
+            if (result)
             {
-                string newHash = PasswordHelper.HashPassword("12345");
-                _userRepository.ResetPassword(SelectedUser.Id, newHash);
-                MessageBox.Show("Пароль сброшен на 12345", "Успешно",
-                    MessageBoxButton.OK, MessageBoxImage.Information);
+                await ExecuteAsync(async () =>
+                {
+                    string newHash = PasswordHelper.HashPassword("12345");
+                    await _repository.ResetPasswordAsync(SelectedItem.Id, newHash);
+                    await ShowMessageAsync("Пароль сброшен на 12345", "Успех");
+                }, "Ошибка при сбросе пароля");
             }
         }
 
-        // ✅ МЕТОД DeleteUser
-        private void DeleteUser()
+        private bool CanDeleteUser()
         {
-            if (SelectedUser == null) return;
+            if (SelectedItem == null) return false;
+            if (CurrentUser == null) return false;
+            if (!CurrentUser.IsAdmin) return false;
+            if (SelectedItem.IsAdmin) return false;
+            if (CurrentUser.Id == SelectedItem.Id) return false;
+            return true;
+        }
 
-            var result = MessageBox.Show(
-                $"Удалить пользователя {SelectedUser.FullName}?\n\nВНИМАНИЕ: Это действие нельзя отменить!",
-                "Подтверждение удаления",
-                MessageBoxButton.YesNo,
-                MessageBoxImage.Warning);
+        protected override bool ItemMatchesSearch(UserDto item, string searchText)
+        {
+            return item.FullName.Contains(searchText) ||
+                   item.Username.Contains(searchText) ||
+                   item.Email.Contains(searchText);
+        }
 
-            if (result == MessageBoxResult.Yes)
+        private async Task ShowMessageAsync(string message, string title)
+        {
+            await Application.Current.Dispatcher.InvokeAsync(() =>
             {
-                try
-                {
-                    _userRepository.Delete(SelectedUser.Id);
-                    LoadData();
-                    MessageBox.Show("Пользователь удален", "Успех",
-                        MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Ошибка при удалении: {ex.Message}", "Ошибка",
-                        MessageBoxButton.OK, MessageBoxImage.Error);
-                }
-            }
+                MessageBox.Show(message, title, MessageBoxButton.OK, MessageBoxImage.Information);
+            });
+        }
+
+        private async Task<bool> ShowConfirmationAsync(string message, string title)
+        {
+            return await Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                return MessageBox.Show(message, title, MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes;
+            });
         }
     }
 }

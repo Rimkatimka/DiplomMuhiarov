@@ -146,8 +146,8 @@
     </Reference>
     <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Configuration" />
-    <Reference Include="System.Configuration.ConfigurationManager, Version=10.0.0.3, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Configuration.ConfigurationManager.10.0.3\lib\net462\System.Configuration.ConfigurationManager.dll</HintPath>
+    <Reference Include="System.Configuration.ConfigurationManager, Version=10.0.0.9, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Configuration.ConfigurationManager.10.0.9\lib\net462\System.Configuration.ConfigurationManager.dll</HintPath>
     </Reference>
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
@@ -158,6 +158,7 @@
     <Reference Include="System.Numerics.Vectors, Version=4.1.4.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Numerics.Vectors.4.5.0\lib\net46\System.Numerics.Vectors.dll</HintPath>
     </Reference>
+    <Reference Include="System.Runtime.Caching" />
     <Reference Include="System.Runtime.CompilerServices.Unsafe, Version=4.0.4.1, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Runtime.CompilerServices.Unsafe.4.5.3\lib\net461\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
     </Reference>
@@ -186,6 +187,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Commands\AsyncRelayCommand.cs" />
     <Compile Include="Commands\RelayCommand.cs" />
     <Compile Include="Controls\EmailMaskedTextBox.cs" />
     <Compile Include="Controls\SimpleEmailMaskedTextBox.cs" />
@@ -197,12 +199,15 @@
     <Compile Include="Converters\ObjectToVisibilityConverter.cs" />
     <Compile Include="Helpers\DatabasePathHelper.cs" />
     <Compile Include="Helpers\InputValidator.cs" />
+    <Compile Include="Helpers\PaginatedList.cs" />
     <Compile Include="Helpers\PanelAnimator.cs" />
     <Compile Include="Helpers\ValidationService.cs" />
+    <Compile Include="Services\CacheService.cs" />
     <Compile Include="Services\DatabaseService.cs" />
     <Compile Include="Services\ExcelExport\ExcelExportService.cs" />
     <Compile Include="Services\ExportDialogService.cs" />
     <Compile Include="Services\IDatabaseService.cs" />
+    <Compile Include="Services\LoadingOverlayService.cs" />
     <Compile Include="ViewModels\Admin\AuditLogViewModel.cs" />
     <Compile Include="ViewModels\Admin\BackupViewModel.cs" />
     <Compile Include="ViewModels\Admin\ProfileEditViewModel.cs" />
@@ -210,6 +215,8 @@
     <Compile Include="ViewModels\Admin\UserManagementViewModel.cs" />
     <Compile Include="ViewModels\Analytics\AnalyticsViewModel.cs" />
     <Compile Include="ViewModels\Auth\LoginViewModel.cs" />
+    <Compile Include="ViewModels\Base\EditViewModelBase.cs" />
+    <Compile Include="ViewModels\Base\ListViewModelBase.cs" />
     <Compile Include="ViewModels\Base\ValidatableViewModel.cs" />
     <Compile Include="ViewModels\Base\ViewModelBase.cs" />
     <Compile Include="ViewModels\Directories\CityEditViewModel.cs" />

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using EnergyMeteringSystem.Core.Helpers;
 using EnergyMeteringSystem.Core.Interfaces.Repositories;
@@ -12,128 +13,122 @@ namespace EnergyMeteringSystem.Data.Repositories
 {
     public class MeterReadingRepository : BaseRepository, IMeterReadingRepository
     {
+        // Константы
+        private const int DEFAULT_VERIFICATION_TAKE = 500;
+        private const int DEFAULT_HISTORY_TAKE = 100;
+
         // Синхронный (для совместимости)
         public List<MeterReadingVerificationDto> GetForVerification()
         {
             return GetForVerificationAsync().Result;
         }
 
-        // ✅ АСИНХРОННЫЙ
-        public async Task<List<MeterReadingVerificationDto>> GetForVerificationAsync()
+        // ✅ ОПТИМИЗИРОВАННЫЙ метод - ОДИН ЗАПРОС!
+        public async Task<List<MeterReadingVerificationDto>> GetForVerificationAsync(CancellationToken cancellationToken = default)
         {
             try
             {
-                System.Diagnostics.Debug.WriteLine("GetForVerificationAsync: начало");
+                System.Diagnostics.Debug.WriteLine("GetForVerificationAsync: оптимизированный запрос");
+
+                // 🚀 ОДИН ЗАПРОС со всеми JOIN
+                var query = await (from r in Query<MeterReading>()
+                                   join m in Query<Meter>() on r.MeterId equals m.Id
+                                   join o in Query<ConsumptionObject>() on m.ConsumptionObjectId equals o.Id
+                                   join s in Query<Street>() on o.StreetId equals s.Id
+                                   join c in Query<City>() on s.CityId equals c.Id
+                                   join reg in Query<Region>() on c.RegionId equals reg.Id
+                                   join u in Query<User>() on r.EnteredByUserId equals u.Id
+                                   join rs in Query<ReadingStatus>() on r.ReadingStatusId equals rs.Id
+                                   where r.ReadingStatusId == 1
+                                   orderby r.ReadingDate descending
+                                   select new
+                                   {
+                                       r.Id,
+                                       r.MeterId,
+                                       r.ReadingDate,
+                                       r.Value,
+                                       r.EnteredAt,
+                                       r.ReadingStatusId,
+                                       MeterSerial = m.SerialNumber,
+                                       HouseNumber = o.HouseNumber,
+                                       ApartmentNumber = o.ApartmentNumber,
+                                       StreetName = s.Name,
+                                       CityName = c.Name,
+                                       RegionName = reg.Name,
+                                       EnteredByName = u.FullName,
+                                       StatusName = rs.Name
+                                   })
+                                   .Take(DEFAULT_VERIFICATION_TAKE)
+                                   .ToListAsync(cancellationToken);
+
+                if (!query.Any()) return new List<MeterReadingVerificationDto>();
+
+                // Получаем ID всех счетчиков
+                var meterIds = query.Select(x => x.MeterId).Distinct().ToList();
+
+                // 🚀 ОДИН запрос для получения предыдущих показаний всех счетчиков
+                var lastReadingsBeforeDate = await GetPreviousReadingsBatchForVerificationAsync(meterIds, query.Min(x => x.ReadingDate), cancellationToken);
 
                 var result = new List<MeterReadingVerificationDto>();
 
-                var readings = await Query<MeterReading>()
-                    .Where(r => r.ReadingStatusId == 1)
-                    .OrderByDescending(r => r.ReadingDate)
-                    .ToListAsync();
-
-                foreach (var reading in readings)
+                foreach (var item in query)
                 {
-                    var meter = await Query<Meter>()
-                        .FirstOrDefaultAsync(m => m.Id == reading.MeterId);
-                    if (meter == null) continue;
+                    // Формируем адрес
+                    string fullAddress = $"{item.RegionName}, {item.CityName}, {item.StreetName}, д. {item.HouseNumber}";
+                    if (!string.IsNullOrEmpty(item.ApartmentNumber))
+                        fullAddress += $", кв. {item.ApartmentNumber}";
 
-                    var obj = await Query<ConsumptionObject>()
-                        .FirstOrDefaultAsync(o => o.Id == meter.ConsumptionObjectId);
-                    if (obj == null) continue;
-
-                    var street = await Query<Street>()
-                        .FirstOrDefaultAsync(s => s.Id == obj.StreetId);
-                    if (street == null) continue;
-
-                    var city = await Query<City>()
-                        .FirstOrDefaultAsync(c => c.Id == street.CityId);
-                    if (city == null) continue;
-
-                    var region = await Query<Region>()
-                        .FirstOrDefaultAsync(r => r.Id == city.RegionId);
-                    if (region == null) continue;
-
-                    var user = await Query<User>()
-                        .FirstOrDefaultAsync(u => u.Id == reading.EnteredByUserId);
-                    var status = await Query<ReadingStatus>()
-                        .FirstOrDefaultAsync(rs => rs.Id == reading.ReadingStatusId);
-
+                    // Получаем предыдущее показание
                     decimal? previousValue = null;
-                    var previous = await Query<MeterReading>()
-                        .Where(r => r.MeterId == reading.MeterId && r.ReadingDate < reading.ReadingDate)
-                        .OrderByDescending(r => r.ReadingDate)
-                        .FirstOrDefaultAsync();
-                    if (previous != null)
+                    if (lastReadingsBeforeDate.TryGetValue(item.MeterId, out var prevReading))
                     {
-                        previousValue = previous.Value;
+                        previousValue = prevReading.Value;
                     }
-
-                    string fullAddress = "";
-                    if (region != null && !string.IsNullOrEmpty(region.Name))
-                        fullAddress += region.Name + ", ";
-                    if (city != null && !string.IsNullOrEmpty(city.Name))
-                        fullAddress += city.Name + ", ";
-                    if (street != null && !string.IsNullOrEmpty(street.Name))
-                        fullAddress += street.Name + ", ";
-                    fullAddress += "д. " + obj.HouseNumber;
-                    if (!string.IsNullOrEmpty(obj.ApartmentNumber))
-                        fullAddress += ", кв. " + obj.ApartmentNumber;
 
                     result.Add(new MeterReadingVerificationDto
                     {
-                        Id = reading.Id,
+                        Id = item.Id,
                         Address = fullAddress,
-                        SerialNumber = meter.SerialNumber ?? "Нет номера",
-                        ReadingDate = reading.ReadingDate,
-                        Value = reading.Value,
+                        SerialNumber = item.MeterSerial ?? "Нет номера",
+                        ReadingDate = item.ReadingDate,
+                        Value = item.Value,
                         PreviousValue = previousValue,
-                        EnteredBy = user?.FullName ?? "Неизвестно",
-                        EnteredAt = reading.EnteredAt,
-                        StatusId = reading.ReadingStatusId,
-                        StatusName = status?.Name ?? "Введено",
+                        EnteredBy = item.EnteredByName ?? "Неизвестно",
+                        EnteredAt = item.EnteredAt,
+                        StatusId = item.ReadingStatusId,
+                        StatusName = item.StatusName ?? "Введено",
                         IsSelected = false
                     });
                 }
 
+                System.Diagnostics.Debug.WriteLine($"GetForVerificationAsync: загружено {result.Count} записей");
                 return result;
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Ошибка: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Ошибка GetForVerificationAsync: {ex.Message}");
                 return new List<MeterReadingVerificationDto>();
             }
         }
 
-        public async Task<decimal?> GetLastReadingAsync(int meterId)
+        // Вспомогательный метод для получения предыдущих показаний
+        private async Task<Dictionary<int, MeterReading>> GetPreviousReadingsBatchForVerificationAsync(
+            List<int> meterIds, DateTime minDate, CancellationToken cancellationToken = default)
         {
-            return await Query<MeterReading>()
-                .Where(r => r.MeterId == meterId)
-                .OrderByDescending(r => r.ReadingDate)
-                .Select(r => (decimal?)r.Value)
-                .FirstOrDefaultAsync();
+            if (meterIds == null || !meterIds.Any())
+                return new Dictionary<int, MeterReading>();
+
+            var previousReadings = await Query<MeterReading>()
+                .Where(r => meterIds.Contains(r.MeterId) && r.ReadingDate < minDate)
+                .GroupBy(r => r.MeterId)
+                .Select(g => g.OrderByDescending(r => r.ReadingDate).FirstOrDefault())
+                .ToDictionaryAsync(r => r.MeterId, r => r, cancellationToken);
+
+            return previousReadings;
         }
 
-        public decimal? GetLastReading(int meterId)
-        {
-            return GetLastReadingAsync(meterId).Result;
-        }
-
-        public DateTime? GetLastReadingDate(int meterId)
-        {
-            return GetLastReadingDateAsync(meterId).Result;
-        }
-
-        public async Task<DateTime?> GetLastReadingDateAsync(int meterId)
-        {
-            return await Query<MeterReading>()
-                .Where(r => r.MeterId == meterId)
-                .OrderByDescending(r => r.ReadingDate)
-                .Select(r => (DateTime?)r.ReadingDate)
-                .FirstOrDefaultAsync();
-        }
-
-        public void Add(MeterReadingInputDto dto)
+        // ✅ ОПТИМИЗИРОВАННЫЙ Add с async
+        public async Task<int> AddAsync(MeterReadingInputDto dto, CancellationToken cancellationToken = default)
         {
             var entity = new MeterReading
             {
@@ -144,32 +139,83 @@ namespace EnergyMeteringSystem.Data.Repositories
                 EnteredByUserId = dto.EnteredByUserId,
                 ReadingStatusId = dto.ReadingStatusId,
                 RejectionReasonId = dto.RejectionReasonId,
-                Comment = dto.Comment,
+                Comment = dto.Comment?.Length > 500 ? dto.Comment.Substring(0, 500) : dto.Comment,
                 TariffZone = dto.TariffZone
             };
             _context.MeterReading.Add(entity);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync(cancellationToken);
 
             AuditLogger.Log("INSERT", "MeterReading", entity.Id, null,
                 new { dto.MeterId, dto.Value, dto.ReadingDate, dto.ReadingStatusId });
+
+            return entity.Id;
         }
 
+        // Синхронный Add (для совместимости)
+        public void Add(MeterReadingInputDto dto)
+        {
+            AddAsync(dto).Wait();
+        }
+
+        // ✅ ОПТИМИЗИРОВАННЫЙ UpdateStatus с async
+        public async Task<bool> UpdateStatusAsync(int readingId, int newStatusId, int? rejectionReasonId = null, string comment = null, CancellationToken cancellationToken = default)
+        {
+            var reading = await _context.MeterReading.FindAsync(cancellationToken, readingId);
+            if (reading == null) return false;
+
+            var oldStatus = reading.ReadingStatusId;
+
+            reading.ReadingStatusId = newStatusId;
+            reading.RejectionReasonId = rejectionReasonId;
+            reading.Comment = comment?.Length > 500 ? comment.Substring(0, 500) : comment;
+
+            await _context.SaveChangesAsync(cancellationToken);
+
+            AuditLogger.Log("UPDATE", "MeterReading", readingId,
+                new { StatusId = oldStatus },
+                new { StatusId = newStatusId, rejectionReasonId, comment });
+
+            return true;
+        }
+
+        // Синхронный UpdateStatus (для совместимости)
         public void UpdateStatus(int readingId, int newStatusId, int? rejectionReasonId = null, string comment = null)
         {
-            var reading = _context.MeterReading.Find(readingId);
-            if (reading != null)
+            UpdateStatusAsync(readingId, newStatusId, rejectionReasonId, comment).Wait();
+        }
+
+        // ✅ ОПТИМИЗИРОВАННЫЙ GetMetersByObjectId
+        // ✅ ОПТИМИЗИРОВАННЫЙ GetMetersByObjectId
+        public async Task<List<MeterForReadingDto>> GetMetersByObjectIdAsync(int objectId, CancellationToken cancellationToken = default)
+        {
+            // Один запрос со всеми данными
+            var meters = await Query<Meter>()
+                .Where(m => m.ConsumptionObjectId == objectId)
+                .Select(m => new
+                {
+                    m.Id,
+                    m.SerialNumber,
+                    MeterTypeName = m.MeterType.Name,      // ← явное имя
+                    StatusName = m.MeterStatus.Name,       // ← явное имя
+                    m.InitialReading,
+                    m.InstallationDate,
+                    LastReading = m.MeterReading
+                        .OrderByDescending(r => r.ReadingDate)
+                        .Select(r => (decimal?)r.Value)
+                        .FirstOrDefault()
+                })
+                .ToListAsync(cancellationToken);
+
+            return meters.Select(m => new MeterForReadingDto
             {
-                var oldStatus = reading.ReadingStatusId;
-
-                reading.ReadingStatusId = newStatusId;
-                reading.RejectionReasonId = rejectionReasonId;
-                reading.Comment = comment;
-                _context.SaveChanges();
-
-                AuditLogger.Log("UPDATE", "MeterReading", readingId,
-                    new { StatusId = oldStatus },
-                    new { StatusId = newStatusId, rejectionReasonId, comment });
-            }
+                Id = m.Id,
+                SerialNumber = m.SerialNumber,
+                MeterTypeName = m.MeterTypeName,
+                StatusName = m.StatusName,
+                LastReading = m.LastReading,
+                InitialReading = m.InitialReading,
+                InstallationDate = m.InstallationDate
+            }).ToList();
         }
 
         public List<MeterForReadingDto> GetMetersByObjectId(int objectId)
@@ -177,45 +223,13 @@ namespace EnergyMeteringSystem.Data.Repositories
             return GetMetersByObjectIdAsync(objectId).Result;
         }
 
-        public async Task<List<MeterForReadingDto>> GetMetersByObjectIdAsync(int objectId)
-        {
-            var meters = await Query<Meter>()
-                .Where(m => m.ConsumptionObjectId == objectId)
-                .ToListAsync();
-
-            var result = new List<MeterForReadingDto>();
-
-            foreach (var m in meters)
-            {
-                var lastReading = await Query<MeterReading>()
-                    .Where(r => r.MeterId == m.Id)
-                    .OrderByDescending(r => r.ReadingDate)
-                    .Select(r => (decimal?)r.Value)
-                    .FirstOrDefaultAsync();
-
-                result.Add(new MeterForReadingDto
-                {
-                    Id = m.Id,
-                    SerialNumber = m.SerialNumber,
-                    MeterTypeName = m.MeterType?.Name,
-                    LastReading = lastReading,
-                    LastReadingDate = null,
-                    StatusName = m.MeterStatus?.Name
-                });
-            }
-            return result;
-        }
-
-        public List<MeterReadingHistoryDto> GetHistoryByMeterId(int meterId)
-        {
-            return GetHistoryByMeterIdAsync(meterId).Result;
-        }
-
-        public async Task<List<MeterReadingHistoryDto>> GetHistoryByMeterIdAsync(int meterId)
+        // ✅ ОПТИМИЗИРОВАННЫЙ GetHistoryByMeterId
+        public async Task<List<MeterReadingHistoryDto>> GetHistoryByMeterIdAsync(int meterId, int take = DEFAULT_HISTORY_TAKE, CancellationToken cancellationToken = default)
         {
             var readings = await Query<MeterReading>()
                 .Where(r => r.MeterId == meterId)
-                .OrderBy(r => r.ReadingDate)
+                .OrderByDescending(r => r.ReadingDate)
+                .Take(take)
                 .Select(r => new MeterReadingHistoryDto
                 {
                     Id = r.Id,
@@ -225,42 +239,70 @@ namespace EnergyMeteringSystem.Data.Repositories
                     EnteredBy = r.User.FullName,
                     EnteredAt = r.EnteredAt
                 })
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
-            for (int i = 0; i < readings.Count; i++)
+            // Вычисляем потребление (обратный порядок)
+            for (int i = readings.Count - 1; i > 0; i--)
             {
-                if (i > 0)
-                {
-                    readings[i].Consumption = readings[i].Value - readings[i - 1].Value;
-                }
+                readings[i - 1].Consumption = readings[i - 1].Value - readings[i].Value;
             }
 
             return readings;
         }
 
-        // Остальные методы по аналогии...
+        public List<MeterReadingHistoryDto> GetHistoryByMeterId(int meterId)
+        {
+            return GetHistoryByMeterIdAsync(meterId).Result;
+        }
+
+        // ✅ ОПТИМИЗИРОВАННЫЙ GetHistoryByObjectId
+        public async Task<List<MeterReadingHistoryDto>> GetHistoryByObjectIdAsync(int objectId, int take = DEFAULT_HISTORY_TAKE, CancellationToken cancellationToken = default)
+        {
+            var readings = await Query<MeterReading>()
+                .Where(r => r.Meter.ConsumptionObjectId == objectId)
+                .OrderByDescending(r => r.ReadingDate)
+                .Take(take)
+                .Select(r => new MeterReadingHistoryDto
+                {
+                    Id = r.Id,
+                    ReadingDate = r.ReadingDate,
+                    Value = r.Value,
+                    StatusName = r.ReadingStatus.Name,
+                    EnteredBy = r.User.FullName,
+                    EnteredAt = r.EnteredAt
+                })
+                .ToListAsync(cancellationToken);
+
+            return readings;
+        }
+
         public List<MeterReadingHistoryDto> GetHistoryByObjectId(int objectId)
         {
             return GetHistoryByObjectIdAsync(objectId).Result;
         }
 
-        public async Task<List<MeterReadingHistoryDto>> GetHistoryByObjectIdAsync(int objectId)
+        // ✅ ОПТИМИЗИРОВАННЫЙ GetReadingsForPeriod
+        public async Task<List<MeterReadingDto>> GetReadingsForPeriodAsync(int objectId, int year, int month, CancellationToken cancellationToken = default)
         {
-            var readings = await (from r in Query<MeterReading>()
-                                  join m in Query<Meter>() on r.MeterId equals m.Id
-                                  where m.ConsumptionObjectId == objectId
-                                  orderby r.ReadingDate descending
-                                  select r).ToListAsync();
+            DateTime startDate = new DateTime(year, month, 1);
+            DateTime endDate = startDate.AddMonths(1).AddDays(-1);
 
-            return readings.Select(r => new MeterReadingHistoryDto
-            {
-                Id = r.Id,
-                ReadingDate = r.ReadingDate,
-                Value = r.Value,
-                StatusName = r.ReadingStatus?.Name,
-                EnteredBy = r.User?.FullName,
-                EnteredAt = r.EnteredAt
-            }).ToList();
+            var readings = await Query<MeterReading>()
+                .Where(r => r.Meter.ConsumptionObjectId == objectId && r.ReadingDate >= startDate && r.ReadingDate <= endDate)
+                .Select(r => new MeterReadingDto
+                {
+                    Id = r.Id,
+                    MeterId = r.MeterId,
+                    ReadingDate = r.ReadingDate,
+                    Value = r.Value,
+                    ReadingStatusId = r.ReadingStatusId,
+                    StatusName = r.ReadingStatus.Name,
+                    EnteredBy = r.User.FullName,
+                    EnteredAt = r.EnteredAt
+                })
+                .ToListAsync(cancellationToken);
+
+            return readings;
         }
 
         public List<MeterReadingDto> GetReadingsForPeriod(int objectId, int year, int month)
@@ -268,37 +310,62 @@ namespace EnergyMeteringSystem.Data.Repositories
             return GetReadingsForPeriodAsync(objectId, year, month).Result;
         }
 
-        public async Task<List<MeterReadingDto>> GetReadingsForPeriodAsync(int objectId, int year, int month)
+        // ✅ Новый метод: массовое обновление статусов
+        public async Task<int> BatchUpdateStatusAsync(List<int> readingIds, int newStatusId, int? rejectionReasonId = null, string comment = null, CancellationToken cancellationToken = default)
         {
-            DateTime startDate = new DateTime(year, month, 1);
-            DateTime endDate = startDate.AddMonths(1).AddDays(-1);
+            var readings = await _context.MeterReading
+                .Where(r => readingIds.Contains(r.Id))
+                .ToListAsync(cancellationToken);
 
-            var readings = await Query<MeterReading>()
-                .Where(r => r.Meter.ConsumptionObjectId == objectId && r.ReadingDate >= startDate && r.ReadingDate <= endDate)
-                .ToListAsync();
-
-            return readings.Select(r => new MeterReadingDto
+            foreach (var reading in readings)
             {
-                Id = r.Id,
-                MeterId = r.MeterId,
-                ReadingDate = r.ReadingDate,
-                Value = r.Value,
-                ReadingStatusId = r.ReadingStatusId,
-                StatusName = r.ReadingStatus?.Name,
-                EnteredBy = r.User?.FullName,
-                EnteredAt = r.EnteredAt
-            }).ToList();
+                reading.ReadingStatusId = newStatusId;
+                reading.RejectionReasonId = rejectionReasonId;
+                if (comment != null)
+                    reading.Comment = comment.Length > 500 ? comment.Substring(0, 500) : comment;
+            }
+
+            var count = await _context.SaveChangesAsync(cancellationToken);
+
+            AuditLogger.Log("BATCH_UPDATE", "MeterReading", 0, null,
+                new { Count = count, NewStatusId = newStatusId });
+
+            return count;
         }
 
-        public MeterReadingDto GetByMeterAndDate(int meterId, DateTime readingDate, int tariffZone = 1)
+        // Остальные методы
+        public async Task<decimal?> GetLastReadingAsync(int meterId, CancellationToken cancellationToken = default)
         {
-            return GetByMeterAndDateAsync(meterId, readingDate, tariffZone).Result;
+            return await Query<MeterReading>()
+                .Where(r => r.MeterId == meterId)
+                .OrderByDescending(r => r.ReadingDate)
+                .Select(r => (decimal?)r.Value)
+                .FirstOrDefaultAsync(cancellationToken);
         }
 
-        public async Task<MeterReadingDto> GetByMeterAndDateAsync(int meterId, DateTime readingDate, int tariffZone = 1)
+        public decimal? GetLastReading(int meterId)
+        {
+            return GetLastReadingAsync(meterId).Result;
+        }
+
+        public async Task<DateTime?> GetLastReadingDateAsync(int meterId, CancellationToken cancellationToken = default)
+        {
+            return await Query<MeterReading>()
+                .Where(r => r.MeterId == meterId)
+                .OrderByDescending(r => r.ReadingDate)
+                .Select(r => (DateTime?)r.ReadingDate)
+                .FirstOrDefaultAsync(cancellationToken);
+        }
+
+        public DateTime? GetLastReadingDate(int meterId)
+        {
+            return GetLastReadingDateAsync(meterId).Result;
+        }
+
+        public async Task<MeterReadingDto> GetByMeterAndDateAsync(int meterId, DateTime readingDate, int tariffZone = 1, CancellationToken cancellationToken = default)
         {
             var reading = await Query<MeterReading>()
-                .FirstOrDefaultAsync(r => r.MeterId == meterId && r.ReadingDate == readingDate && r.TariffZone == tariffZone);
+                .FirstOrDefaultAsync(r => r.MeterId == meterId && r.ReadingDate == readingDate && r.TariffZone == tariffZone, cancellationToken);
 
             if (reading == null) return null;
 
@@ -311,6 +378,11 @@ namespace EnergyMeteringSystem.Data.Repositories
                 ReadingStatusId = reading.ReadingStatusId,
                 EnteredAt = reading.EnteredAt
             };
+        }
+
+        public MeterReadingDto GetByMeterAndDate(int meterId, DateTime readingDate, int tariffZone = 1)
+        {
+            return GetByMeterAndDateAsync(meterId, readingDate, tariffZone).Result;
         }
     }
 }

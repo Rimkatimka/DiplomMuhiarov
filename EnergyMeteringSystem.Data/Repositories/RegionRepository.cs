@@ -5,28 +5,39 @@ using System;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace EnergyMeteringSystem.Data.Repositories
 {
     public class RegionRepository : BaseRepository
     {
+        // Константы для кэширования
+        private const string CACHE_KEY_ALL = "Regions_All";
+        private const string CACHE_KEY_BY_ID = "Region_{0}";
+        private const string CACHE_KEY_BY_NAME = "Region_Name_{0}";
+        private const int CACHE_MINUTES = 60; // Регионы меняются редко
+
         public List<RegionDto> GetAll()
         {
             return GetAllAsync().Result;
         }
 
-        public async Task<List<RegionDto>> GetAllAsync()
+        // ✅ ОПТИМИЗИРОВАННЫЙ GetAll с кэшированием
+        public async Task<List<RegionDto>> GetAllAsync(CancellationToken cancellationToken = default)
         {
-            return await Query<Region>()
-                .Select(r => new RegionDto
-                {
-                    Id = r.Id,
-                    Name = r.Name,
-                    Code = r.Code
-                })
-                .OrderBy(r => r.Name)
-                .ToListAsync();
+            return await CacheService.GetOrAddAsync(CACHE_KEY_ALL, async () =>
+            {
+                return await Query<Region>()
+                    .Select(r => new RegionDto
+                    {
+                        Id = r.Id,
+                        Name = r.Name,
+                        Code = r.Code
+                    })
+                    .OrderBy(r => r.Name)
+                    .ToListAsync(cancellationToken);
+            }, CACHE_MINUTES);
         }
 
         public RegionDto GetById(int id)
@@ -34,19 +45,25 @@ namespace EnergyMeteringSystem.Data.Repositories
             return GetByIdAsync(id).Result;
         }
 
-        public async Task<RegionDto> GetByIdAsync(int id)
+        // ✅ ОПТИМИЗИРОВАННЫЙ GetById с кэшированием
+        public async Task<RegionDto> GetByIdAsync(int id, CancellationToken cancellationToken = default)
         {
-            var region = await Query<Region>()
-                .FirstOrDefaultAsync(r => r.Id == id);
+            string cacheKey = string.Format(CACHE_KEY_BY_ID, id);
 
-            if (region == null) return null;
-
-            return new RegionDto
+            return await CacheService.GetOrAddAsync(cacheKey, async () =>
             {
-                Id = region.Id,
-                Name = region.Name,
-                Code = region.Code
-            };
+                var region = await Query<Region>()
+                    .FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
+
+                if (region == null) return null;
+
+                return new RegionDto
+                {
+                    Id = region.Id,
+                    Name = region.Name,
+                    Code = region.Code
+                };
+            }, CACHE_MINUTES);
         }
 
         public RegionDto GetByName(string name)
@@ -54,19 +71,28 @@ namespace EnergyMeteringSystem.Data.Repositories
             return GetByNameAsync(name).Result;
         }
 
-        public async Task<RegionDto> GetByNameAsync(string name)
+        // ✅ ОПТИМИЗИРОВАННЫЙ GetByName с кэшированием
+        public async Task<RegionDto> GetByNameAsync(string name, CancellationToken cancellationToken = default)
         {
-            var region = await Query<Region>()
-                .FirstOrDefaultAsync(r => r.Name == name);
+            if (string.IsNullOrWhiteSpace(name))
+                return null;
 
-            if (region == null) return null;
+            string cacheKey = string.Format(CACHE_KEY_BY_NAME, name.ToLower());
 
-            return new RegionDto
+            return await CacheService.GetOrAddAsync(cacheKey, async () =>
             {
-                Id = region.Id,
-                Name = region.Name,
-                Code = region.Code
-            };
+                var region = await Query<Region>()
+                    .FirstOrDefaultAsync(r => r.Name == name, cancellationToken);
+
+                if (region == null) return null;
+
+                return new RegionDto
+                {
+                    Id = region.Id,
+                    Name = region.Name,
+                    Code = region.Code
+                };
+            }, CACHE_MINUTES);
         }
 
         public bool Exists(string name)
@@ -74,9 +100,47 @@ namespace EnergyMeteringSystem.Data.Repositories
             return ExistsAsync(name).Result;
         }
 
-        public async Task<bool> ExistsAsync(string name)
+        // ✅ ОПТИМИЗИРОВАННЫЙ Exists
+        public async Task<bool> ExistsAsync(string name, int? excludeId = null, CancellationToken cancellationToken = default)
         {
-            return await Query<Region>().AnyAsync(r => r.Name == name);
+            if (string.IsNullOrWhiteSpace(name))
+                return false;
+
+            var query = Query<Region>().Where(r => r.Name == name);
+
+            if (excludeId.HasValue)
+            {
+                query = query.Where(r => r.Id != excludeId.Value);
+            }
+
+            return await query.AnyAsync(cancellationToken);
+        }
+
+        // ✅ ОПТИМИЗИРОВАННЫЙ Add с async
+        public async Task<int> AddAsync(RegionDto dto, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(dto.Name))
+                throw new ArgumentException("Название региона не может быть пустым");
+
+            if (await ExistsAsync(dto.Name, null, cancellationToken))
+            {
+                throw new InvalidOperationException($"Регион '{dto.Name}' уже существует в базе данных");
+            }
+
+            var entity = new Region
+            {
+                Name = dto.Name.Trim(),
+                Code = dto.Code?.Trim()
+            };
+            _context.Region.Add(entity);
+            await _context.SaveChangesAsync(cancellationToken);
+
+            // Инвалидируем кэш
+            InvalidateCache();
+
+            AuditLogger.Log("INSERT", "Region", entity.Id, null, new { dto.Name, dto.Code });
+
+            return entity.Id;
         }
 
         public void Add(RegionDto dto)
@@ -84,48 +148,41 @@ namespace EnergyMeteringSystem.Data.Repositories
             AddAsync(dto).Wait();
         }
 
-        public async Task AddAsync(RegionDto dto)
-        {
-            if (await ExistsAsync(dto.Name))
-            {
-                throw new InvalidOperationException($"Регион '{dto.Name}' уже существует в базе данных");
-            }
-
-            var entity = new Region
-            {
-                Name = dto.Name,
-                Code = dto.Code
-            };
-            _context.Region.Add(entity);
-            await _context.SaveChangesAsync();
-
-            AuditLogger.Log("INSERT", "Region", entity.Id, null, new { dto.Name, dto.Code });
-        }
-
         public void Update(RegionDto dto)
         {
             UpdateAsync(dto).Wait();
         }
 
-        public async Task UpdateAsync(RegionDto dto)
+        // ✅ ОПТИМИЗИРОВАННЫЙ Update с async
+        public async Task<bool> UpdateAsync(RegionDto dto, CancellationToken cancellationToken = default)
         {
-            var entity = await _context.Region.FindAsync(dto.Id);
-            if (entity != null)
+            if (string.IsNullOrWhiteSpace(dto.Name))
+                throw new ArgumentException("Название региона не может быть пустым");
+
+            var entity = await _context.Region.FindAsync(cancellationToken, dto.Id);
+            if (entity == null) return false;
+
+            if (entity.Name != dto.Name && await ExistsAsync(dto.Name, dto.Id, cancellationToken))
             {
-                if (entity.Name != dto.Name && await ExistsAsync(dto.Name))
-                {
-                    throw new InvalidOperationException($"Регион '{dto.Name}' уже существует в базе данных");
-                }
-
-                var oldValues = new { entity.Name, entity.Code };
-                var newValues = new { dto.Name, dto.Code };
-
-                entity.Name = dto.Name;
-                entity.Code = dto.Code;
-                await _context.SaveChangesAsync();
-
-                AuditLogger.Log("UPDATE", "Region", entity.Id, oldValues, newValues);
+                throw new InvalidOperationException($"Регион '{dto.Name}' уже существует в базе данных");
             }
+
+            var oldValues = new { entity.Name, entity.Code };
+            var newValues = new { dto.Name, dto.Code };
+
+            entity.Name = dto.Name.Trim();
+            entity.Code = dto.Code?.Trim();
+            await _context.SaveChangesAsync(cancellationToken);
+
+            // Инвалидируем кэш
+            InvalidateCache();
+            CacheService.Remove(string.Format(CACHE_KEY_BY_ID, dto.Id));
+            CacheService.Remove(string.Format(CACHE_KEY_BY_NAME, oldValues.Name?.ToLower()));
+            CacheService.Remove(string.Format(CACHE_KEY_BY_NAME, dto.Name.ToLower()));
+
+            AuditLogger.Log("UPDATE", "Region", entity.Id, oldValues, newValues);
+
+            return true;
         }
 
         public void Delete(int id)
@@ -133,24 +190,92 @@ namespace EnergyMeteringSystem.Data.Repositories
             DeleteAsync(id).Wait();
         }
 
-        public async Task DeleteAsync(int id)
+        // ✅ ОПТИМИЗИРОВАННЫЙ Delete с async
+        public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
         {
-            var entity = await _context.Region.FindAsync(id);
-            if (entity != null)
+            var entity = await _context.Region.FindAsync(cancellationToken, id);
+            if (entity == null) return false;
+
+            // Проверяем, есть ли связанные города
+            bool hasCities = await Query<City>()
+                .AnyAsync(c => c.RegionId == id, cancellationToken);
+
+            if (hasCities)
             {
-                bool hasCities = await Query<City>().AnyAsync(c => c.RegionId == id);
-                if (hasCities)
-                {
-                    throw new InvalidOperationException("Нельзя удалить регион, в котором есть города");
-                }
-
-                var oldValues = new { entity.Name };
-
-                _context.Region.Remove(entity);
-                await _context.SaveChangesAsync();
-
-                AuditLogger.Log("DELETE", "Region", id, oldValues, null);
+                throw new InvalidOperationException("Нельзя удалить регион, в котором есть города");
             }
+
+            var oldValues = new { entity.Name, entity.Code };
+
+            _context.Region.Remove(entity);
+            await _context.SaveChangesAsync(cancellationToken);
+
+            // Инвалидируем кэш
+            InvalidateCache();
+            CacheService.Remove(string.Format(CACHE_KEY_BY_ID, id));
+            CacheService.Remove(string.Format(CACHE_KEY_BY_NAME, oldValues.Name?.ToLower()));
+
+            AuditLogger.Log("DELETE", "Region", id, oldValues, null);
+
+            return true;
+        }
+
+        // ✅ НОВЫЙ МЕТОД: получение регионов с пагинацией
+        public async Task<PaginatedResult<RegionDto>> GetPaginatedAsync(
+            int page,
+            int pageSize,
+            string searchTerm = null,
+            CancellationToken cancellationToken = default)
+        {
+            var query = Query<Region>().AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                query = query.Where(r => r.Name.Contains(searchTerm) ||
+                                        (r.Code != null && r.Code.Contains(searchTerm)));
+            }
+
+            var totalCount = await query.CountAsync(cancellationToken);
+
+            var items = await query
+                .OrderBy(r => r.Name)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(r => new RegionDto
+                {
+                    Id = r.Id,
+                    Name = r.Name,
+                    Code = r.Code
+                })
+                .ToListAsync(cancellationToken);
+
+            return new PaginatedResult<RegionDto>(items, totalCount, page, pageSize);
+        }
+
+        // ✅ НОВЫЙ МЕТОД: поиск регионов
+        public async Task<List<RegionDto>> SearchAsync(string searchTerm, int maxResults = 20, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(searchTerm))
+                return await GetAllAsync(cancellationToken);
+
+            return await Query<Region>()
+                .Where(r => r.Name.Contains(searchTerm) ||
+                           (r.Code != null && r.Code.Contains(searchTerm)))
+                .Take(maxResults)
+                .Select(r => new RegionDto
+                {
+                    Id = r.Id,
+                    Name = r.Name,
+                    Code = r.Code
+                })
+                .OrderBy(r => r.Name)
+                .ToListAsync(cancellationToken);
+        }
+
+        // Приватный метод инвалидации кэша
+        private void InvalidateCache()
+        {
+            CacheService.Remove(CACHE_KEY_ALL);
         }
     }
 }
