@@ -181,13 +181,18 @@ namespace EnergyMeteringSystem.Data.Repositories
 
         public async Task<bool> UpdateAsync(MeterDto dto, CancellationToken cancellationToken = default)
         {
+            System.Diagnostics.Debug.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] MeterRepository.UpdateAsync НАЧАЛО, ID={dto.Id}");
+
             try
             {
                 var entity = await _context.Meter.FindAsync(cancellationToken, dto.Id);
-                if (entity == null) return false;
+                if (entity == null)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] Счетчик с ID={dto.Id} не найден");
+                    return false;
+                }
 
-                var oldValues = new { entity.SerialNumber, entity.MeterStatusId, entity.NextVerificationDate };
-                var newValues = new { dto.SerialNumber, dto.StatusId, dto.NextVerificationDate };
+                System.Diagnostics.Debug.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] Обновление полей...");
 
                 entity.SerialNumber = dto.SerialNumber?.Trim();
                 entity.MeterTypeId = dto.MeterTypeId;
@@ -199,15 +204,19 @@ namespace EnergyMeteringSystem.Data.Repositories
                 entity.MeterStatusId = dto.StatusId;
                 entity.ServiceLifeYears = dto.ServiceLifeYears;
 
+                System.Diagnostics.Debug.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] Сохранение в БД...");
                 await _context.SaveChangesAsync(cancellationToken);
 
-                AuditLogger.Log("UPDATE", "Meter", entity.Id, oldValues, newValues);
+                System.Diagnostics.Debug.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] UpdateAsync УСПЕШНО");
+
+                // Инвалидируем кэш
+                AuditLogger.Log("UPDATE", "Meter", entity.Id, null, new { dto.SerialNumber, dto.StatusId });
 
                 return true;
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Ошибка в UpdateAsync: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] UpdateAsync ОШИБКА: {ex.Message}");
                 throw;
             }
         }

@@ -14,7 +14,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Directories
         private string _code;
         private string _errorMessage;
 
-        public event EventHandler OnRegionSaved;  // ← ДОБАВЛЕНО!
+        public event EventHandler OnRegionSaved;
 
         public string Name
         {

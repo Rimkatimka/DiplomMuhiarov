@@ -25,7 +25,10 @@ namespace EnergyMeteringSystem.App.ViewModels.Base
             get => _isEditMode;
             set => SetProperty(ref _isEditMode, value);
         }
-
+        protected void RaiseOnSaved()
+        {
+            OnSaved?.Invoke(this, EventArgs.Empty);
+        }
         public string Title
         {
             get => _title;

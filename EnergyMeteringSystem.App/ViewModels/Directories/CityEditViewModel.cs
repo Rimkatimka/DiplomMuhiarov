@@ -17,7 +17,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Directories
         private ObservableCollection<RegionDto> _regions;
         private int _preselectedRegionId;
 
-        public event EventHandler OnCitySaved;  // ← ЭТО СОБЫТИЕ
+        public event EventHandler OnCitySaved;
 
         public string Name
         {
@@ -80,12 +80,12 @@ namespace EnergyMeteringSystem.App.ViewModels.Directories
                 RegionName = SelectedRegion.Name
             };
             _cityRepository.Add(dto);
-            OnCitySaved?.Invoke(this, EventArgs.Empty);  // ← ВЫЗОВ СОБЫТИЯ
+            OnCitySaved?.Invoke(this, EventArgs.Empty);
         }
 
         private void Cancel()
         {
-            OnCitySaved?.Invoke(this, EventArgs.Empty);  // ← ВЫЗОВ СОБЫТИЯ
+            OnCitySaved?.Invoke(this, EventArgs.Empty);
         }
     }
 }

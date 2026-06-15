@@ -17,6 +17,9 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
         private readonly IMeterTypeRepository _meterTypeRepository;
         private readonly ConsumptionObjectRepository _objectRepository;
         private readonly MeterStatusRepository _statusRepository;
+        private readonly RegionRepository _regionRepository;
+        private readonly CityRepository _cityRepository;
+        private readonly StreetRepository _streetRepository;
 
         private const decimal MAX_INITIAL_READING = 99999.999m;
         private const decimal MIN_INITIAL_READING = 0;
@@ -32,10 +35,114 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
         private DateTime? _nextVerificationDate;
         private DateTime? _removalDate;
         private string _dateError;
+        private bool _isLoadingData = true;
+
+        // Для каскадного выбора нового объекта
+        private bool _isChangeObjectMode;
+        private RegionDto _selectedRegion;
+        private CityDto _selectedCity;
+        private StreetDto _selectedStreet;
+        private ConsumptionObjectDto _selectedNewObject;
+        private ObservableCollection<RegionDto> _regions;
+        private ObservableCollection<CityDto> _cities;
+        private ObservableCollection<StreetDto> _streets;
+        private ObservableCollection<ConsumptionObjectDto> _allObjects;
+        private ObservableCollection<ConsumptionObjectDto> _filteredObjects;
 
         public ObservableCollection<MeterTypeDto> MeterTypes { get; set; }
-        public ObservableCollection<ConsumptionObjectDto> Objects { get; set; }
         public ObservableCollection<MeterStatusDto> Statuses { get; set; }
+
+        public ObservableCollection<RegionDto> Regions
+        {
+            get => _regions;
+            set => SetProperty(ref _regions, value);
+        }
+
+        public ObservableCollection<CityDto> Cities
+        {
+            get => _cities;
+            set => SetProperty(ref _cities, value);
+        }
+
+        public ObservableCollection<StreetDto> Streets
+        {
+            get => _streets;
+            set => SetProperty(ref _streets, value);
+        }
+
+        public ObservableCollection<ConsumptionObjectDto> FilteredObjects
+        {
+            get => _filteredObjects;
+            set => SetProperty(ref _filteredObjects, value);
+        }
+
+        public bool IsLoadingData
+        {
+            get => _isLoadingData;
+            set => SetProperty(ref _isLoadingData, value);
+        }
+
+        public bool IsChangeObjectMode
+        {
+            get => _isChangeObjectMode;
+            set
+            {
+                if (SetProperty(ref _isChangeObjectMode, value) && !value)
+                {
+                    SelectedNewObject = null;
+                    SelectedRegion = null;
+                    SelectedCity = null;
+                    SelectedStreet = null;
+                }
+            }
+        }
+
+        public ConsumptionObjectDto SelectedNewObject
+        {
+            get => _selectedNewObject;
+            set => SetProperty(ref _selectedNewObject, value);
+        }
+
+        public RegionDto SelectedRegion
+        {
+            get => _selectedRegion;
+            set
+            {
+                if (SetProperty(ref _selectedRegion, value))
+                {
+                    LoadCitiesByRegion(value?.Id ?? 0);
+                    SelectedCity = null;
+                    SelectedStreet = null;
+                    FilterObjects();
+                }
+            }
+        }
+
+        public CityDto SelectedCity
+        {
+            get => _selectedCity;
+            set
+            {
+                if (SetProperty(ref _selectedCity, value))
+                {
+                    LoadStreetsByCity(value?.Id ?? 0);
+                    SelectedStreet = null;
+                    FilterObjects();
+                }
+            }
+        }
+
+        public StreetDto SelectedStreet
+        {
+            get => _selectedStreet;
+            set
+            {
+                if (SetProperty(ref _selectedStreet, value))
+                {
+                    FilterObjects();
+                }
+            }
+        }
 
         public bool IsObjectEnabled => !IsObjectReadOnly;
         public bool HasDateError => !string.IsNullOrEmpty(DateError);
@@ -183,44 +290,61 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
             set => SetProperty(ref _selectedStatus, value);
         }
 
-        // Конструктор для добавления
         public MeterEditViewModel(ConsumptionObjectDto currentObject = null)
             : base(new MeterRepository(), null)
         {
             _meterTypeRepository = new MeterTypeRepository();
             _objectRepository = new ConsumptionObjectRepository();
             _statusRepository = new MeterStatusRepository();
+            _regionRepository = new RegionRepository();
+            _cityRepository = new CityRepository();
+            _streetRepository = new StreetRepository();
 
             MeterTypes = new ObservableCollection<MeterTypeDto>();
-            Objects = new ObservableCollection<ConsumptionObjectDto>();
             Statuses = new ObservableCollection<MeterStatusDto>();
+            Regions = new ObservableCollection<RegionDto>();
+            Cities = new ObservableCollection<CityDto>();
+            Streets = new ObservableCollection<StreetDto>();
+            _allObjects = new ObservableCollection<ConsumptionObjectDto>();
+            FilteredObjects = new ObservableCollection<ConsumptionObjectDto>();
 
             Title = "Регистрация счетчика";
             InstallationDate = DateTime.Today;
             LastVerificationDate = InstallationDate;
+            IsChangeObjectMode = false;
+            IsLoadingData = true;
 
             if (currentObject != null)
             {
                 IsObjectReadOnly = true;
+                SelectedObject = currentObject;
             }
 
             _ = LoadDataAsync();
         }
 
-        // Конструктор для редактирования
         public MeterEditViewModel(MeterDto existingMeter)
             : base(new MeterRepository(), existingMeter)
         {
             _meterTypeRepository = new MeterTypeRepository();
             _objectRepository = new ConsumptionObjectRepository();
             _statusRepository = new MeterStatusRepository();
+            _regionRepository = new RegionRepository();
+            _cityRepository = new CityRepository();
+            _streetRepository = new StreetRepository();
 
             MeterTypes = new ObservableCollection<MeterTypeDto>();
-            Objects = new ObservableCollection<ConsumptionObjectDto>();
             Statuses = new ObservableCollection<MeterStatusDto>();
+            Regions = new ObservableCollection<RegionDto>();
+            Cities = new ObservableCollection<CityDto>();
+            Streets = new ObservableCollection<StreetDto>();
+            _allObjects = new ObservableCollection<ConsumptionObjectDto>();
+            FilteredObjects = new ObservableCollection<ConsumptionObjectDto>();
 
             Title = "Редактирование счетчика";
             IsObjectReadOnly = false;
+            IsChangeObjectMode = false;
+            IsLoadingData = true;
 
             _ = LoadDataAsync();
         }
@@ -233,11 +357,6 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
                 MeterTypes.Clear();
                 foreach (var type in types)
                     MeterTypes.Add(type);
-
-                var objects = await _objectRepository.GetAllAsync();
-                Objects.Clear();
-                foreach (var obj in objects)
-                    Objects.Add(obj);
 
                 var statuses = await _statusRepository.GetAllAsync();
                 Statuses.Clear();
@@ -252,21 +371,88 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
                     });
                 }
 
+                var regions = await _regionRepository.GetAllAsync();
+                Regions.Clear();
+                foreach (var region in regions)
+                    Regions.Add(region);
+
+                var allObjects = await _objectRepository.GetAllAsync();
+                _allObjects.Clear();
+                foreach (var obj in allObjects)
+                    _allObjects.Add(obj);
+
                 if (IsEditMode && _originalItem != null)
                 {
                     LoadItem(_originalItem);
 
-                    // Выбираем объект после загрузки
                     if (_originalItem.ConsumptionObjectId > 0)
                     {
-                        SelectedObject = Objects.FirstOrDefault(o => o.Id == _originalItem.ConsumptionObjectId);
+                        SelectedObject = _allObjects.FirstOrDefault(o => o.Id == _originalItem.ConsumptionObjectId);
                     }
                 }
+
+                FilterObjects();
+                IsLoadingData = false;
             }, "Ошибка загрузки данных");
+        }
+
+        private async Task LoadCitiesByRegionAsync(int regionId)
+        {
+            if (regionId <= 0) return;
+            var cities = await _cityRepository.GetByRegionIdAsync(regionId);
+            await Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                Cities.Clear();
+                foreach (var city in cities)
+                    Cities.Add(city);
+            });
+        }
+
+        private void LoadCitiesByRegion(int regionId)
+        {
+            if (regionId <= 0) return;
+            Task.Run(async () => await LoadCitiesByRegionAsync(regionId));
+        }
+
+        private async Task LoadStreetsByCityAsync(int cityId)
+        {
+            if (cityId <= 0) return;
+            var streets = await _streetRepository.GetByCityIdAsync(cityId);
+            await Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                Streets.Clear();
+                foreach (var street in streets)
+                    Streets.Add(street);
+            });
+        }
+
+        private void LoadStreetsByCity(int cityId)
+        {
+            if (cityId <= 0) return;
+            Task.Run(async () => await LoadStreetsByCityAsync(cityId));
+        }
+
+        private void FilterObjects()
+        {
+            FilteredObjects.Clear();
+
+            var filtered = _allObjects.AsEnumerable();
+
+            if (SelectedStreet != null)
+                filtered = filtered.Where(o => o.StreetId == SelectedStreet.Id);
+            else if (SelectedCity != null)
+                filtered = filtered.Where(o => o.CityId == SelectedCity.Id);
+            else if (SelectedRegion != null)
+                filtered = filtered.Where(o => o.RegionId == SelectedRegion.Id);
+
+            foreach (var obj in filtered)
+                FilteredObjects.Add(obj);
         }
 
         protected override void LoadItem(MeterDto item)
         {
+            if (item == null) return;
+
             SerialNumber = item.SerialNumber;
             InstallationDate = item.InstallationDate;
             InitialReading = item.InitialReading;
@@ -274,8 +460,11 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
             NextVerificationDate = item.NextVerificationDate;
             ServiceLifeYears = item.ServiceLifeYears;
 
-            SelectedMeterType = MeterTypes.FirstOrDefault(t => t.Id == item.MeterTypeId);
-            SelectedStatus = Statuses.FirstOrDefault(s => s.Id == item.StatusId);
+            if (MeterTypes != null)
+                SelectedMeterType = MeterTypes.FirstOrDefault(t => t.Id == item.MeterTypeId);
+
+            if (Statuses != null)
+                SelectedStatus = Statuses.FirstOrDefault(s => s.Id == item.StatusId);
         }
 
         protected override MeterDto GetDto()
@@ -295,31 +484,142 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
             };
         }
 
-        protected override async Task SaveToRepositoryAsync(MeterDto dto)
+        // ✅ Проверка с сообщением для пользователя
+        private bool ValidateWithMessage()
         {
-            ValidateDates();
+            var errors = new System.Text.StringBuilder();
+
+            if (string.IsNullOrWhiteSpace(SerialNumber))
+                errors.AppendLine("• Серийный номер не заполнен");
+
+            if (SelectedMeterType == null)
+                errors.AppendLine("• Не выбран тип счетчика");
+
+            if (SelectedObject == null)
+                errors.AppendLine("• Не выбран объект установки");
+
+            if (SelectedStatus == null)
+                errors.AppendLine("• Не выбран статус счетчика");
+
+            if (!InstallationDate.HasValue)
+                errors.AppendLine("• Не указана дата установки");
+            else if (InstallationDate > DateTime.Today)
+                errors.AppendLine("• Дата установки не может быть позже сегодняшнего дня");
 
             if (!string.IsNullOrEmpty(DateError))
+                errors.AppendLine($"• {DateError}");
+
+            if (errors.Length > 0)
             {
-                MessageBox.Show("Исправьте ошибки в датах перед сохранением",
-                    "Ошибка валидации", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show($"Невозможно сохранить счетчик:\n\n{errors.ToString()}\n\nЗаполните все обязательные поля.",
+                    "Ошибка валидации",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+                return false;
+            }
+
+            return true;
+        }
+
+        protected override async Task SaveToRepositoryAsync(MeterDto dto)
+        {
+            System.Diagnostics.Debug.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] SaveToRepositoryAsync НАЧАЛО");
+
+            ValidateDates();
+
+            // ✅ ПРОВЕРКА С СООБЩЕНИЕМ ПРИ НАЖАТИИ
+            var errors = new System.Text.StringBuilder();
+
+            if (string.IsNullOrWhiteSpace(SerialNumber))
+                errors.AppendLine("• Серийный номер не заполнен");
+
+            if (SelectedMeterType == null)
+                errors.AppendLine("• Не выбран тип счетчика");
+
+            if (SelectedObject == null)
+                errors.AppendLine("• Не выбран объект установки");
+
+            if (SelectedStatus == null)
+                errors.AppendLine("• Не выбран статус счетчика");
+
+            if (!InstallationDate.HasValue)
+                errors.AppendLine("• Не указана дата установки");
+            else if (InstallationDate > DateTime.Today)
+                errors.AppendLine("• Дата установки не может быть позже сегодняшнего дня");
+
+            if (!string.IsNullOrEmpty(DateError))
+                errors.AppendLine($"• {DateError}");
+
+            if (errors.Length > 0)
+            {
+                MessageBox.Show($"Невозможно сохранить счетчик:\n\n{errors.ToString()}\n\nЗаполните все обязательные поля.",
+                    "Ошибка валидации",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
                 return;
             }
 
+            // ✅ ПОДТВЕРЖДЕНИЕ СОХРАНЕНИЯ (для редактирования)
             if (IsEditMode)
-                await _repository.UpdateAsync(dto);
-            else
-                await _repository.AddAsync(dto);
+            {
+                var confirmResult = MessageBox.Show(
+                    $"Сохранить изменения для счетчика \"{SerialNumber}\"?",
+                    "Подтверждение сохранения",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Question);
+
+                if (confirmResult != MessageBoxResult.Yes)
+                    return;
+            }
+
+            if (IsChangeObjectMode && SelectedNewObject != null)
+            {
+                dto.ConsumptionObjectId = SelectedNewObject.Id;
+                System.Diagnostics.Debug.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] Объект изменён на ID={SelectedNewObject.Id}");
+            }
+
+            System.Diagnostics.Debug.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] Вызов _repository.UpdateAsync...");
+
+            try
+            {
+                if (IsEditMode)
+                    await _repository.UpdateAsync(dto);
+                else
+                    await _repository.AddAsync(dto);
+
+                System.Diagnostics.Debug.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] Сохранение УСПЕШНО");
+
+                // ✅ СООБЩЕНИЕ ОБ УСПЕХЕ
+                MessageBox.Show($"Счетчик \"{SerialNumber}\" успешно сохранен!",
+                    "Успех",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+
+                IsLoadingData = false;
+                RaiseOnSaved();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] ОШИБКА: {ex.Message}");
+                IsLoadingData = false;
+                MessageBox.Show($"Ошибка при сохранении: {ex.Message}", "Ошибка",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         protected override bool CanSave()
         {
-            return !string.IsNullOrWhiteSpace(SerialNumber) &&
-                   SelectedMeterType != null &&
-                   SelectedObject != null &&
-                   SelectedStatus != null &&
-                   InstallationDate.HasValue &&
-                   string.IsNullOrEmpty(DateError);
+            bool result = !string.IsNullOrWhiteSpace(SerialNumber) &&
+                           SelectedMeterType != null &&
+                           SelectedObject != null &&
+                           SelectedStatus != null &&
+                           InstallationDate.HasValue &&
+                           string.IsNullOrEmpty(DateError);
+
+            // Для отладки
+            System.Diagnostics.Debug.WriteLine($"CanSave = {result}");
+
+            return result;
         }
 
         private void CalculateRemovalDate()
@@ -340,8 +640,6 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
                 int interval = SelectedMeterType.VerificationIntervalYears ?? 16;
                 NextVerificationDate = InstallationDate.Value.AddYears(interval);
             }
-
-            OnPropertyChanged(nameof(NextVerificationDate));
         }
 
         private void ValidateDates()
@@ -349,30 +647,13 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
             DateError = string.Empty;
 
             if (InstallationDate > DateTime.Today)
-            {
                 DateError = "Дата установки не может быть позже сегодняшнего дня";
-                return;
-            }
-
-            if (LastVerificationDate.HasValue && LastVerificationDate > DateTime.Today)
-            {
+            else if (LastVerificationDate.HasValue && LastVerificationDate > DateTime.Today)
                 DateError = "Дата последней поверки не может быть позже сегодняшнего дня";
-                return;
-            }
-
-            if (LastVerificationDate.HasValue && NextVerificationDate.HasValue &&
-                NextVerificationDate <= LastVerificationDate)
-            {
+            else if (LastVerificationDate.HasValue && NextVerificationDate.HasValue && NextVerificationDate <= LastVerificationDate)
                 DateError = "Дата следующей поверки должна быть позже даты последней поверки";
-                return;
-            }
-
-            if (RemovalDate.HasValue && NextVerificationDate.HasValue &&
-                NextVerificationDate > RemovalDate)
-            {
+            else if (RemovalDate.HasValue && NextVerificationDate.HasValue && NextVerificationDate > RemovalDate)
                 DateError = "Дата следующей поверки не может быть позже даты изъятия счетчика";
-                return;
-            }
         }
     }
 }

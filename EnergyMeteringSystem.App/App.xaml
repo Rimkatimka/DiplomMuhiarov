@@ -5,14 +5,41 @@
 
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
 
-        <!-- Стиль для заголовков колонок -->
+        <!-- ============= ЦВЕТОВАЯ СХЕМА: КРЕМНИЕВАЯ ДОЛИНА ============= -->
+        <SolidColorBrush x:Key="MenuBackgroundBrush" Color="#2D2D3A"/>
+        <SolidColorBrush x:Key="MenuCardBackgroundBrush" Color="#3D3D4D"/>
+        <SolidColorBrush x:Key="MenuInputBackgroundBrush" Color="#4D4D60"/>
+        <SolidColorBrush x:Key="MenuForegroundBrush" Color="White"/>
+        <SolidColorBrush x:Key="MenuForegroundSecondaryBrush" Color="#AAAAAA"/>
+        <SolidColorBrush x:Key="MenuAccentBrush" Color="#1CE6B9"/>
+        <SolidColorBrush x:Key="MenuHoverBrush" Color="#4D4D60"/>
+        <SolidColorBrush x:Key="MenuSelectedBrush" Color="#6200EE"/>
+
+        <SolidColorBrush x:Key="ButtonBackgroundBrush" Color="#1CE6B9"/>
+        <SolidColorBrush x:Key="ButtonHoverBrush" Color="#33FFD0"/>
+        <SolidColorBrush x:Key="ButtonPressedBrush" Color="#00C4A0"/>
+        <SolidColorBrush x:Key="ButtonForegroundBrush" Color="#1A1A1A"/>
+        <SolidColorBrush x:Key="LogoutButtonBrush" Color="#E31B23"/>
+
+        <SolidColorBrush x:Key="DataGridHeaderBrush" Color="#6200EE"/>
+        <SolidColorBrush x:Key="DataGridHeaderForegroundBrush" Color="White"/>
+        <SolidColorBrush x:Key="DataGridHeaderBorderBrush" Color="#7C4DFF"/>
+        <SolidColorBrush x:Key="DataGridBackgroundBrush" Color="White"/>
+        <SolidColorBrush x:Key="DataGridAlternatingBrush" Color="#F5F5F5"/>
+        <SolidColorBrush x:Key="DataGridBorderBrush" Color="#CCCCCC"/>
+        <SolidColorBrush x:Key="DataGridCellBorderBrush" Color="#E0E0E0"/>
+        <SolidColorBrush x:Key="DataGridForegroundBrush" Color="#1A1A1A"/>
+
+        <SolidColorBrush x:Key="ProgressBarForegroundBrush" Color="#6200EE"/>
+        <SolidColorBrush x:Key="ProgressBarBackgroundBrush" Color="#E0E0E0"/>
+
         <Style x:Key="DataGridColumnHeaderStyle" TargetType="DataGridColumnHeader">
-            <Setter Property="Background" Value="#2D3F5E"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="{StaticResource DataGridHeaderBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource DataGridHeaderForegroundBrush}"/>
             <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="Height" Value="35"/>
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
-            <Setter Property="BorderBrush" Value="#4A6A8A"/>
+            <Setter Property="BorderBrush" Value="{StaticResource DataGridHeaderBorderBrush}"/>
             <Setter Property="BorderThickness" Value="0,0,1,1"/>
         </Style>
 
@@ -20,52 +47,46 @@
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="Padding" Value="0"/>
             <Setter Property="Height" Value="35"/>
-            <Setter Property="BorderBrush" Value="#E0E0E0"/>
+            <Setter Property="BorderBrush" Value="{StaticResource DataGridCellBorderBrush}"/>
             <Setter Property="BorderThickness" Value="0,0,1,1"/>
         </Style>
 
-        <!-- Глобальный стиль для всех DataGrid -->
         <Style TargetType="DataGrid">
-            <!-- Визуальные настройки -->
-            <Setter Property="Background" Value="White"/>
-            <Setter Property="BorderBrush" Value="#CCCCCC"/>
+            <Setter Property="Background" Value="{StaticResource DataGridBackgroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource DataGridBorderBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="RowHeaderWidth" Value="0"/>
             <Setter Property="CanUserAddRows" Value="False"/>
             <Setter Property="CanUserDeleteRows" Value="False"/>
-            <Setter Property="AlternatingRowBackground" Value="#F5F5F5"/>
+            <Setter Property="AlternatingRowBackground" Value="{StaticResource DataGridAlternatingBrush}"/>
             <Setter Property="AlternationCount" Value="2"/>
             <Setter Property="ColumnHeaderStyle" Value="{StaticResource DataGridColumnHeaderStyle}"/>
             <Setter Property="CellStyle" Value="{StaticResource DataGridCellStyle}"/>
-
-            <!-- ✅ ВИРТУАЛИЗАЦИЯ - для быстрой работы с 3000+ записей -->
             <Setter Property="VirtualizingPanel.IsVirtualizing" Value="True"/>
             <Setter Property="VirtualizingPanel.VirtualizationMode" Value="Recycling"/>
             <Setter Property="VirtualizingPanel.ScrollUnit" Value="Pixel"/>
             <Setter Property="EnableColumnVirtualization" Value="True"/>
             <Setter Property="ScrollViewer.CanContentScroll" Value="True"/>
-
-            <!-- ✅ ДОПОЛНИТЕЛЬНЫЕ НАСТРОЙКИ ПРОИЗВОДИТЕЛЬНОСТИ -->
             <Setter Property="RowHeight" Value="35"/>
             <Setter Property="MaxHeight" Value="600"/>
             <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto"/>
             <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto"/>
-
-            <!-- ✅ ОПТИМИЗАЦИЯ ПАМЯТИ -->
             <Setter Property="VirtualizingPanel.CacheLengthUnit" Value="Page"/>
             <Setter Property="VirtualizingPanel.CacheLength" Value="2,2"/>
         </Style>
 
-        <!-- Стиль для кнопок -->
         <Style TargetType="Button">
-            <Setter Property="Background" Value="#1976D2"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="{StaticResource ButtonBackgroundBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource ButtonForegroundBrush}"/>
             <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="15,8"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border Background="{TemplateBinding Background}"
-                                CornerRadius="3"
+                                CornerRadius="6"
                                 Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" 
                                               VerticalAlignment="Center"/>
@@ -73,15 +94,12 @@
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Padding" Value="15,8"/>
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Opacity" Value="0.85"/>
+                    <Setter Property="Background" Value="{StaticResource ButtonHoverBrush}"/>
                 </Trigger>
                 <Trigger Property="IsPressed" Value="True">
-                    <Setter Property="Opacity" Value="0.7"/>
+                    <Setter Property="Background" Value="{StaticResource ButtonPressedBrush}"/>
                 </Trigger>
                 <Trigger Property="IsEnabled" Value="False">
                     <Setter Property="Opacity" Value="0.5"/>
@@ -89,19 +107,18 @@
             </Style.Triggers>
         </Style>
 
-        <!-- ✅ Стиль для ProgressBar (индикатор загрузки) -->
         <Style TargetType="ProgressBar">
             <Setter Property="Height" Value="4"/>
-            <Setter Property="Foreground" Value="#1976D2"/>
-            <Setter Property="Background" Value="#E0E0E0"/>
+            <Setter Property="Foreground" Value="{StaticResource ProgressBarForegroundBrush}"/>
+            <Setter Property="Background" Value="{StaticResource ProgressBarBackgroundBrush}"/>
             <Setter Property="IsIndeterminate" Value="True"/>
             <Setter Property="Visibility" Value="Collapsed"/>
         </Style>
 
-        <!-- ✅ Стиль для ScrollViewer -->
         <Style TargetType="ScrollViewer">
             <Setter Property="PanningMode" Value="VerticalOnly"/>
             <Setter Property="ScrollViewer.CanContentScroll" Value="True"/>
         </Style>
+
     </Application.Resources>
 </Application>
