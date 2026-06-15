@@ -1,14 +1,13 @@
-﻿using System;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Windows;
-using EnergyMeteringSystem.App.Commands;
+﻿using EnergyMeteringSystem.App.Commands;
 using EnergyMeteringSystem.App.ViewModels.Base;
 using EnergyMeteringSystem.Core.Models.DTO;
 using EnergyMeteringSystem.Data.Repositories;
 using LiveCharts;
 using LiveCharts.Wpf;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Windows;
 
 namespace EnergyMeteringSystem.App.ViewModels.Main
 {
@@ -20,15 +19,12 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
         private string[] _chartMonths;
         private bool _hasData;
         private string _chartTitle;
-        private int _selectedYear;
 
         private int _totalObjects;
         private int _totalMeters;
         private int _readingsToday;
         private int _readingsWeek;
         private int _expiredMeters;
-
-        public ObservableCollection<int> AvailableYears { get; set; }
 
         public int TotalObjects
         {
@@ -84,18 +80,6 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
             set => SetProperty(ref _hasData, value);
         }
 
-        public int SelectedYear
-        {
-            get => _selectedYear;
-            set
-            {
-                if (SetProperty(ref _selectedYear, value))
-                {
-                    _ = LoadChartDataAsync();
-                }
-            }
-        }
-
         public Func<double, string> YFormatter => value => $"{value:F0}";
 
         public AsyncRelayCommand RefreshCommand { get; }
@@ -110,20 +94,12 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
             ChartTitle = "Загрузка данных...";
             HasData = true;
 
-            // Инициализация списка годов
-            AvailableYears = new ObservableCollection<int>();
-            for (int i = 2020; i <= DateTime.Today.Year; i++)
-            {
-                AvailableYears.Add(i);
-            }
-            _selectedYear = DateTime.Today.Year;
-
             RefreshCommand = new AsyncRelayCommand(async () => await LoadAllDataAsync());
 
-            _ = LoadAllDataAsync();
+            Task.Run(async () => await LoadAllDataAsync());
         }
 
-        public async Task LoadAllDataAsync()
+        private async Task LoadAllDataAsync()
         {
             System.Diagnostics.Debug.WriteLine("LoadAllDataAsync START");
 
@@ -134,6 +110,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
 
                 System.Diagnostics.Debug.WriteLine($"GetDashboardDataAsync: Objects={_data?.TotalObjects}, Meters={_data?.TotalMeters}");
 
+                // ✅ ОБНОВЛЯЕМ UI В ПРАВИЛЬНОМ ПОТОКЕ
                 await Application.Current.Dispatcher.InvokeAsync(() =>
                 {
                     TotalObjects = _data?.TotalObjects ?? 0;
@@ -146,7 +123,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
                 });
 
                 // Загружаем данные для графика
-                await LoadChartDataAsync();
+                await LoadChartDataSimpleAsync();
             }
             catch (Exception ex)
             {
@@ -159,15 +136,15 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
             }
         }
 
-        private async Task LoadChartDataAsync()
+        private async Task LoadChartDataSimpleAsync()
         {
-            System.Diagnostics.Debug.WriteLine($"LoadChartDataAsync START for year {SelectedYear}");
+            System.Diagnostics.Debug.WriteLine("LoadChartDataSimpleAsync START");
 
             try
             {
-                var chartData = await _dashboardRepository.GetReadingsCountByMonthAsync(SelectedYear);
+                var chartData = await _dashboardRepository.GetChartDataAsync(DateTime.Today.Year);
 
-                System.Diagnostics.Debug.WriteLine($"GetReadingsCountByMonthAsync вернул {chartData?.Count ?? 0} точек");
+                System.Diagnostics.Debug.WriteLine($"GetChartDataAsync вернул {chartData?.Count ?? 0} точек");
 
                 await Application.Current.Dispatcher.InvokeAsync(() =>
                 {
@@ -186,10 +163,8 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
                             }
                         };
 
-                        ChartTitle = $"Динамика показаний по месяцам ({SelectedYear} год)";
+                        ChartTitle = "Динамика показаний по месяцам";
                         HasData = true;
-
-                        System.Diagnostics.Debug.WriteLine($"График обновлен, данных: {chartData.Sum(d => d.Consumption)}");
                     }
                     else
                     {
@@ -204,17 +179,14 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
                                 DataLabels = false
                             }
                         };
-                        ChartTitle = $"Нет данных за {SelectedYear} год";
+                        ChartTitle = "Нет данных для отображения";
                         HasData = false;
                     }
-
-                    OnPropertyChanged(nameof(ChartSeries));
-                    OnPropertyChanged(nameof(ChartMonths));
                 });
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"LoadChartDataAsync ERROR: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"LoadChartDataSimpleAsync ERROR: {ex.Message}");
                 await Application.Current.Dispatcher.InvokeAsync(() =>
                 {
                     ChartTitle = "Ошибка загрузки графика";

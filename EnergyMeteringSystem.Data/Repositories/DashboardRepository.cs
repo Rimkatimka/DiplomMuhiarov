@@ -91,53 +91,5 @@ namespace EnergyMeteringSystem.Data.Repositories
 
             return result;
         }
-        /// <summary>
-        /// Получить количество показаний по месяцам за указанный год
-        /// </summary>
-        public async Task<List<ChartDataPointDto>> GetReadingsCountByMonthAsync(int year)
-        {
-            var result = new List<ChartDataPointDto>();
-            string[] monthNames = { "Янв", "Фев", "Мар", "Апр", "Май", "Июн",
-                            "Июл", "Авг", "Сен", "Окт", "Ноя", "Дек" };
-
-            try
-            {
-                var startDate = new DateTime(year, 1, 1);
-                var endDate = new DateTime(year, 12, 31, 23, 59, 59);
-
-                // Получаем количество показаний по месяцам
-                var readingsByMonth = await _context.MeterReading
-                    .Where(r => r.ReadingDate >= startDate && r.ReadingDate <= endDate)
-                    .GroupBy(r => r.ReadingDate.Month)
-                    .Select(g => new { Month = g.Key, Count = g.Count() })
-                    .ToDictionaryAsync(x => x.Month, x => x.Count);
-
-                for (int month = 1; month <= 12; month++)
-                {
-                    result.Add(new ChartDataPointDto
-                    {
-                        MonthName = monthNames[month - 1],
-                        Consumption = readingsByMonth.ContainsKey(month) ? readingsByMonth[month] : 0
-                    });
-
-                    System.Diagnostics.Debug.WriteLine($"  {monthNames[month - 1]}: {result.Last().Consumption}");
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"GetReadingsCountByMonthAsync ERROR: {ex.Message}");
-                // Возвращаем заглушку с нулями
-                for (int month = 1; month <= 12; month++)
-                {
-                    result.Add(new ChartDataPointDto
-                    {
-                        MonthName = monthNames[month - 1],
-                        Consumption = 0
-                    });
-                }
-            }
-
-            return result;
-        }
     }
 }

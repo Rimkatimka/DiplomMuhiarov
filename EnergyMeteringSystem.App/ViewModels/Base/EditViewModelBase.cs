@@ -1,8 +1,7 @@
-﻿using EnergyMeteringSystem.App.Commands;
-using EnergyMeteringSystem.App.Helpers;
+﻿
+using EnergyMeteringSystem.App.Commands;
 using System;
 using System.Threading.Tasks;
-using System.Windows;
 using System.Windows.Input;
 
 namespace EnergyMeteringSystem.App.ViewModels.Base
@@ -26,11 +25,14 @@ namespace EnergyMeteringSystem.App.ViewModels.Base
             get => _isEditMode;
             set => SetProperty(ref _isEditMode, value);
         }
-
+        protected void RaiseOnSaved()
+        {
+            OnSaved?.Invoke(this, EventArgs.Empty);
+        }
         public string Title
         {
             get => _title;
-            set => SetProperty(ref _title, value);
+            set => SetProperty(ref _title, value);  // ✅ Добавлен setter
         }
 
         public ICommand SaveCommand { get; protected set; }
@@ -56,85 +58,23 @@ namespace EnergyMeteringSystem.App.ViewModels.Base
         protected abstract void LoadItem(TModel item);
         protected abstract TModel GetDto();
         protected abstract Task SaveToRepositoryAsync(TModel dto);
-        protected abstract bool CanSave();
+        protected new abstract bool CanSave();
 
         protected virtual async Task SaveAsync()
         {
-            if (!CanSave())
-            {
-                // Используем метод GetErrors из ValidatableViewModel
-                var missingFieldsMessage = GetMissingFieldsMessage();
-                if (!string.IsNullOrEmpty(missingFieldsMessage))
-                {
-                    await Application.Current.Dispatcher.InvokeAsync(() =>
-                    {
-                        MessageBox.Show(
-                            $"Невозможно сохранить:\n\n{missingFieldsMessage}\n\nЗаполните все обязательные поля.",
-                            "Ошибка валидации",
-                            MessageBoxButton.OK,
-                            MessageBoxImage.Warning);
-                    });
-                }
-                return;
-            }
+            if (!CanSave()) return;
 
             await ExecuteAsync(async () =>
             {
                 var dto = GetDto();
                 await SaveToRepositoryAsync(dto);
-                RaiseOnSaved();
+                OnSaved?.Invoke(this, EventArgs.Empty);
             }, "Ошибка при сохранении");
         }
 
         protected virtual void Cancel()
         {
             OnCancelled?.Invoke(this, EventArgs.Empty);
-        }
-
-        protected void RaiseOnSaved()
-        {
-            OnSaved?.Invoke(this, EventArgs.Empty);
-        }
-
-        /// <summary>
-        /// Получает сообщение о незаполненных обязательных полях
-        /// </summary>
-        protected virtual string GetMissingFieldsMessage()
-        {
-            if (_fieldValidations == null || _fieldValidations.Count == 0)
-                return null;
-
-            var missingFields = new System.Text.StringBuilder();
-            foreach (var validation in _fieldValidations)
-            {
-                if (validation.Value != null && validation.Value.Count > 0)
-                {
-                    missingFields.AppendLine($"• {validation.Key}: {string.Join(", ", validation.Value)}");
-                }
-            }
-            return missingFields.Length > 0 ? missingFields.ToString() : null;
-        }
-
-        /// <summary>
-        /// Асинхронное выполнение с обработкой ошибок
-        /// </summary>
-        protected async Task ExecuteAsync(Func<Task> action, string errorTitle = "Ошибка")
-        {
-            try
-            {
-                await action();
-            }
-            catch (Exception ex)
-            {
-                await Application.Current.Dispatcher.InvokeAsync(() =>
-                {
-                    MessageBox.Show(
-                        ex.Message,
-                        errorTitle,
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Error);
-                });
-            }
         }
     }
 }

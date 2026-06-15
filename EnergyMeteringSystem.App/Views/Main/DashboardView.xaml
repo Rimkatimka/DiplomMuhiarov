@@ -8,7 +8,8 @@
     </UserControl.Resources>
 
     <Grid>
-        <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="20">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="20"
+                      IsEnabled="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}">
             <StackPanel>
                 <!-- KPI Карточки -->
                 <Grid>
@@ -61,13 +62,24 @@
                                         Height="350"
                                         DisableAnimations="True">
                         <lvc:CartesianChart.AxisX>
-                            <lvc:Axis Title="Месяц" Labels="{Binding ChartMonths}"/>
+                            <lvc:Axis Title="Месяц" Labels="{Binding ChartMonths}">
+                                <lvc:Axis.Separator>
+                                    <lvc:Separator Step="1"/>
+                                </lvc:Axis.Separator>
+                            </lvc:Axis>
                         </lvc:CartesianChart.AxisX>
                         <lvc:CartesianChart.AxisY>
                             <lvc:Axis Title="Количество показаний" LabelFormatter="{Binding YFormatter}"/>
                         </lvc:CartesianChart.AxisY>
                     </lvc:CartesianChart>
                 </Border>
+
+                <!-- Сообщение если нет данных -->
+                <TextBlock Text="Нет данных для отображения графика" 
+                           FontSize="14" Foreground="Gray"
+                           HorizontalAlignment="Center"
+                           Margin="0,20,0,0"
+                           Visibility="{Binding HasData, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=Inverse}"/>
             </StackPanel>
         </ScrollViewer>
 

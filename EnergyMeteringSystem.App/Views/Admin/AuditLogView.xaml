@@ -1,11 +1,9 @@
 ﻿<UserControl x:Class="EnergyMeteringSystem.App.Views.Admin.AuditLogView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:converters="clr-namespace:EnergyMeteringSystem.App.Converters">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
-        <converters:InverseBooleanConverter x:Key="InverseBooleanConverter"/>
     </UserControl.Resources>
 
     <Grid Margin="10">
@@ -16,38 +14,15 @@
 
         <!-- Фильтры -->
         <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
-            <TextBlock Text="С:" 
-                       VerticalAlignment="Center" 
-                       Margin="5"
-                       Foreground="{DynamicResource DataGridForegroundBrush}"/>
-            <DatePicker SelectedDate="{Binding FromDate}" 
-                        Width="120" 
-                        Margin="5"
-                        Background="{DynamicResource DataGridBackgroundBrush}"
-                        Foreground="{DynamicResource DataGridForegroundBrush}"
-                        BorderBrush="{DynamicResource DataGridBorderBrush}"/>
-
-            <TextBlock Text="По:" 
-                       VerticalAlignment="Center" 
-                       Margin="5"
-                       Foreground="{DynamicResource DataGridForegroundBrush}"/>
-            <DatePicker SelectedDate="{Binding ToDate}" 
-                        Width="120" 
-                        Margin="5"
-                        Background="{DynamicResource DataGridBackgroundBrush}"
-                        Foreground="{DynamicResource DataGridForegroundBrush}"
-                        BorderBrush="{DynamicResource DataGridBorderBrush}"/>
+            <TextBlock Text="С:" VerticalAlignment="Center" Margin="5"/>
+            <DatePicker SelectedDate="{Binding FromDate}" Width="120" Margin="5"/>
+            <TextBlock Text="По:" VerticalAlignment="Center" Margin="5"/>
+            <DatePicker SelectedDate="{Binding ToDate}" Width="120" Margin="5"/>
 
             <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" 
-                     Width="200" 
-                     Padding="8,6" 
-                     Margin="10,0,0,0"
+                     Width="200" Padding="5" Margin="10,0,0,0"
                      VerticalAlignment="Center"
-                     ToolTip="Поиск по пользователю, действию, таблице"
-                     Background="{DynamicResource DataGridBackgroundBrush}"
-                     Foreground="{DynamicResource DataGridForegroundBrush}"
-                     BorderBrush="{DynamicResource DataGridBorderBrush}"
-                     BorderThickness="1"/>
+                     ToolTip="Поиск по пользователю, действию, таблице"/>
         </StackPanel>
 
         <!-- Таблица логов -->
@@ -55,18 +30,17 @@
                   ItemsSource="{Binding FilteredItems}"
                   AutoGenerateColumns="False"
                   IsReadOnly="True"
-                  AlternatingRowBackground="{DynamicResource DataGridAlternatingBrush}"
+                  AlternatingRowBackground="#F5F5F5"
                   AlternationCount="2"
-                  IsEnabled="{Binding IsLoading, Converter={StaticResource InverseBooleanConverter}}"
-                  Background="{DynamicResource DataGridBackgroundBrush}"
-                  BorderBrush="{DynamicResource DataGridBorderBrush}"
-                  RowHeaderWidth="0"
-                  ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}"
-                  CellStyle="{StaticResource DataGridCellStyle}">
+                  IsEnabled="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}">
 
             <DataGrid.Resources>
-                <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource DataGridColumnHeaderStyle}"/>
-                <Style TargetType="DataGridCell" BasedOn="{StaticResource DataGridCellStyle}"/>
+                <Style TargetType="DataGridColumnHeader">
+                    <Setter Property="Background" Value="#2D3F5E"/>
+                    <Setter Property="Foreground" Value="White"/>
+                    <Setter Property="FontWeight" Value="Bold"/>
+                    <Setter Property="Height" Value="35"/>
+                </Style>
             </DataGrid.Resources>
 
             <DataGrid.Columns>
@@ -79,19 +53,13 @@
             </DataGrid.Columns>
         </DataGrid>
 
-        <!-- Индикатор загрузки -->
+        <!-- Индикатор загрузки (поверх таблицы) -->
         <Border Grid.Row="1" 
                 Background="#80000000" 
                 Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}">
             <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                <ProgressBar IsIndeterminate="True" 
-                             Width="150" 
-                             Height="20"
-                             Foreground="{DynamicResource ProgressBarForegroundBrush}"
-                             Background="{DynamicResource ProgressBarBackgroundBrush}"/>
-                <TextBlock Text="Загрузка журнала аудита..." 
-                           Margin="0,10,0,0" 
-                           Foreground="White"/>
+                <ProgressBar IsIndeterminate="True" Width="150" Height="20"/>
+                <TextBlock Text="Загрузка журнала аудита..." Margin="0,10,0,0" Foreground="White"/>
             </StackPanel>
         </Border>
 
@@ -100,7 +68,7 @@
                    Text="Нет записей в журнале аудита за выбранный период"
                    HorizontalAlignment="Center"
                    VerticalAlignment="Center"
-                   Foreground="{DynamicResource MenuForegroundSecondaryBrush}"
+                   Foreground="Gray"
                    Visibility="{Binding FilteredItems.Count, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=Inverse}"/>
     </Grid>
 </UserControl>
