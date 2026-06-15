@@ -6,6 +6,7 @@ using EnergyMeteringSystem.Data.Repositories;
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 
 namespace EnergyMeteringSystem.App.ViewModels.Objects
@@ -30,11 +31,18 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
         private string _residentCountError;
         private CityDto _selectedCity;
         private RegionDto _selectedRegion;
+        private bool _isLoadingData = true;
 
         public ObservableCollection<RegionDto> Regions { get; set; }
         public ObservableCollection<CityDto> Cities { get; set; }
         public ObservableCollection<StreetDto> StreetsList { get; set; }
         public ObservableCollection<ObjectTypeDto> ObjectTypes { get; set; }
+
+        public bool IsLoadingData
+        {
+            get => _isLoadingData;
+            set => SetProperty(ref _isLoadingData, value);
+        }
 
         public RegionDto SelectedRegion
         {
@@ -43,7 +51,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
             {
                 if (SetProperty(ref _selectedRegion, value) && value != null)
                 {
-                    LoadCitiesByRegion(value.Id);
+                    _ = LoadCitiesByRegionAsync(value.Id);
                 }
             }
         }
@@ -55,7 +63,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
             {
                 if (SetProperty(ref _selectedCity, value) && value != null)
                 {
-                    LoadStreetsByCity(value.Id);
+                    _ = LoadStreetsByCityAsync(value.Id);
                 }
             }
         }
@@ -121,7 +129,6 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
         public bool HasResidentCountError => !string.IsNullOrEmpty(ResidentCountError);
         public bool IsPrivateHouse => SelectedObjectType?.Name == "Частный дом";
         public bool IsApartmentNumberEnabled => !IsPrivateHouse;
-
         public bool IsEditMode { get; private set; }
 
         public RelayCommand SaveCommand { get; }
@@ -132,8 +139,6 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
 
         public ConsumptionObjectEditViewModel(ConsumptionObjectDto existingObject = null)
         {
-            System.Diagnostics.Debug.WriteLine($"ConsumptionObjectEditViewModel конструктор START, existingObject={existingObject != null}");
-
             _objectRepository = new ConsumptionObjectRepository();
             _streetRepository = new StreetRepository();
             _typeRepository = new ObjectTypeRepository();
@@ -145,145 +150,148 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
             StreetsList = new ObservableCollection<StreetDto>();
             ObjectTypes = new ObservableCollection<ObjectTypeDto>();
 
-            SaveCommand = new RelayCommand(_ => Save(), _ => CanSave());
+            SaveCommand = new RelayCommand(_ => Save(), _ => CanSave() && !IsLoadingData);
             CancelCommand = new RelayCommand(_ => Cancel());
             AddRegionCommand = new RelayCommand(_ => AddRegion());
             AddCityCommand = new RelayCommand(_ => AddCity());
             AddStreetCommand = new RelayCommand(_ => AddStreet());
 
-            // Синхронная загрузка справочников
-            LoadRegionsSync();
-            LoadObjectTypesSync();
+            IsLoadingData = true;
+
+            // Асинхронная загрузка справочников
+            Task.Run(async () => await LoadRegionsAsync());
+            Task.Run(async () => await LoadObjectTypesAsync());
 
             if (existingObject != null)
             {
                 IsEditMode = true;
-                System.Diagnostics.Debug.WriteLine($"Загружаем объект для редактирования: ID={existingObject.Id}");
-                LoadObjectSync(existingObject);
+                _object = existingObject;
+
+                // Заполняем простые поля сразу
+                HouseNumber = existingObject.HouseNumber;
+                ApartmentNumber = existingObject.ApartmentNumber;
+                TotalArea = existingObject.TotalArea ?? 0;
+                ResidentCount = existingObject.ResidentCount;
+
+                // Асинхронная загрузка города и улицы
+                Task.Run(async () => await LoadCityAndStreetAsync(existingObject));
             }
             else
             {
                 IsEditMode = false;
-                System.Diagnostics.Debug.WriteLine("Режим добавления нового объекта");
                 HouseNumber = string.Empty;
                 ApartmentNumber = string.Empty;
                 TotalArea = 0;
                 ResidentCount = null;
+                IsLoadingData = false;
             }
-
-            System.Diagnostics.Debug.WriteLine("ConsumptionObjectEditViewModel конструктор END");
         }
 
-        private void LoadRegionsSync()
+        private async Task LoadRegionsAsync()
         {
-            var regions = _regionRepository.GetAll();
-            Regions.Clear();
-            foreach (var region in regions)
-                Regions.Add(region);
-        }
-
-        private void LoadObjectTypesSync()
-        {
-            var types = _typeRepository.GetAll();
-            ObjectTypes.Clear();
-            foreach (var type in types)
+            var regions = await _regionRepository.GetAllAsync();
+            await Application.Current.Dispatcher.InvokeAsync(() =>
             {
-                ObjectTypes.Add(new ObjectTypeDto
+                Regions.Clear();
+                foreach (var region in regions)
+                    Regions.Add(region);
+            });
+        }
+
+        private async Task LoadObjectTypesAsync()
+        {
+            var types = await _typeRepository.GetAllAsync();
+            await Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                ObjectTypes.Clear();
+                foreach (var type in types)
                 {
-                    Id = type.Id,
-                    Name = type.Name,
-                    Description = type.Description
-                });
-            }
+                    ObjectTypes.Add(new ObjectTypeDto
+                    {
+                        Id = type.Id,
+                        Name = type.Name,
+                        Description = type.Description
+                    });
+                }
+            });
         }
 
-        private void LoadCitiesByRegion(int regionId)
+        private async Task LoadCitiesByRegionAsync(int regionId)
         {
-            var cities = _cityRepository.GetByRegionId(regionId);
-            Cities.Clear();
-            foreach (var city in cities)
-                Cities.Add(city);
-        }
-
-        private void LoadStreetsByCity(int cityId)
-        {
-            var streets = _streetRepository.GetByCityId(cityId);
-            StreetsList.Clear();
-            foreach (var street in streets)
-                StreetsList.Add(street);
-        }
-
-        private void LoadObjectSync(ConsumptionObjectDto obj)
-        {
-            System.Diagnostics.Debug.WriteLine($"LoadObjectSync START для объекта ID={obj?.Id}");
-
-            if (obj == null)
+            var cities = await _cityRepository.GetByRegionIdAsync(regionId);
+            await Application.Current.Dispatcher.InvokeAsync(() =>
             {
-                System.Diagnostics.Debug.WriteLine("LoadObjectSync: obj == null");
-                return;
-            }
+                Cities.Clear();
+                foreach (var city in cities)
+                    Cities.Add(city);
+            });
+        }
 
+        private async Task LoadStreetsByCityAsync(int cityId)
+        {
+            var streets = await _streetRepository.GetByCityIdAsync(cityId);
+            await Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                StreetsList.Clear();
+                foreach (var street in streets)
+                    StreetsList.Add(street);
+            });
+        }
+
+        private async Task LoadCityAndStreetAsync(ConsumptionObjectDto obj)
+        {
             try
             {
-                _object = obj;
+                // Ждём загрузки регионов
+                while (Regions.Count == 0)
+                    await Task.Delay(50);
 
-                // Получаем улицу
-                var street = _streetRepository.GetById(obj.StreetId);
-                if (street == null)
+                var street = await _streetRepository.GetByIdAsync(obj.StreetId);
+                if (street == null) return;
+
+                var city = await _cityRepository.GetByIdAsync(street.CityId);
+                if (city == null) return;
+
+                await Application.Current.Dispatcher.InvokeAsync(() =>
                 {
-                    System.Diagnostics.Debug.WriteLine($"ОШИБКА: улица с ID={obj.StreetId} не найдена");
-                    return;
-                }
-
-                // Получаем город
-                var city = _cityRepository.GetById(street.CityId);
-                if (city == null)
-                {
-                    System.Diagnostics.Debug.WriteLine($"ОШИБКА: город с ID={street.CityId} не найден");
-                    return;
-                }
-
-                // Выбираем регион
-                SelectedRegion = Regions.FirstOrDefault(r => r.Id == city.RegionId);
-                System.Diagnostics.Debug.WriteLine($"SelectedRegion = {SelectedRegion?.Name ?? "null"}");
+                    SelectedRegion = Regions.FirstOrDefault(r => r.Id == city.RegionId);
+                });
 
                 if (SelectedRegion != null)
                 {
-                    // Загружаем города выбранного региона
-                    LoadCitiesByRegion(SelectedRegion.Id);
+                    await LoadCitiesByRegionAsync(SelectedRegion.Id);
 
-                    // Выбираем город
-                    SelectedCity = Cities.FirstOrDefault(c => c.Id == city.Id);
-                    System.Diagnostics.Debug.WriteLine($"SelectedCity = {SelectedCity?.Name ?? "null"}");
+                    await Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        SelectedCity = Cities.FirstOrDefault(c => c.Id == city.Id);
+                    });
 
                     if (SelectedCity != null)
                     {
-                        // Загружаем улицы выбранного города
-                        LoadStreetsByCity(SelectedCity.Id);
+                        await LoadStreetsByCityAsync(SelectedCity.Id);
 
-                        // Выбираем улицу
-                        SelectedStreet = StreetsList.FirstOrDefault(s => s.Id == obj.StreetId);
-                        System.Diagnostics.Debug.WriteLine($"SelectedStreet = {SelectedStreet?.Name ?? "null"}");
+                        await Application.Current.Dispatcher.InvokeAsync(() =>
+                        {
+                            SelectedStreet = StreetsList.FirstOrDefault(s => s.Id == obj.StreetId);
+                        });
                     }
                 }
 
-                // Выбираем тип объекта
-                SelectedObjectType = ObjectTypes.FirstOrDefault(t => t.Id == obj.ObjectTypeId);
-                System.Diagnostics.Debug.WriteLine($"SelectedObjectType = {SelectedObjectType?.Name ?? "null"}");
-
-                // Заполняем остальные поля
-                HouseNumber = obj.HouseNumber;
-                ApartmentNumber = obj.ApartmentNumber;
-                TotalArea = obj.TotalArea ?? 0;
-                ResidentCount = obj.ResidentCount;
-
-                System.Diagnostics.Debug.WriteLine("LoadObjectSync: ОБЪЕКТ УСПЕШНО ЗАГРУЖЕН");
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    SelectedObjectType = ObjectTypes.FirstOrDefault(t => t.Id == obj.ObjectTypeId);
+                });
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"LoadObjectSync: ОШИБКА - {ex.Message}");
-                MessageBox.Show($"Ошибка при загрузке объекта: {ex.Message}", "Ошибка",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                System.Diagnostics.Debug.WriteLine($"LoadCityAndStreetAsync ERROR: {ex.Message}");
+            }
+            finally
+            {
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    IsLoadingData = false;
+                });
             }
         }
 
@@ -293,9 +301,9 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
             var editView = new Views.Directories.RegionEditView();
             editView.DataContext = editViewModel;
 
-            editViewModel.OnRegionSaved += (s, e) =>
+            editViewModel.OnRegionSaved += async (s, e) =>
             {
-                LoadRegionsSync();
+                await LoadRegionsAsync();
                 var addedRegion = Regions.FirstOrDefault(r => r.Name == editViewModel.Name);
                 if (addedRegion != null)
                     SelectedRegion = addedRegion;
@@ -316,9 +324,9 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
             var editView = new Views.Directories.CityEditView();
             editView.DataContext = editViewModel;
 
-            editViewModel.OnCitySaved += (s, e) =>
+            editViewModel.OnCitySaved += async (s, e) =>
             {
-                LoadCitiesByRegion(SelectedRegion.Id);
+                await LoadCitiesByRegionAsync(SelectedRegion.Id);
                 var addedCity = Cities.FirstOrDefault(c => c.Name == editViewModel.Name);
                 if (addedCity != null)
                     SelectedCity = addedCity;
@@ -339,9 +347,9 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
             var editView = new Views.Directories.StreetEditView();
             editView.DataContext = editViewModel;
 
-            editViewModel.OnStreetSaved += (s, e) =>
+            editViewModel.OnStreetSaved += async (s, e) =>
             {
-                LoadStreetsByCity(SelectedCity.Id);
+                await LoadStreetsByCityAsync(SelectedCity.Id);
                 var addedStreet = StreetsList.FirstOrDefault(s => s.Name == editViewModel.Name);
                 if (addedStreet != null)
                     SelectedStreet = addedStreet;
@@ -406,6 +414,36 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
                 return;
             }
 
+            // ✅ ПРОВЕРКА: убеждаемся, что SelectedStreet не null
+            if (SelectedStreet == null)
+            {
+                MessageBox.Show("Выберите улицу из списка", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            // ✅ ПРОВЕРКА: убеждаемся, что SelectedCity не null
+            if (SelectedCity == null)
+            {
+                MessageBox.Show("Выберите город из списка", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            // ✅ ПРОВЕРКА: убеждаемся, что SelectedRegion не null
+            if (SelectedRegion == null)
+            {
+                MessageBox.Show("Выберите регион из списка", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            // ✅ ПРОВЕРКА: убеждаемся, что SelectedObjectType не null
+            if (SelectedObjectType == null)
+            {
+                MessageBox.Show("Выберите тип объекта", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            System.Diagnostics.Debug.WriteLine($"Сохранение объекта: StreetId={SelectedStreet.Id}, CityId={SelectedCity.Id}, RegionId={SelectedRegion.Id}, ObjectTypeId={SelectedObjectType.Id}");
+
             var dto = new ConsumptionObjectDto
             {
                 Id = _object?.Id ?? 0,
@@ -420,15 +458,24 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
             try
             {
                 if (IsEditMode)
+                {
+                    System.Diagnostics.Debug.WriteLine("Вызов UpdateAsync");
                     _objectRepository.Update(dto);
+                }
                 else
+                {
+                    System.Diagnostics.Debug.WriteLine("Вызов AddAsync");
                     _objectRepository.Add(dto);
+                }
 
+                System.Diagnostics.Debug.WriteLine("Сохранение успешно");
                 OnObjectSaved?.Invoke(this, EventArgs.Empty);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка при сохранении: {ex.Message}", "Ошибка",
+                System.Diagnostics.Debug.WriteLine($"ОШИБКА сохранения: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"InnerException: {ex.InnerException?.Message}");
+                MessageBox.Show($"Ошибка при сохранении: {ex.Message}\n{ex.InnerException?.Message}", "Ошибка",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }

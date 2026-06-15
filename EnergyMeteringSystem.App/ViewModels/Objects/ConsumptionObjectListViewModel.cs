@@ -15,9 +15,16 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
         private readonly ConsumptionObjectRepository _repository;
         private string _searchText;
         private ConsumptionObjectDto _selectedItem;
+        private bool _isLoading;
 
         public ObservableCollection<ConsumptionObjectDto> Items { get; set; }
         public ObservableCollection<ConsumptionObjectDto> FilteredItems { get; set; }
+
+        public bool IsLoading
+        {
+            get => _isLoading;
+            set => SetProperty(ref _isLoading, value);
+        }
 
         public string SearchText
         {
@@ -38,14 +45,12 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
             {
                 if (SetProperty(ref _selectedItem, value))
                 {
-                    // ✅ Обновляем состояние кнопок
-                    EditCommand.RaiseCanExecuteChanged();
-                    DeleteCommand.RaiseCanExecuteChanged();
+                    (EditCommand as RelayCommand)?.RaiseCanExecuteChanged();
+                    (DeleteCommand as RelayCommand)?.RaiseCanExecuteChanged();
                 }
             }
         }
 
-        // Команды
         public RelayCommand RefreshCommand { get; }
         public RelayCommand AddCommand { get; }
         public RelayCommand EditCommand { get; }
@@ -65,39 +70,27 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
             DeleteCommand = new RelayCommand(_ => DeleteObject(), _ => SelectedItem != null);
             ShowMetersCommand = new RelayCommand<ConsumptionObjectDto>(obj => ShowMeters(obj));
 
-            System.Diagnostics.Debug.WriteLine("ConsumptionObjectListViewModel конструктор");
-
-            // Загружаем данные
             Task.Run(async () => await LoadDataAsync());
         }
 
-        private async Task LoadDataAsync()
+        public async Task LoadDataAsync()
         {
             try
             {
                 IsLoading = true;
-                System.Diagnostics.Debug.WriteLine("LoadDataAsync START");
-
                 var list = await _repository.GetAllAsync();
-
-                System.Diagnostics.Debug.WriteLine($"Получено {list.Count} объектов");
 
                 await Application.Current.Dispatcher.InvokeAsync(() =>
                 {
                     Items.Clear();
                     foreach (var obj in list)
-                    {
                         Items.Add(obj);
-                    }
-
                     ApplyFilter();
                 });
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Ошибка LoadDataAsync: {ex.Message}");
-                MessageBox.Show($"Ошибка загрузки объектов: {ex.Message}", "Ошибка",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Ошибка загрузки: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -115,13 +108,8 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
                     Items.Where(o => o.Address.ToLower().Contains(SearchText.ToLower())));
 
             foreach (var obj in filtered)
-            {
                 FilteredItems.Add(obj);
-            }
-
-            System.Diagnostics.Debug.WriteLine($"ApplyFilter: {FilteredItems.Count} объектов после фильтра");
         }
-
 
         private void AddObject()
         {
@@ -134,67 +122,23 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
                 await LoadDataAsync();
                 editView.Close();
             };
-
             editView.ShowDialog();
         }
 
         private void EditObject()
         {
-            if (SelectedItem == null)
+            if (SelectedItem == null) return;
+
+            var editViewModel = new ConsumptionObjectEditViewModel(SelectedItem);
+            var editView = new Views.Objects.ConsumptionObjectEditView(editViewModel);
+            editView.Owner = Application.Current.MainWindow;
+
+            editViewModel.OnObjectSaved += async (s, e) =>
             {
-                System.Diagnostics.Debug.WriteLine("EditObject: SelectedItem == null, выход");
-                return;
-            }
-
-            System.Diagnostics.Debug.WriteLine($"EditObject: начинаем редактирование объекта ID={SelectedItem.Id}, Address={SelectedItem.Address}");
-
-            try
-            {
-                var editViewModel = new ConsumptionObjectEditViewModel(SelectedItem);
-
-                if (editViewModel == null)
-                {
-                    System.Diagnostics.Debug.WriteLine("EditObject: editViewModel == null");
-                    return;
-                }
-
-                var editView = new Views.Objects.ConsumptionObjectEditView(editViewModel);
-
-                if (editView == null)
-                {
-                    System.Diagnostics.Debug.WriteLine("EditObject: editView == null");
-                    return;
-                }
-
-                editView.Owner = Application.Current.MainWindow;
-
-                editViewModel.OnObjectSaved += async (s, e) =>
-                {
-                    System.Diagnostics.Debug.WriteLine("EditObject: OnObjectSaved сработал");
-                    await LoadDataAsync();
-                    editView.Close();
-                };
-
-                editView.ShowDialog();
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"EditObject: ОШИБКА - {ex.Message}");
-                System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
-                MessageBox.Show($"Ошибка при редактировании: {ex.Message}", "Ошибка",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-
-        private void ShowMeters(ConsumptionObjectDto obj)
-        {
-            if (obj == null) return;
-
-            var window = new Views.Meters.MetersForObjectView();
-            var viewModel = new ViewModels.Meters.MetersForObjectViewModel(obj);
-            window.DataContext = viewModel;
-            window.Owner = Application.Current.MainWindow;
-            window.ShowDialog();
+                await LoadDataAsync();
+                editView.Close();
+            };
+            editView.ShowDialog();
         }
 
         private async void DeleteObject()
@@ -218,14 +162,24 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Ошибка при удалении: {ex.Message}", "Ошибка",
-                        MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show($"Ошибка при удалении: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
                 finally
                 {
                     IsLoading = false;
                 }
             }
+        }
+
+        private void ShowMeters(ConsumptionObjectDto obj)
+        {
+            if (obj == null) return;
+
+            var window = new Views.Meters.MetersForObjectView();
+            var viewModel = new ViewModels.Meters.MetersForObjectViewModel(obj);
+            window.DataContext = viewModel;
+            window.Owner = Application.Current.MainWindow;
+            window.ShowDialog();
         }
     }
 }

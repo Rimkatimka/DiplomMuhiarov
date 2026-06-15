@@ -177,7 +177,6 @@
     <Compile Include="Repositories\AnalyticsRepository.cs" />
     <Compile Include="Repositories\AuditRepository.cs" />
     <Compile Include="Repositories\BaseRepository.cs" />
-    <Compile Include="Repositories\CacheService.cs" />
     <Compile Include="Repositories\CityRepository.cs" />
     <Compile Include="Repositories\ConsumptionObjectRepository.cs" />
     <Compile Include="Repositories\DashboardRepository.cs" />

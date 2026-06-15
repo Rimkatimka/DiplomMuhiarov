@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using EnergyMeteringSystem.Core.Helpers;
 using EnergyMeteringSystem.Core.Interfaces.Repositories;
@@ -13,67 +12,67 @@ namespace EnergyMeteringSystem.Data.Repositories
 {
     public class UserRepository : BaseRepository, IUserRepository
     {
-        private const string CACHE_KEY_ALL_USERS = "Users_All";
-        private const string CACHE_KEY_USER_BY_ID = "User_{0}";
-        private const string CACHE_KEY_USER_BY_USERNAME = "User_Username_{0}";
-        private const string CACHE_KEY_ALL_ROLES = "UserRoles_All";
-        private const int CACHE_MINUTES = 15;
-        private const int DEFAULT_USER_ID = 1;
+        public async Task<List<UserDto>> GetAllAsync()
+        {
+            try
+            {
+                var users = await _context.User
+                    .Include(u => u.UserRole)
+                    .Select(u => new UserDto
+                    {
+                        Id = u.Id,
+                        Username = u.Username,
+                        FullName = u.FullName,
+                        Email = u.Email,
+                        RoleId = u.RoleId,
+                        RoleName = u.UserRole.Name,
+                        IsActive = u.IsActive,
+                        CreatedAt = u.CreatedAt
+                    })
+                    .OrderBy(u => u.FullName)
+                    .ToListAsync();
+
+                return users;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"ERROR in UserRepository.GetAllAsync: {ex.Message}");
+                return new List<UserDto>();
+            }
+        }
 
         public List<UserDto> GetAll()
         {
             return GetAllAsync().Result;
         }
 
-        // ✅ ОПТИМИЗИРОВАННЫЙ GetAll - один запрос с подзапросом для LastLogin
-        public async Task<List<UserDto>> GetAllAsync(CancellationToken cancellationToken = default)
+        public async Task<UserDto> GetByIdAsync(int id)
         {
-            return await CacheService.GetOrAddAsync(CACHE_KEY_ALL_USERS, async () =>
+            try
             {
-                try
+                var user = await _context.User
+                    .Include(u => u.UserRole)
+                    .FirstOrDefaultAsync(u => u.Id == id);
+
+                if (user == null) return null;
+
+                return new UserDto
                 {
-                    var users = await Query<User>()
-                        .Select(u => new UserDto
-                        {
-                            Id = u.Id,
-                            Username = u.Username,
-                            FullName = u.FullName,
-                            Email = u.Email,
-                            RoleId = u.RoleId,
-                            RoleName = u.UserRole.Name,
-                            IsActive = u.IsActive,
-                            CreatedAt = u.CreatedAt,
-                            LastLoginText = u.AuditLog
-                                .Where(a => a.ActionType == "LOGIN")
-                                .OrderByDescending(a => a.ActionTime)
-                                .Select(a => a.ActionTime)
-                                .FirstOrDefault() != null ? "Да" : "Никогда"
-                        })
-                        .OrderBy(u => u.FullName)
-                        .ToListAsync(cancellationToken);
-
-                    // Форматируем дату последнего входа
-                    foreach (var user in users)
-                    {
-                        var lastLogin = await Query<AuditLog>()
-                            .Where(a => a.UserId == user.Id && a.ActionType == "LOGIN")
-                            .OrderByDescending(a => a.ActionTime)
-                            .Select(a => (DateTime?)a.ActionTime)
-                            .FirstOrDefaultAsync(cancellationToken);
-
-                        user.LastLoginText = lastLogin.HasValue
-                            ? lastLogin.Value.ToString("dd.MM.yyyy HH:mm")
-                            : "Никогда";
-                    }
-
-                    return users;
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"ERROR: {ex.Message}");
-                    return new List<UserDto>();
-                }
-            }, CACHE_MINUTES);
+                    Id = user.Id,
+                    Username = user.Username,
+                    FullName = user.FullName,
+                    Email = user.Email,
+                    RoleId = user.RoleId,
+                    RoleName = user.UserRole?.Name,
+                    IsActive = user.IsActive,
+                    CreatedAt = user.CreatedAt
+                };
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"ERROR in UserRepository.GetByIdAsync: {ex.Message}");
+                return null;
+            }
         }
 
         public UserDto GetById(int id)
@@ -81,29 +80,34 @@ namespace EnergyMeteringSystem.Data.Repositories
             return GetByIdAsync(id).Result;
         }
 
-        public async Task<UserDto> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+        public async Task<UserDto> GetByUsernameAsync(string username)
         {
-            string cacheKey = string.Format(CACHE_KEY_USER_BY_ID, id);
-
-            return await CacheService.GetOrAddAsync(cacheKey, async () =>
+            try
             {
-                var u = await Query<User>()
-                    .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+                var user = await _context.User
+                    .Include(u => u.UserRole)
+                    .FirstOrDefaultAsync(u => u.Username == username);
 
-                return u == null
-                    ? null
-                    : new UserDto
-                    {
-                        Id = u.Id,
-                        Username = u.Username,
-                        FullName = u.FullName,
-                        Email = u.Email,
-                        RoleId = u.RoleId,
-                        RoleName = u.UserRole?.Name,
-                        IsActive = u.IsActive,
-                        CreatedAt = u.CreatedAt
-                    };
-            }, CACHE_MINUTES);
+                if (user == null) return null;
+
+                return new UserDto
+                {
+                    Id = user.Id,
+                    Username = user.Username,
+                    PasswordHash = user.PasswordHash,
+                    FullName = user.FullName,
+                    Email = user.Email,
+                    RoleId = user.RoleId,
+                    RoleName = user.UserRole?.Name,
+                    IsActive = user.IsActive,
+                    CreatedAt = user.CreatedAt
+                };
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"ERROR in UserRepository.GetByUsernameAsync: {ex.Message}");
+                return null;
+            }
         }
 
         public UserDto GetByUsername(string username)
@@ -111,139 +115,12 @@ namespace EnergyMeteringSystem.Data.Repositories
             return GetByUsernameAsync(username).Result;
         }
 
-        public async Task<UserDto> GetByUsernameAsync(string username, CancellationToken cancellationToken = default)
-        {
-            if (string.IsNullOrWhiteSpace(username))
-                return null;
-
-            try
-            {
-                string cacheKey = $"User_Username_{username.ToLower()}";
-
-                // Используем простой вариант без кэша для отладки
-                // TODO: вернуть кэш после исправления
-                // return await CacheService.GetOrAddAsync(cacheKey, async () =>
-                // {
-                var user = await Query<User>()
-                    .Include(u => u.UserRole)
-                    .FirstOrDefaultAsync(u => u.Username == username, cancellationToken);
-
-                if (user == null) return null;
-
-                return new UserDto
-                {
-                    Id = user.Id,
-                    Username = user.Username,
-                    PasswordHash = user.PasswordHash,
-                    FullName = user.FullName,
-                    Email = user.Email,
-                    RoleId = user.RoleId,
-                    RoleName = user.UserRole?.Name,
-                    IsActive = user.IsActive,
-                    CreatedAt = user.CreatedAt
-                };
-                // });
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"GetByUsernameAsync error: {ex.Message}");
-
-                // Прямой запрос без кэша
-                var user = await Query<User>()
-                    .Include(u => u.UserRole)
-                    .FirstOrDefaultAsync(u => u.Username == username, cancellationToken);
-
-                if (user == null) return null;
-
-                return new UserDto
-                {
-                    Id = user.Id,
-                    Username = user.Username,
-                    PasswordHash = user.PasswordHash,
-                    FullName = user.FullName,
-                    Email = user.Email,
-                    RoleId = user.RoleId,
-                    RoleName = user.UserRole?.Name,
-                    IsActive = user.IsActive,
-                    CreatedAt = user.CreatedAt
-                };
-            }
-        }
-
-        public bool IsUsernameExists(string username, int? excludeUserId = null)
-        {
-            return IsUsernameExistsAsync(username, excludeUserId).Result;
-        }
-
-        public async Task<bool> IsUsernameExistsAsync(string username, int? excludeUserId = null, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var query = Query<User>().Where(u => u.Username == username);
-
-                if (excludeUserId.HasValue)
-                {
-                    query = query.Where(u => u.Id != excludeUserId.Value);
-                }
-
-                return await query.AnyAsync(cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Ошибка в IsUsernameExistsAsync: {ex.Message}");
-                return false;
-            }
-        }
-
-        public void ResetPassword(int id, string newPasswordHash)
-        {
-            ResetPasswordAsync(id, newPasswordHash).Wait();
-        }
-
-        public async Task ResetPasswordAsync(int id, string newPasswordHash, CancellationToken cancellationToken = default)
-        {
-            var entity = await _context.User.FindAsync(cancellationToken, id);
-            if (entity != null)
-            {
-                var oldValues = new { PasswordHash = "***" };
-                var newValues = new { PasswordHash = "***" };
-
-                entity.PasswordHash = newPasswordHash;
-                await _context.SaveChangesAsync(cancellationToken);
-
-                InvalidateCache(id, entity.Username);
-
-                AuditLogger.Log("UPDATE", "User", id, oldValues, newValues);
-            }
-        }
-
-        public List<UserRoleDto> GetAllRoles()
-        {
-            return GetAllRolesAsync().Result;
-        }
-
-        public async Task<List<UserRoleDto>> GetAllRolesAsync(CancellationToken cancellationToken = default)
-        {
-            return await CacheService.GetOrAddAsync(CACHE_KEY_ALL_ROLES, async () =>
-            {
-                return await Query<UserRole>()
-                    .Select(r => new UserRoleDto
-                    {
-                        Id = r.Id,
-                        Name = r.Name,
-                        Description = r.Description
-                    })
-                    .OrderBy(r => r.Name)
-                    .ToListAsync(cancellationToken);
-            }, CACHE_MINUTES * 4); // Роли кэшируем дольше
-        }
-
-        public async Task<int> AddAsync(UserDto dto, CancellationToken cancellationToken = default)
+        public async Task<int> AddAsync(UserDto dto)
         {
             var entity = new User
             {
                 Username = dto.Username,
-                PasswordHash = PasswordHelper.HashPassword("12345"),
+                PasswordHash = dto.PasswordHash ?? PasswordHelper.HashPassword("12345"),
                 FullName = dto.FullName,
                 Email = dto.Email,
                 RoleId = dto.RoleId,
@@ -252,9 +129,7 @@ namespace EnergyMeteringSystem.Data.Repositories
             };
 
             _context.User.Add(entity);
-            await _context.SaveChangesAsync(cancellationToken);
-
-            InvalidateCache();
+            await _context.SaveChangesAsync();
 
             AuditLogger.Log("INSERT", "User", entity.Id, null, new { dto.Username, dto.FullName, dto.Email });
 
@@ -266,9 +141,9 @@ namespace EnergyMeteringSystem.Data.Repositories
             AddAsync(dto).Wait();
         }
 
-        public async Task<bool> UpdateAsync(UserDto dto, CancellationToken cancellationToken = default)
+        public async Task<bool> UpdateAsync(UserDto dto)
         {
-            var entity = await _context.User.FindAsync(cancellationToken, dto.Id);
+            var entity = await _context.User.FindAsync(dto.Id);
             if (entity == null) return false;
 
             var oldValues = new { entity.FullName, entity.Email, entity.RoleId };
@@ -277,9 +152,8 @@ namespace EnergyMeteringSystem.Data.Repositories
             entity.FullName = dto.FullName;
             entity.Email = dto.Email;
             entity.RoleId = dto.RoleId;
-            await _context.SaveChangesAsync(cancellationToken);
 
-            InvalidateCache(entity.Id, entity.Username);
+            await _context.SaveChangesAsync();
 
             AuditLogger.Log("UPDATE", "User", entity.Id, oldValues, newValues);
 
@@ -291,49 +165,21 @@ namespace EnergyMeteringSystem.Data.Repositories
             UpdateAsync(dto).Wait();
         }
 
-        public void Delete(int id)
+        public async Task<bool> SetActiveStatusAsync(int id, bool isActive)
         {
-            DeleteAsync(id).Wait();
-        }
+            var entity = await _context.User.FindAsync(id);
+            if (entity == null) return false;
 
-        public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var entity = await _context.User.FindAsync(cancellationToken, id);
-                if (entity == null)
-                {
-                    throw new Exception("Пользователь не найден");
-                }
+            var oldValues = new { entity.IsActive };
+            var newValues = new { IsActive = isActive };
 
-                if (entity.RoleId == 3)
-                {
-                    throw new InvalidOperationException("Нельзя удалить администратора");
-                }
+            entity.IsActive = isActive;
 
-                var currentUserId = GetCurrentUserId();
-                if (currentUserId == id)
-                {
-                    throw new InvalidOperationException("Нельзя удалить свою учетную запись");
-                }
+            await _context.SaveChangesAsync();
 
-                var oldValues = new { entity.Username, entity.FullName, entity.Email, entity.RoleId };
-                string username = entity.Username;
+            AuditLogger.Log("UPDATE", "User", id, oldValues, newValues);
 
-                _context.User.Remove(entity);
-                await _context.SaveChangesAsync(cancellationToken);
-
-                InvalidateCache(id, username);
-
-                AuditLogger.Log("DELETE", "User", id, oldValues, null);
-
-                return true;
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Ошибка удаления: {ex.Message}");
-                throw;
-            }
+            return true;
         }
 
         public void SetActiveStatus(int id, bool isActive)
@@ -341,37 +187,72 @@ namespace EnergyMeteringSystem.Data.Repositories
             SetActiveStatusAsync(id, isActive).Wait();
         }
 
-        public async Task<bool> SetActiveStatusAsync(int id, bool isActive, CancellationToken cancellationToken = default)
+        public async Task<bool> ResetPasswordAsync(int id, string newPasswordHash)
         {
-            var entity = await _context.User.FindAsync(cancellationToken, id);
+            var entity = await _context.User.FindAsync(id);
             if (entity == null) return false;
 
-            var oldValues = new { entity.IsActive };
-            var newValues = new { IsActive = isActive };
+            var oldValues = new { entity.PasswordHash };
+            var newValues = new { PasswordHash = newPasswordHash };
 
-            entity.IsActive = isActive;
-            await _context.SaveChangesAsync(cancellationToken);
+            entity.PasswordHash = newPasswordHash;
 
-            InvalidateCache(id, entity.Username);
+            await _context.SaveChangesAsync();
 
-            AuditLogger.Log("UPDATE", "User", entity.Id, oldValues, newValues);
+            AuditLogger.Log("UPDATE", "User", id, oldValues, newValues);
 
             return true;
         }
 
-        private void InvalidateCache(int? userId = null, string username = null)
+        public void ResetPassword(int id, string newPasswordHash)
         {
-            CacheService.Remove(CACHE_KEY_ALL_USERS);
-            if (userId.HasValue)
-                CacheService.Remove(string.Format(CACHE_KEY_USER_BY_ID, userId.Value));
-            if (!string.IsNullOrEmpty(username))
-                CacheService.Remove(string.Format(CACHE_KEY_USER_BY_USERNAME, username.ToLower()));
+            ResetPasswordAsync(id, newPasswordHash).Wait();
         }
 
-        private int GetCurrentUserId()
+        public async Task<List<UserRoleDto>> GetAllRolesAsync()
         {
-            // TODO: получить реального пользователя из контекста
-            return DEFAULT_USER_ID;
+            return await _context.UserRole
+                .Select(r => new UserRoleDto
+                {
+                    Id = r.Id,
+                    Name = r.Name,
+                    Description = r.Description
+                })
+                .OrderBy(r => r.Name)
+                .ToListAsync();
+        }
+
+        public List<UserRoleDto> GetAllRoles()
+        {
+            return GetAllRolesAsync().Result;
+        }
+
+        public async Task<bool> DeleteAsync(int id)
+        {
+            var entity = await _context.User.FindAsync(id);
+            if (entity == null) return false;
+
+            bool hasAuditLogs = await _context.AuditLog.AnyAsync(a => a.UserId == id);
+            bool hasMeterReadings = await _context.MeterReading.AnyAsync(r => r.EnteredByUserId == id);
+
+            if (hasAuditLogs || hasMeterReadings)
+            {
+                throw new InvalidOperationException("Нельзя удалить пользователя, у которого есть связанные данные");
+            }
+
+            var oldValues = new { entity.Username, entity.FullName };
+
+            _context.User.Remove(entity);
+            await _context.SaveChangesAsync();
+
+            AuditLogger.Log("DELETE", "User", id, oldValues, null);
+
+            return true;
+        }
+
+        public void Delete(int id)
+        {
+            DeleteAsync(id).Wait();
         }
     }
 }

@@ -13,56 +13,44 @@ namespace EnergyMeteringSystem.Data.Repositories
 {
     public class ReadingStatusRepository : BaseRepository, IDirectoryRepository<DirectoryDto>
     {
-        private const string CACHE_KEY_ALL = "ReadingStatuses_All";
-        private const string CACHE_KEY_BY_ID = "ReadingStatus_{0}";
-        private const int CACHE_MINUTES = 60;
+        public async Task<List<DirectoryDto>> GetAllAsync(CancellationToken cancellationToken = default)
+        {
+            return await Query<ReadingStatus>()
+                .Select(s => new DirectoryDto
+                {
+                    Id = s.Id,
+                    Name = s.Name,
+                    Description = s.Description,
+                    IsActive = true
+                })
+                .OrderBy(s => s.Name)
+                .ToListAsync(cancellationToken);
+        }
 
         public List<DirectoryDto> GetAll()
         {
             return GetAllAsync().Result;
         }
 
-        public async Task<List<DirectoryDto>> GetAllAsync(CancellationToken cancellationToken = default)
+        public async Task<DirectoryDto> GetByIdAsync(int id, CancellationToken cancellationToken = default)
         {
-            return await CacheService.GetOrAddAsync(CACHE_KEY_ALL, async () =>
+            var entity = await Query<ReadingStatus>()
+                .FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
+
+            if (entity == null) return null;
+
+            return new DirectoryDto
             {
-                return await Query<ReadingStatus>()
-                    .Select(s => new DirectoryDto
-                    {
-                        Id = s.Id,
-                        Name = s.Name,
-                        Description = s.Description,
-                        IsActive = true
-                    })
-                    .OrderBy(s => s.Name)
-                    .ToListAsync(cancellationToken);
-            }, CACHE_MINUTES);
+                Id = entity.Id,
+                Name = entity.Name,
+                Description = entity.Description,
+                IsActive = true
+            };
         }
 
         public DirectoryDto GetById(int id)
         {
             return GetByIdAsync(id).Result;
-        }
-
-        public async Task<DirectoryDto> GetByIdAsync(int id, CancellationToken cancellationToken = default)
-        {
-            string cacheKey = string.Format(CACHE_KEY_BY_ID, id);
-
-            return await CacheService.GetOrAddAsync(cacheKey, async () =>
-            {
-                var entity = await Query<ReadingStatus>()
-                    .FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
-
-                return entity == null
-                    ? null
-                    : new DirectoryDto
-                    {
-                        Id = entity.Id,
-                        Name = entity.Name,
-                        Description = entity.Description,
-                        IsActive = true
-                    };
-            }, CACHE_MINUTES);
         }
 
         public async Task<int> AddAsync(DirectoryDto dto, CancellationToken cancellationToken = default)
@@ -77,10 +65,9 @@ namespace EnergyMeteringSystem.Data.Repositories
                 Code = dto.Name.Trim().ToUpper().Replace(" ", "_"),
                 ColorHex = "#808080"
             };
+
             _context.ReadingStatus.Add(entity);
             await _context.SaveChangesAsync(cancellationToken);
-
-            InvalidateCache();
 
             AuditLogger.Log("INSERT", "ReadingStatus", entity.Id, null, new { dto.Name });
 
@@ -107,9 +94,6 @@ namespace EnergyMeteringSystem.Data.Repositories
             entity.Description = dto.Description;
             await _context.SaveChangesAsync(cancellationToken);
 
-            InvalidateCache();
-            CacheService.Remove(string.Format(CACHE_KEY_BY_ID, dto.Id));
-
             AuditLogger.Log("UPDATE", "ReadingStatus", entity.Id, oldValues, newValues);
 
             return true;
@@ -125,7 +109,6 @@ namespace EnergyMeteringSystem.Data.Repositories
             var entity = await _context.ReadingStatus.FindAsync(cancellationToken, id);
             if (entity == null) return false;
 
-            // Проверяем, есть ли связанные показания
             bool hasReadings = await Query<MeterReading>()
                 .AnyAsync(r => r.ReadingStatusId == id, cancellationToken);
 
@@ -139,9 +122,6 @@ namespace EnergyMeteringSystem.Data.Repositories
             _context.ReadingStatus.Remove(entity);
             await _context.SaveChangesAsync(cancellationToken);
 
-            InvalidateCache();
-            CacheService.Remove(string.Format(CACHE_KEY_BY_ID, id));
-
             AuditLogger.Log("DELETE", "ReadingStatus", id, oldValues, null);
 
             return true;
@@ -150,11 +130,6 @@ namespace EnergyMeteringSystem.Data.Repositories
         public void Delete(int id)
         {
             DeleteAsync(id).Wait();
-        }
-
-        private void InvalidateCache()
-        {
-            CacheService.Remove(CACHE_KEY_ALL);
         }
     }
 }

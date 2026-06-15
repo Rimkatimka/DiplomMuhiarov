@@ -202,7 +202,6 @@
     <Compile Include="Helpers\PaginatedList.cs" />
     <Compile Include="Helpers\PanelAnimator.cs" />
     <Compile Include="Helpers\ValidationService.cs" />
-    <Compile Include="Services\CacheService.cs" />
     <Compile Include="Services\DatabaseService.cs" />
     <Compile Include="Services\ExcelExport\ExcelExportService.cs" />
     <Compile Include="Services\ExportDialogService.cs" />

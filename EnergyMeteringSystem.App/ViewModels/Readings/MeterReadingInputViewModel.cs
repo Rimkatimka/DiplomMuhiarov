@@ -25,7 +25,6 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
         private decimal _readingValue;
         private string _warningMessage;
         private MeterReadingHistoryDto _lastReading;
-        private ObservableCollection<MeterReadingHistoryDto> _readingHistory;
         private string _periodDisplay;
 
         public ObservableCollection<int> Years { get; set; }
@@ -81,7 +80,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
 
         public AsyncRelayCommand SaveCommand { get; }
         public RelayCommand ClearCommand { get; }
-        public AsyncRelayCommand SetLastReadingCommand { get; }
+        public RelayCommand SetLastReadingCommand { get; }  // ← RelayCommand (не async)
 
         public MeterReadingInputViewModel(UserDto currentUser)
         {
@@ -99,7 +98,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
 
             SaveCommand = new AsyncRelayCommand(async () => await SaveReadingAsync(), () => CanSave());
             ClearCommand = new RelayCommand(_ => ClearForm());
-            SetLastReadingCommand = new AsyncRelayCommand(async () => await SetLastReadingValueAsync(), () => HasLastReading);
+            SetLastReadingCommand = new RelayCommand(_ => SetLastReadingValue(), _ => HasLastReading); 
 
             InitializeYearsAndMonths();
             _ = LoadObjectsAsync();
@@ -207,13 +206,23 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
             }, "Ошибка загрузки истории");
         }
 
-        private async Task SetLastReadingValueAsync()
+        // ✅ ЭТОТ МЕТОД СИНХРОННЫЙ — для кнопки "Подставить"
+        private void SetLastReadingValue()
         {
             if (LastReading != null)
             {
-                await Task.Run(() => ReadingValue = LastReading.Value);
+                ReadingValue = LastReading.Value;
                 WarningMessage = "Подставлено последнее показание. При необходимости отредактируйте.";
             }
+        }
+
+        private void CheckAnomaly()
+        {
+            if (LastReading == null) return;
+            decimal diff = ReadingValue - LastReading.Value;
+            if (diff < 0) WarningMessage = "⚠ Ошибка! Новое показание меньше предыдущего!";
+            else if (diff > 1000) WarningMessage = "⚠ Внимание! Аномально высокое потребление!";
+            else WarningMessage = string.Empty;
         }
 
         private bool CanSave()
@@ -228,15 +237,6 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
             { WarningMessage = "Показания за текущий месяц можно вводить с 15-го числа"; return false; }
 
             return true;
-        }
-
-        private void CheckAnomaly()
-        {
-            if (LastReading == null) return;
-            decimal diff = ReadingValue - LastReading.Value;
-            if (diff < 0) WarningMessage = "⚠ Ошибка! Новое показание меньше предыдущего!";
-            else if (diff > 1000) WarningMessage = "⚠ Внимание! Аномально высокое потребление!";
-            else WarningMessage = string.Empty;
         }
 
         private async Task SaveReadingAsync()

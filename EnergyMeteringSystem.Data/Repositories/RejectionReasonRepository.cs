@@ -13,58 +13,44 @@ namespace EnergyMeteringSystem.Data.Repositories
 {
     public class RejectionReasonRepository : BaseRepository, IDirectoryRepository<DirectoryDto>
     {
-        private const string CACHE_KEY_ALL = "RejectionReasons_All";
-        private const string CACHE_KEY_BY_ID = "RejectionReason_{0}";
-        private const int CACHE_MINUTES = 60;
+        public async Task<List<DirectoryDto>> GetAllAsync(CancellationToken cancellationToken = default)
+        {
+            var data = await Query<RejectionReason>()
+                .Select(r => new { r.Id, r.Name, r.RequiresComment })
+                .OrderBy(r => r.Name)
+                .ToListAsync(cancellationToken);
+
+            return data.Select(r => new DirectoryDto
+            {
+                Id = r.Id,
+                Name = r.Name,
+                Description = r.RequiresComment ? "Требует комментарий" : "Без комментария",
+                IsActive = true
+            }).ToList();
+        }
 
         public List<DirectoryDto> GetAll()
         {
             return GetAllAsync().Result;
         }
 
-        public async Task<List<DirectoryDto>> GetAllAsync(CancellationToken cancellationToken = default)
+        public async Task<DirectoryDto> GetByIdAsync(int id, CancellationToken cancellationToken = default)
         {
-            return await CacheService.GetOrAddAsync(CACHE_KEY_ALL, async () =>
-            {
-                var data = await Query<RejectionReason>()
-                    .Select(r => new DirectoryDto
-                    {
-                        Id = r.Id,
-                        Name = r.Name,
-                        Description = r.RequiresComment ? "Требует комментарий" : "Без комментария",
-                        IsActive = true
-                    })
-                    .OrderBy(r => r.Name)
-                    .ToListAsync(cancellationToken);
+            var r = await Query<RejectionReason>()
+                .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 
-                return data;
-            }, CACHE_MINUTES);
+            return r == null ? null : new DirectoryDto
+            {
+                Id = r.Id,
+                Name = r.Name,
+                Description = r.RequiresComment ? "Требует комментарий" : "Без комментария",
+                IsActive = true
+            };
         }
 
         public DirectoryDto GetById(int id)
         {
             return GetByIdAsync(id).Result;
-        }
-
-        public async Task<DirectoryDto> GetByIdAsync(int id, CancellationToken cancellationToken = default)
-        {
-            string cacheKey = string.Format(CACHE_KEY_BY_ID, id);
-
-            return await CacheService.GetOrAddAsync(cacheKey, async () =>
-            {
-                var r = await Query<RejectionReason>()
-                    .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
-
-                return r == null
-                    ? null
-                    : new DirectoryDto
-                    {
-                        Id = r.Id,
-                        Name = r.Name,
-                        Description = r.RequiresComment ? "Требует комментарий" : "Без комментария",
-                        IsActive = true
-                    };
-            }, CACHE_MINUTES);
         }
 
         public async Task<int> AddAsync(DirectoryDto dto, CancellationToken cancellationToken = default)
@@ -77,10 +63,9 @@ namespace EnergyMeteringSystem.Data.Repositories
                 Name = dto.Name.Trim(),
                 RequiresComment = dto.Description?.Contains("Требует") ?? false
             };
+
             _context.RejectionReason.Add(entity);
             await _context.SaveChangesAsync(cancellationToken);
-
-            InvalidateCache();
 
             AuditLogger.Log("INSERT", "RejectionReason", entity.Id, null, new { dto.Name });
 
@@ -106,9 +91,6 @@ namespace EnergyMeteringSystem.Data.Repositories
             entity.Name = dto.Name.Trim();
             await _context.SaveChangesAsync(cancellationToken);
 
-            InvalidateCache();
-            CacheService.Remove(string.Format(CACHE_KEY_BY_ID, dto.Id));
-
             AuditLogger.Log("UPDATE", "RejectionReason", entity.Id, oldValues, newValues);
 
             return true;
@@ -124,7 +106,6 @@ namespace EnergyMeteringSystem.Data.Repositories
             var entity = await _context.RejectionReason.FindAsync(cancellationToken, id);
             if (entity == null) return false;
 
-            // Проверяем, есть ли связанные показания
             bool hasReadings = await Query<MeterReading>()
                 .AnyAsync(r => r.RejectionReasonId == id, cancellationToken);
 
@@ -138,9 +119,6 @@ namespace EnergyMeteringSystem.Data.Repositories
             _context.RejectionReason.Remove(entity);
             await _context.SaveChangesAsync(cancellationToken);
 
-            InvalidateCache();
-            CacheService.Remove(string.Format(CACHE_KEY_BY_ID, id));
-
             AuditLogger.Log("DELETE", "RejectionReason", id, oldValues, null);
 
             return true;
@@ -149,11 +127,6 @@ namespace EnergyMeteringSystem.Data.Repositories
         public void Delete(int id)
         {
             DeleteAsync(id).Wait();
-        }
-
-        private void InvalidateCache()
-        {
-            CacheService.Remove(CACHE_KEY_ALL);
         }
     }
 }

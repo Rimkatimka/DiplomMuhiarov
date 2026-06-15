@@ -1,34 +1,28 @@
-﻿using System;
+﻿using EnergyMeteringSystem.Core.Interfaces.Repositories;
+using EnergyMeteringSystem.Core.Models.DTO;
+using EnergyMeteringSystem.Data.Database;
+using System;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
-using EnergyMeteringSystem.Core.Interfaces.Repositories;
-using EnergyMeteringSystem.Core.Models.DTO;
-using EnergyMeteringSystem.Data.Database;
 
 namespace EnergyMeteringSystem.Data.Repositories
 {
     public class DashboardRepository : BaseRepository, IDashboardRepository
     {
-        public DashboardDto GetDashboardData()
-        {
-            return GetDashboardDataAsync().Result;
-        }
-
-        public async Task<DashboardDto> GetDashboardDataAsync(CancellationToken cancellationToken = default)
+        public async Task<DashboardDto> GetDashboardDataAsync()
         {
             try
             {
                 DateTime today = DateTime.Today;
                 DateTime weekAgo = today.AddDays(-7);
 
-                var totalObjects = await Query<ConsumptionObject>().CountAsync(cancellationToken);
-                var totalMeters = await Query<Meter>().CountAsync(cancellationToken);
-                var readingsToday = await Query<MeterReading>().CountAsync(r => r.ReadingDate == today, cancellationToken);
-                var readingsWeek = await Query<MeterReading>().CountAsync(r => r.ReadingDate >= weekAgo, cancellationToken);
-                var expiredMeters = await Query<Meter>().CountAsync(m => m.NextVerificationDate < today, cancellationToken);
+                var totalObjects = await _context.ConsumptionObject.CountAsync();
+                var totalMeters = await _context.Meter.CountAsync();
+                var readingsToday = await _context.MeterReading.CountAsync(r => r.ReadingDate == today);
+                var readingsWeek = await _context.MeterReading.CountAsync(r => r.ReadingDate >= weekAgo);
+                var expiredMeters = await _context.Meter.CountAsync(m => m.NextVerificationDate < today);
 
                 return new DashboardDto
                 {
@@ -36,8 +30,7 @@ namespace EnergyMeteringSystem.Data.Repositories
                     TotalMeters = totalMeters,
                     ReadingsToday = readingsToday,
                     ReadingsWeek = readingsWeek,
-                    ExpiredMeters = expiredMeters,
-                    ConsumptionChart = new List<ChartPoint>()
+                    ExpiredMeters = expiredMeters
                 };
             }
             catch (Exception ex)
@@ -47,7 +40,11 @@ namespace EnergyMeteringSystem.Data.Repositories
             }
         }
 
-        // ✅ ГЛАВНЫЙ МЕТОД ДЛЯ ГРАФИКА - работает всегда
+        public DashboardDto GetDashboardData()
+        {
+            return GetDashboardDataAsync().Result;
+        }
+
         public async Task<List<ChartDataPointDto>> GetChartDataAsync(int year)
         {
             var result = new List<ChartDataPointDto>();
@@ -55,31 +52,33 @@ namespace EnergyMeteringSystem.Data.Repositories
 
             try
             {
+                // ✅ Упрощаем запрос — сначала получаем данные, потом группируем в памяти
                 var startDate = new DateTime(year, 1, 1);
                 var endDate = new DateTime(year, 12, 31, 23, 59, 59);
 
-                // Получаем данные по месяцам
-                var readingsByMonth = await Query<MeterReading>()
+                var readings = await _context.MeterReading
                     .Where(r => r.ReadingDate >= startDate && r.ReadingDate <= endDate)
-                    .GroupBy(r => r.ReadingDate.Month)
-                    .Select(g => new { Month = g.Key, Count = g.Count() })
+                    .Select(r => new { r.ReadingDate })
                     .ToListAsync();
 
-                var monthlyDict = readingsByMonth.ToDictionary(x => x.Month, x => x.Count);
+                // Группируем в памяти (здесь нет проблем с LINQ to Entities)
+                var grouped = readings
+                    .GroupBy(r => r.ReadingDate.Month)
+                    .Select(g => new { Month = g.Key, Count = g.Count() })
+                    .ToDictionary(x => x.Month, x => x.Count);
 
                 for (int month = 1; month <= 12; month++)
                 {
                     result.Add(new ChartDataPointDto
                     {
                         MonthName = monthNames[month - 1],
-                        Consumption = monthlyDict.ContainsKey(month) ? monthlyDict[month] : 0
+                        Consumption = grouped.ContainsKey(month) ? grouped[month] : 0
                     });
                 }
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"GetChartDataAsync ERROR: {ex.Message}");
-                // Возвращаем пустые данные, но с названиями месяцев
                 for (int month = 1; month <= 12; month++)
                 {
                     result.Add(new ChartDataPointDto

@@ -1,5 +1,5 @@
-﻿using System.Windows.Controls;
-using EnergyMeteringSystem.App.ViewModels.Objects;
+﻿using EnergyMeteringSystem.App.ViewModels.Objects;
+using System.Windows.Controls;
 
 namespace EnergyMeteringSystem.App.Views.Objects
 {

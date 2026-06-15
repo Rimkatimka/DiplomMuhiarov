@@ -14,33 +14,41 @@ namespace EnergyMeteringSystem.Data.Repositories
 {
     public class VerificationIntervalRepository : BaseRepository, IDirectoryRepository<DirectoryDto>
     {
-        private const string CACHE_KEY_ALL = "VerificationIntervals_All";
-        private const string CACHE_KEY_BY_ID = "VerificationInterval_{0}";
-        private const int CACHE_MINUTES = 60;
+        public async Task<List<DirectoryDto>> GetAllAsync(CancellationToken cancellationToken = default)
+        {
+            var data = await Query<VerificationInterval>()
+                .Include(vi => vi.MeterType)
+                .Select(v => new { v.Id, v.MeterType.Name, v.Years })
+                .OrderBy(v => v.Name)
+                .ToListAsync(cancellationToken);
+
+            return data.Select(v => new DirectoryDto
+            {
+                Id = v.Id,
+                Name = v.Name,
+                Description = $"Интервал: {v.Years} лет",
+                IsActive = true
+            }).ToList();
+        }
 
         public List<DirectoryDto> GetAll()
         {
             return GetAllAsync().Result;
         }
 
-        public async Task<List<DirectoryDto>> GetAllAsync(CancellationToken cancellationToken = default)
+        public async Task<DirectoryDto> GetByIdAsync(int id, CancellationToken cancellationToken = default)
         {
-            return await CacheService.GetOrAddAsync(CACHE_KEY_ALL, async () =>
-            {
-                var data = await Query<VerificationInterval>()
-                    .Include(vi => vi.MeterType)
-                    .Select(v => new DirectoryDto
-                    {
-                        Id = v.Id,
-                        Name = v.MeterType.Name,
-                        Description = $"Интервал: {v.Years} лет",
-                        IsActive = true
-                    })
-                    .OrderBy(v => v.Name)
-                    .ToListAsync(cancellationToken);
+            var entity = await Query<VerificationInterval>()
+                .Include(vi => vi.MeterType)
+                .FirstOrDefaultAsync(v => v.Id == id, cancellationToken);
 
-                return data;
-            }, CACHE_MINUTES);
+            return entity == null ? null : new DirectoryDto
+            {
+                Id = entity.Id,
+                Name = entity.MeterType.Name,
+                Description = $"Интервал: {entity.Years} лет",
+                IsActive = true
+            };
         }
 
         public DirectoryDto GetById(int id)
@@ -48,34 +56,11 @@ namespace EnergyMeteringSystem.Data.Repositories
             return GetByIdAsync(id).Result;
         }
 
-        public async Task<DirectoryDto> GetByIdAsync(int id, CancellationToken cancellationToken = default)
-        {
-            string cacheKey = string.Format(CACHE_KEY_BY_ID, id);
-
-            return await CacheService.GetOrAddAsync(cacheKey, async () =>
-            {
-                var entity = await Query<VerificationInterval>()
-                    .Include(vi => vi.MeterType)
-                    .FirstOrDefaultAsync(v => v.Id == id, cancellationToken);
-
-                return entity == null
-                    ? null
-                    : new DirectoryDto
-                    {
-                        Id = entity.Id,
-                        Name = entity.MeterType.Name,
-                        Description = $"Интервал: {entity.Years} лет",
-                        IsActive = true
-                    };
-            }, CACHE_MINUTES);
-        }
-
         public async Task<int> AddAsync(DirectoryDto dto, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(dto.Name))
                 throw new ArgumentException("Название типа счетчика не может быть пустым");
 
-            // Находим MeterType по имени
             var meterType = await Query<MeterType>()
                 .FirstOrDefaultAsync(mt => mt.Name == dto.Name, cancellationToken);
 
@@ -84,8 +69,7 @@ namespace EnergyMeteringSystem.Data.Repositories
                 throw new InvalidOperationException($"Тип счетчика '{dto.Name}' не найден");
             }
 
-            // Извлекаем количество лет из описания
-            int years = 16; // значение по умолчанию
+            int years = 16;
             if (!string.IsNullOrEmpty(dto.Description))
             {
                 var match = Regex.Match(dto.Description, @"(\d+)");
@@ -95,7 +79,6 @@ namespace EnergyMeteringSystem.Data.Repositories
                 }
             }
 
-            // Проверяем, не существует ли уже интервал для этого типа
             bool exists = await Query<VerificationInterval>()
                 .AnyAsync(v => v.MeterTypeId == meterType.Id, cancellationToken);
 
@@ -109,10 +92,9 @@ namespace EnergyMeteringSystem.Data.Repositories
                 MeterTypeId = meterType.Id,
                 Years = years
             };
+
             _context.VerificationInterval.Add(entity);
             await _context.SaveChangesAsync(cancellationToken);
-
-            InvalidateCache();
 
             AuditLogger.Log("INSERT", "VerificationInterval", entity.Id, null,
                 new { MeterTypeId = meterType.Id, Years = years });
@@ -130,7 +112,6 @@ namespace EnergyMeteringSystem.Data.Repositories
             var entity = await _context.VerificationInterval.FindAsync(cancellationToken, dto.Id);
             if (entity == null) return false;
 
-            // Извлекаем количество лет из описания
             int years = entity.Years;
             if (!string.IsNullOrEmpty(dto.Description))
             {
@@ -146,9 +127,6 @@ namespace EnergyMeteringSystem.Data.Repositories
 
             entity.Years = years;
             await _context.SaveChangesAsync(cancellationToken);
-
-            InvalidateCache();
-            CacheService.Remove(string.Format(CACHE_KEY_BY_ID, dto.Id));
 
             AuditLogger.Log("UPDATE", "VerificationInterval", entity.Id, oldValues, newValues);
 
@@ -170,9 +148,6 @@ namespace EnergyMeteringSystem.Data.Repositories
             _context.VerificationInterval.Remove(entity);
             await _context.SaveChangesAsync(cancellationToken);
 
-            InvalidateCache();
-            CacheService.Remove(string.Format(CACHE_KEY_BY_ID, id));
-
             AuditLogger.Log("DELETE", "VerificationInterval", id, oldValues, null);
 
             return true;
@@ -189,20 +164,13 @@ namespace EnergyMeteringSystem.Data.Repositories
                 .Include(vi => vi.MeterType)
                 .FirstOrDefaultAsync(v => v.MeterTypeId == meterTypeId, cancellationToken);
 
-            return entity == null
-                ? null
-                : new DirectoryDto
-                {
-                    Id = entity.Id,
-                    Name = entity.MeterType.Name,
-                    Description = $"Интервал: {entity.Years} лет",
-                    IsActive = true
-                };
-        }
-
-        private void InvalidateCache()
-        {
-            CacheService.Remove(CACHE_KEY_ALL);
+            return entity == null ? null : new DirectoryDto
+            {
+                Id = entity.Id,
+                Name = entity.MeterType.Name,
+                Description = $"Интервал: {entity.Years} лет",
+                IsActive = true
+            };
         }
     }
 }

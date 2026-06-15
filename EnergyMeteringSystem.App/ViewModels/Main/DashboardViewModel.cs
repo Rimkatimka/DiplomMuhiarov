@@ -1,14 +1,13 @@
-﻿using System;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Windows;
-using EnergyMeteringSystem.App.Commands;
+﻿using EnergyMeteringSystem.App.Commands;
 using EnergyMeteringSystem.App.ViewModels.Base;
 using EnergyMeteringSystem.Core.Models.DTO;
 using EnergyMeteringSystem.Data.Repositories;
 using LiveCharts;
 using LiveCharts.Wpf;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Windows;
 
 namespace EnergyMeteringSystem.App.ViewModels.Main
 {
@@ -18,15 +17,14 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
         private DashboardDto _data;
         private SeriesCollection _chartSeries;
         private string[] _chartMonths;
+        private bool _hasData;
+        private string _chartTitle;
 
-        // KPI свойства
         private int _totalObjects;
         private int _totalMeters;
         private int _readingsToday;
         private int _readingsWeek;
         private int _expiredMeters;
-        private bool _hasData;
-        private string _chartTitle;
 
         public int TotalObjects
         {
@@ -98,20 +96,21 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
 
             RefreshCommand = new AsyncRelayCommand(async () => await LoadAllDataAsync());
 
-            _ = LoadAllDataAsync();
+            Task.Run(async () => await LoadAllDataAsync());
         }
 
         private async Task LoadAllDataAsync()
         {
             System.Diagnostics.Debug.WriteLine("LoadAllDataAsync START");
 
-            await ExecuteAsync(async () =>
+            try
             {
                 // Загружаем KPI
                 _data = await _dashboardRepository.GetDashboardDataAsync();
 
-                System.Diagnostics.Debug.WriteLine($"GetDashboardDataAsync: Objects={_data?.TotalObjects}, Meters={_data?.TotalMeters}, ReadingsToday={_data?.ReadingsToday}");
+                System.Diagnostics.Debug.WriteLine($"GetDashboardDataAsync: Objects={_data?.TotalObjects}, Meters={_data?.TotalMeters}");
 
+                // ✅ ОБНОВЛЯЕМ UI В ПРАВИЛЬНОМ ПОТОКЕ
                 await Application.Current.Dispatcher.InvokeAsync(() =>
                 {
                     TotalObjects = _data?.TotalObjects ?? 0;
@@ -123,22 +122,29 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
                     System.Diagnostics.Debug.WriteLine($"KPI обновлены: Objects={TotalObjects}, Meters={TotalMeters}");
                 });
 
-                // Загружаем данные для графика (все года сразу или последний год)
+                // Загружаем данные для графика
                 await LoadChartDataSimpleAsync();
-
-            }, "Ошибка загрузки данных дашборда");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"LoadAllDataAsync ERROR: {ex.Message}");
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    ChartTitle = "Ошибка загрузки данных";
+                    HasData = false;
+                });
+            }
         }
 
         private async Task LoadChartDataSimpleAsync()
         {
             System.Diagnostics.Debug.WriteLine("LoadChartDataSimpleAsync START");
 
-            await ExecuteAsync(async () =>
+            try
             {
-                // Получаем все данные для графика
                 var chartData = await _dashboardRepository.GetChartDataAsync(DateTime.Today.Year);
 
-                System.Diagnostics.Debug.WriteLine($"GetAllChartDataAsync вернул {chartData?.Count ?? 0} точек");
+                System.Diagnostics.Debug.WriteLine($"GetChartDataAsync вернул {chartData?.Count ?? 0} точек");
 
                 await Application.Current.Dispatcher.InvokeAsync(() =>
                 {
@@ -159,13 +165,10 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
 
                         ChartTitle = "Динамика показаний по месяцам";
                         HasData = true;
-
-                        System.Diagnostics.Debug.WriteLine($"График обновлен, месяцев: {ChartMonths.Length}");
-                        System.Diagnostics.Debug.WriteLine($"Данные: {string.Join(", ", chartData.Select(d => d.Consumption))}");
                     }
                     else
                     {
-                        // Нет данных
+                        // Нет данных — показываем заглушку
                         ChartMonths = new[] { "Янв", "Фев", "Мар", "Апр", "Май", "Июн", "Июл", "Авг", "Сен", "Окт", "Ноя", "Дек" };
                         ChartSeries = new SeriesCollection
                         {
@@ -178,11 +181,18 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
                         };
                         ChartTitle = "Нет данных для отображения";
                         HasData = false;
-
-                        System.Diagnostics.Debug.WriteLine("Нет данных для графика");
                     }
                 });
-            }, "Ошибка загрузки графика");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"LoadChartDataSimpleAsync ERROR: {ex.Message}");
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    ChartTitle = "Ошибка загрузки графика";
+                    HasData = false;
+                });
+            }
         }
     }
 }
