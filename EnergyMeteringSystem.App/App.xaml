@@ -1,80 +1,65 @@
 ﻿<Application x:Class="EnergyMeteringSystem.App.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:converters="clr-namespace:EnergyMeteringSystem.App.Converters">
     <Application.Resources>
 
+        <!-- Конвертеры -->
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <converters:InverseBooleanConverter x:Key="InverseBooleanConverter"/>
 
-        <!-- ============= ЦВЕТОВАЯ СХЕМА: КРЕМНИЕВАЯ ДОЛИНА ============= -->
-        <SolidColorBrush x:Key="MenuBackgroundBrush" Color="#2D2D3A"/>
-        <SolidColorBrush x:Key="MenuCardBackgroundBrush" Color="#3D3D4D"/>
-        <SolidColorBrush x:Key="MenuInputBackgroundBrush" Color="#4D4D60"/>
-        <SolidColorBrush x:Key="MenuForegroundBrush" Color="White"/>
-        <SolidColorBrush x:Key="MenuForegroundSecondaryBrush" Color="#AAAAAA"/>
-        <SolidColorBrush x:Key="MenuAccentBrush" Color="#1CE6B9"/>
-        <SolidColorBrush x:Key="MenuHoverBrush" Color="#4D4D60"/>
-        <SolidColorBrush x:Key="MenuSelectedBrush" Color="#6200EE"/>
+        <!-- ============= ЦВЕТОВАЯ СХЕМА: БИРЮЗОВАЯ ============= -->
 
-        <SolidColorBrush x:Key="ButtonBackgroundBrush" Color="#1CE6B9"/>
-        <SolidColorBrush x:Key="ButtonHoverBrush" Color="#33FFD0"/>
-        <SolidColorBrush x:Key="ButtonPressedBrush" Color="#00C4A0"/>
-        <SolidColorBrush x:Key="ButtonForegroundBrush" Color="#1A1A1A"/>
-        <SolidColorBrush x:Key="LogoutButtonBrush" Color="#E31B23"/>
+        <!-- Цвета левой панели (тёмная) -->
+        <SolidColorBrush x:Key="MenuBackgroundBrush" Color="#1A2B2B"/>
+        <SolidColorBrush x:Key="MenuCardBackgroundBrush" Color="#2A3D3D"/>
+        <SolidColorBrush x:Key="MenuInputBackgroundBrush" Color="#3A5050"/>
+        <SolidColorBrush x:Key="MenuForegroundBrush" Color="#E0F0F0"/>
+        <SolidColorBrush x:Key="MenuForegroundSecondaryBrush" Color="#90B0B0"/>
+        <SolidColorBrush x:Key="MenuAccentBrush" Color="#00CED1"/>
+        <SolidColorBrush x:Key="MenuHoverBrush" Color="#3A5050"/>
+        <SolidColorBrush x:Key="MenuSelectedBrush" Color="#008080"/>
 
-        <SolidColorBrush x:Key="DataGridHeaderBrush" Color="#6200EE"/>
+        <!-- Цвета кнопок (основные) -->
+        <SolidColorBrush x:Key="ButtonBackgroundBrush" Color="#008080"/>
+        <SolidColorBrush x:Key="ButtonHoverBrush" Color="#00A0A0"/>
+        <SolidColorBrush x:Key="ButtonPressedBrush" Color="#006666"/>
+        <SolidColorBrush x:Key="ButtonForegroundBrush" Color="White"/>
+
+        <!-- Семантические цвета для кнопок -->
+        <SolidColorBrush x:Key="SuccessButtonBrush" Color="#2E7D32"/>
+        <SolidColorBrush x:Key="SuccessButtonHoverBrush" Color="#43A047"/>
+        <SolidColorBrush x:Key="DangerButtonBrush" Color="#D32F2F"/>
+        <SolidColorBrush x:Key="DangerButtonHoverBrush" Color="#E53935"/>
+        <SolidColorBrush x:Key="CloseButtonBrush" Color="#757575"/>
+        <SolidColorBrush x:Key="CloseButtonHoverBrush" Color="#9E9E9E"/>
+        <SolidColorBrush x:Key="LogoutButtonBrush" Color="#D32F2F"/>
+
+        <!-- Цвета DataGrid -->
+        <SolidColorBrush x:Key="DataGridHeaderBrush" Color="#008080"/>
         <SolidColorBrush x:Key="DataGridHeaderForegroundBrush" Color="White"/>
-        <SolidColorBrush x:Key="DataGridHeaderBorderBrush" Color="#7C4DFF"/>
+        <SolidColorBrush x:Key="DataGridHeaderBorderBrush" Color="#20B2AA"/>
         <SolidColorBrush x:Key="DataGridBackgroundBrush" Color="White"/>
-        <SolidColorBrush x:Key="DataGridAlternatingBrush" Color="#F5F5F5"/>
-        <SolidColorBrush x:Key="DataGridBorderBrush" Color="#CCCCCC"/>
-        <SolidColorBrush x:Key="DataGridCellBorderBrush" Color="#E0E0E0"/>
-        <SolidColorBrush x:Key="DataGridForegroundBrush" Color="#1A1A1A"/>
+        <SolidColorBrush x:Key="DataGridAlternatingBrush" Color="#F5F8F8"/>
+        <SolidColorBrush x:Key="DataGridBorderBrush" Color="#D0E0E0"/>
+        <SolidColorBrush x:Key="DataGridCellBorderBrush" Color="#E8F0F0"/>
+        <SolidColorBrush x:Key="DataGridForegroundBrush" Color="#1A2B2B"/>
+        <SolidColorBrush x:Key="DataGridSelectedBrush" Color="#E0F5F5"/>
+        <SolidColorBrush x:Key="DataGridSelectedForegroundBrush" Color="#006666"/>
+        <SolidColorBrush x:Key="DataGridSelectedBorderBrush" Color="#80C0C0"/>
 
-        <SolidColorBrush x:Key="ProgressBarForegroundBrush" Color="#6200EE"/>
-        <SolidColorBrush x:Key="ProgressBarBackgroundBrush" Color="#E0E0E0"/>
+        <!-- ProgressBar -->
+        <SolidColorBrush x:Key="ProgressBarForegroundBrush" Color="#008080"/>
+        <SolidColorBrush x:Key="ProgressBarBackgroundBrush" Color="#E8F0F0"/>
 
-        <Style x:Key="DataGridColumnHeaderStyle" TargetType="DataGridColumnHeader">
-            <Setter Property="Background" Value="{StaticResource DataGridHeaderBrush}"/>
-            <Setter Property="Foreground" Value="{StaticResource DataGridHeaderForegroundBrush}"/>
-            <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="Height" Value="35"/>
-            <Setter Property="HorizontalContentAlignment" Value="Center"/>
-            <Setter Property="BorderBrush" Value="{StaticResource DataGridHeaderBorderBrush}"/>
-            <Setter Property="BorderThickness" Value="0,0,1,1"/>
-        </Style>
+        <!-- ScrollBar -->
+        <SolidColorBrush x:Key="ScrollBarBackgroundBrush" Color="#E0EEEE"/>
+        <SolidColorBrush x:Key="ScrollBarThumbBrush" Color="#008080"/>
+        <SolidColorBrush x:Key="ScrollBarThumbHoverBrush" Color="#00A0A0"/>
 
-        <Style x:Key="DataGridCellStyle" TargetType="DataGridCell">
-            <Setter Property="VerticalAlignment" Value="Center"/>
-            <Setter Property="Padding" Value="0"/>
-            <Setter Property="Height" Value="35"/>
-            <Setter Property="BorderBrush" Value="{StaticResource DataGridCellBorderBrush}"/>
-            <Setter Property="BorderThickness" Value="0,0,1,1"/>
-        </Style>
+        <!-- ============= СТИЛИ ============= -->
 
-        <Style TargetType="DataGrid">
-            <Setter Property="Background" Value="{StaticResource DataGridBackgroundBrush}"/>
-            <Setter Property="BorderBrush" Value="{StaticResource DataGridBorderBrush}"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="RowHeaderWidth" Value="0"/>
-            <Setter Property="CanUserAddRows" Value="False"/>
-            <Setter Property="CanUserDeleteRows" Value="False"/>
-            <Setter Property="AlternatingRowBackground" Value="{StaticResource DataGridAlternatingBrush}"/>
-            <Setter Property="AlternationCount" Value="2"/>
-            <Setter Property="ColumnHeaderStyle" Value="{StaticResource DataGridColumnHeaderStyle}"/>
-            <Setter Property="CellStyle" Value="{StaticResource DataGridCellStyle}"/>
-            <Setter Property="VirtualizingPanel.IsVirtualizing" Value="True"/>
-            <Setter Property="VirtualizingPanel.VirtualizationMode" Value="Recycling"/>
-            <Setter Property="VirtualizingPanel.ScrollUnit" Value="Pixel"/>
-            <Setter Property="EnableColumnVirtualization" Value="True"/>
-            <Setter Property="ScrollViewer.CanContentScroll" Value="True"/>
-            <Setter Property="RowHeight" Value="35"/>
-            <Setter Property="MaxHeight" Value="600"/>
-            <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto"/>
-            <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto"/>
-            <Setter Property="VirtualizingPanel.CacheLengthUnit" Value="Page"/>
-            <Setter Property="VirtualizingPanel.CacheLength" Value="2,2"/>
-        </Style>
-
+        <!-- Базовый стиль для всех кнопок (должен быть ПЕРВЫМ) -->
         <Style TargetType="Button">
             <Setter Property="Background" Value="{StaticResource ButtonBackgroundBrush}"/>
             <Setter Property="Foreground" Value="{StaticResource ButtonForegroundBrush}"/>
@@ -107,6 +92,104 @@
             </Style.Triggers>
         </Style>
 
+        <!-- Стиль для кнопки "Добавить" (зелёный) - использует BasedOn -->
+        <Style x:Key="SuccessButtonStyle" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Background" Value="{StaticResource SuccessButtonBrush}"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{StaticResource SuccessButtonHoverBrush}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Стиль для кнопки "Удалить" (красный) -->
+        <Style x:Key="DangerButtonStyle" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Background" Value="{StaticResource DangerButtonBrush}"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{StaticResource DangerButtonHoverBrush}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Стиль для кнопки "Закрыть" (серый) -->
+        <Style x:Key="CloseButtonStyle" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Background" Value="{StaticResource CloseButtonBrush}"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{StaticResource CloseButtonHoverBrush}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Стиль заголовков колонок DataGrid -->
+        <Style x:Key="DataGridColumnHeaderStyle" TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="{StaticResource DataGridHeaderBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource DataGridHeaderForegroundBrush}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="BorderBrush" Value="{StaticResource DataGridHeaderBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="0,0,1,1"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+
+        <!-- Стиль ячеек DataGrid -->
+        <Style x:Key="DataGridCellStyle" TargetType="DataGridCell">
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Padding" Value="8,0"/>
+            <Setter Property="Height" Value="38"/>
+            <Setter Property="BorderBrush" Value="{StaticResource DataGridCellBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="0,0,1,1"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Foreground" Value="{StaticResource DataGridForegroundBrush}"/>
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
+
+        <!-- Стиль строки DataGrid при выделении -->
+        <Style TargetType="DataGridRow">
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="{StaticResource DataGridSelectedBrush}"/>
+                    <Setter Property="Foreground" Value="{StaticResource DataGridSelectedForegroundBrush}"/>
+                </Trigger>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{StaticResource DataGridSelectedBrush}"/>
+                    <Setter Property="Foreground" Value="{StaticResource DataGridSelectedForegroundBrush}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Глобальный стиль DataGrid -->
+        <Style TargetType="DataGrid">
+            <Setter Property="Background" Value="{StaticResource DataGridBackgroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource DataGridBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="RowHeaderWidth" Value="0"/>
+            <Setter Property="CanUserAddRows" Value="False"/>
+            <Setter Property="CanUserDeleteRows" Value="False"/>
+            <Setter Property="AlternatingRowBackground" Value="{StaticResource DataGridAlternatingBrush}"/>
+            <Setter Property="AlternationCount" Value="2"/>
+            <Setter Property="ColumnHeaderStyle" Value="{StaticResource DataGridColumnHeaderStyle}"/>
+            <Setter Property="CellStyle" Value="{StaticResource DataGridCellStyle}"/>
+            <Setter Property="VirtualizingPanel.IsVirtualizing" Value="True"/>
+            <Setter Property="VirtualizingPanel.VirtualizationMode" Value="Recycling"/>
+            <Setter Property="VirtualizingPanel.ScrollUnit" Value="Pixel"/>
+            <Setter Property="EnableColumnVirtualization" Value="True"/>
+            <Setter Property="ScrollViewer.CanContentScroll" Value="True"/>
+            <Setter Property="RowHeight" Value="38"/>
+            <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto"/>
+            <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto"/>
+            <Setter Property="VirtualizingPanel.CacheLengthUnit" Value="Page"/>
+            <Setter Property="VirtualizingPanel.CacheLength" Value="2,2"/>
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="GridLinesVisibility" Value="Horizontal"/>
+            <Setter Property="HeadersVisibility" Value="Column"/>
+        </Style>
+
+        <!-- Стиль для ProgressBar -->
         <Style TargetType="ProgressBar">
             <Setter Property="Height" Value="4"/>
             <Setter Property="Foreground" Value="{StaticResource ProgressBarForegroundBrush}"/>
@@ -115,9 +198,126 @@
             <Setter Property="Visibility" Value="Collapsed"/>
         </Style>
 
+        <!-- Стиль для ScrollViewer -->
         <Style TargetType="ScrollViewer">
             <Setter Property="PanningMode" Value="VerticalOnly"/>
             <Setter Property="ScrollViewer.CanContentScroll" Value="True"/>
+        </Style>
+
+        <!-- Стиль для TextBox -->
+        <Style TargetType="TextBox">
+            <Setter Property="Background" Value="{StaticResource DataGridBackgroundBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource DataGridForegroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource DataGridBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="8,6"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="CaretBrush" Value="{StaticResource DataGridForegroundBrush}"/>
+        </Style>
+
+        <!-- Стиль для ComboBox -->
+        <Style TargetType="ComboBox">
+            <Setter Property="Background" Value="{StaticResource DataGridBackgroundBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource DataGridForegroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource DataGridBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="6,4"/>
+            <Setter Property="FontSize" Value="13"/>
+        </Style>
+
+        <!-- Стиль для ComboBoxItem -->
+        <Style TargetType="ComboBoxItem">
+            <Setter Property="Background" Value="{StaticResource DataGridBackgroundBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource DataGridForegroundBrush}"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{StaticResource DataGridSelectedBrush}"/>
+                    <Setter Property="Foreground" Value="{StaticResource DataGridSelectedForegroundBrush}"/>
+                </Trigger>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="{StaticResource DataGridHeaderBrush}"/>
+                    <Setter Property="Foreground" Value="White"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Стиль для CheckBox -->
+        <Style TargetType="CheckBox">
+            <Setter Property="Foreground" Value="{StaticResource DataGridForegroundBrush}"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Margin" Value="5"/>
+        </Style>
+
+        <!-- Стиль для RadioButton -->
+        <Style TargetType="RadioButton">
+            <Setter Property="Foreground" Value="{StaticResource DataGridForegroundBrush}"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Margin" Value="5"/>
+        </Style>
+
+        <!-- Стиль для DatePicker -->
+        <Style TargetType="DatePicker">
+            <Setter Property="Background" Value="{StaticResource DataGridBackgroundBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource DataGridForegroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource DataGridBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="FontSize" Value="13"/>
+        </Style>
+
+        <!-- Стиль для TabControl -->
+        <Style TargetType="TabControl">
+            <Setter Property="Background" Value="{StaticResource DataGridBackgroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource DataGridBorderBrush}"/>
+        </Style>
+
+        <!-- Стиль для TabItem -->
+        <Style TargetType="TabItem">
+            <Setter Property="Background" Value="{StaticResource DataGridAlternatingBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource DataGridForegroundBrush}"/>
+            <Setter Property="Padding" Value="15,8"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="{StaticResource DataGridHeaderBrush}"/>
+                    <Setter Property="Foreground" Value="White"/>
+                </Trigger>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{StaticResource DataGridSelectedBrush}"/>
+                    <Setter Property="Foreground" Value="{StaticResource DataGridSelectedForegroundBrush}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Стиль для GroupBox -->
+        <Style TargetType="GroupBox">
+            <Setter Property="Background" Value="{StaticResource DataGridBackgroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource DataGridBorderBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource DataGridForegroundBrush}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="10"/>
+            <Setter Property="Padding" Value="10"/>
+        </Style>
+
+        <!-- Стиль для ListBox -->
+        <Style TargetType="ListBox">
+            <Setter Property="Background" Value="{StaticResource DataGridBackgroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource DataGridBorderBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource DataGridForegroundBrush}"/>
+        </Style>
+
+        <!-- Стиль для ListBoxItem -->
+        <Style TargetType="ListBoxItem">
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="{StaticResource DataGridHeaderBrush}"/>
+                    <Setter Property="Foreground" Value="White"/>
+                </Trigger>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{StaticResource DataGridSelectedBrush}"/>
+                    <Setter Property="Foreground" Value="{StaticResource DataGridSelectedForegroundBrush}"/>
+                </Trigger>
+            </Style.Triggers>
         </Style>
 
     </Application.Resources>

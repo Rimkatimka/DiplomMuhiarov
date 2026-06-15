@@ -20,7 +20,7 @@
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <!-- Левая панель с меню - использует DynamicResource из App.xaml -->
+        <!-- Левая панель с меню -->
         <Border x:Name="MenuPanel" 
                 Grid.Column="0" 
                 Background="{DynamicResource MenuBackgroundBrush}" 
@@ -72,25 +72,22 @@
                              ToolTip="Поиск по меню"/>
                 </Border>
 
-                <!-- TreeView меню с прокруткой -->
+                <!-- TreeView меню -->
                 <ScrollViewer Grid.Row="2" 
                               VerticalScrollBarVisibility="Auto" 
                               HorizontalScrollBarVisibility="Disabled">
-
                     <TreeView x:Name="MainMenuTree" 
                               ItemsSource="{Binding FilteredMenuItems}"
                               SelectedItemChanged="TreeView_SelectedItemChanged"
                               Background="Transparent"
                               BorderThickness="0"
                               Foreground="{DynamicResource MenuForegroundBrush}">
-
                         <TreeView.ItemTemplate>
                             <HierarchicalDataTemplate DataType="{x:Type local:MenuItemViewModel}" 
                                                       ItemsSource="{Binding Children}">
                                 <TextBlock Text="{Binding Title}" Margin="10,5" FontSize="14"/>
                             </HierarchicalDataTemplate>
                         </TreeView.ItemTemplate>
-
                         <TreeView.ItemContainerStyle>
                             <Style TargetType="TreeViewItem">
                                 <Setter Property="IsExpanded" Value="True"/>
@@ -111,7 +108,7 @@
                     </TreeView>
                 </ScrollViewer>
 
-                <!-- Кнопка выхода -->
+                <!-- Кнопка выхода (снизу) -->
                 <Button Grid.Row="3" 
                         x:Name="LogoutButton"
                         Content="Выйти"
@@ -121,7 +118,9 @@
                         BorderThickness="0"
                         Padding="10"
                         Margin="10"
-                        HorizontalAlignment="Stretch"/>
+                        HorizontalAlignment="Stretch"
+                        Cursor="Hand"
+                        FontWeight="SemiBold"/>
             </Grid>
         </Border>
 
@@ -140,7 +139,6 @@
                         CornerRadius="20"
                         Cursor="Hand"
                         Panel.ZIndex="100">
-
                     <Border.Style>
                         <Style TargetType="Border">
                             <Style.Triggers>
@@ -150,7 +148,6 @@
                             </Style.Triggers>
                         </Style>
                     </Border.Style>
-
                     <Button x:Name="ToggleMenuButton"
                             Background="Transparent"
                             BorderThickness="0"
@@ -159,7 +156,6 @@
                             ToolTip="Свернуть меню"
                             Padding="0"
                             Margin="0">
-
                         <TextBlock x:Name="ToggleButtonText" 
                                    Text="◀" 
                                    FontSize="16" 
@@ -181,7 +177,11 @@
                 Background="#80000000" 
                 Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}">
             <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                <ProgressBar IsIndeterminate="True" Width="150" Height="20"/>
+                <ProgressBar IsIndeterminate="True" 
+                             Width="150" 
+                             Height="20"
+                             Foreground="{DynamicResource ProgressBarForegroundBrush}"
+                             Background="{DynamicResource ProgressBarBackgroundBrush}"/>
                 <TextBlock Text="Загрузка..." Margin="0,10,0,0" Foreground="White"/>
             </StackPanel>
         </Border>

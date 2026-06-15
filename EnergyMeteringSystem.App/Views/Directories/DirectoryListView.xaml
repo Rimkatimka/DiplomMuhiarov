@@ -1,9 +1,11 @@
 ﻿<UserControl x:Class="EnergyMeteringSystem.App.Views.Directories.DirectoryListView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:converters="clr-namespace:EnergyMeteringSystem.App.Converters">
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <converters:InverseBooleanConverter x:Key="InverseBooleanConverter"/>
     </UserControl.Resources>
 
     <Grid Margin="10">
@@ -16,10 +18,16 @@
         <!-- Поиск -->
         <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
             <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" 
-                     Width="300" Padding="5"
+                     Width="300" 
+                     Padding="8,6"
                      VerticalAlignment="Center"
                      ToolTip="Поиск по названию или описанию"
-                     IsEnabled="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"/>            
+                     IsEnabled="{Binding IsLoading, Converter={StaticResource InverseBooleanConverter}}"
+                     Background="{DynamicResource DataGridBackgroundBrush}"
+                     Foreground="{DynamicResource DataGridForegroundBrush}"
+                     BorderBrush="{DynamicResource DataGridBorderBrush}"
+                     BorderThickness="1"
+                     FontSize="13"/>
         </StackPanel>
 
         <!-- Таблица -->
@@ -29,7 +37,20 @@
                   AutoGenerateColumns="False"
                   IsReadOnly="True"
                   SelectionMode="Single"
-                  IsEnabled="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}">
+                  IsEnabled="{Binding IsLoading, Converter={StaticResource InverseBooleanConverter}}"
+                  AlternatingRowBackground="{DynamicResource DataGridAlternatingBrush}"
+                  AlternationCount="2"
+                  Background="{DynamicResource DataGridBackgroundBrush}"
+                  BorderBrush="{DynamicResource DataGridBorderBrush}"
+                  RowHeaderWidth="0"
+                  ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}"
+                  CellStyle="{StaticResource DataGridCellStyle}">
+
+            <DataGrid.Resources>
+                <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource DataGridColumnHeaderStyle}"/>
+                <Style TargetType="DataGridCell" BasedOn="{StaticResource DataGridCellStyle}"/>
+            </DataGrid.Resources>
+
             <DataGrid.Columns>
                 <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="50"/>
                 <DataGridTextColumn Header="Название" Binding="{Binding Name}" Width="200"/>
@@ -38,23 +59,37 @@
             </DataGrid.Columns>
         </DataGrid>
 
-        <!-- Кнопки -->
+        <!-- Кнопки с семантическими цветами -->
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
-            <Button Content="Добавить" 
+            <Button Content="➕ Добавить" 
                     Command="{Binding AddCommand}"
-                    Padding="15,5" Margin="5"
-                    Background="#4CAF50" Foreground="White"
-                    IsEnabled="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-            <Button Content="Редактировать" 
+                    Padding="15,5" 
+                    Margin="5"
+                    Background="{StaticResource SuccessButtonBrush}" 
+                    Foreground="White"
+                    IsEnabled="{Binding IsLoading, Converter={StaticResource InverseBooleanConverter}}"
+                    Cursor="Hand"
+                    FontWeight="SemiBold"/>
+
+            <Button Content="✏ Редактировать" 
                     Command="{Binding EditCommand}"
-                    Padding="15,5" Margin="5"
-                    Background="#2196F3" Foreground="White"
-                    IsEnabled="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-            <Button Content="Удалить" 
+                    Padding="15,5" 
+                    Margin="5"
+                    Background="{DynamicResource ButtonBackgroundBrush}" 
+                    Foreground="{DynamicResource ButtonForegroundBrush}"
+                    IsEnabled="{Binding IsLoading, Converter={StaticResource InverseBooleanConverter}}"
+                    Cursor="Hand"
+                    FontWeight="SemiBold"/>
+
+            <Button Content="🗑 Удалить" 
                     Command="{Binding DeleteCommand}"
-                    Padding="15,5" Margin="5"
-                    Background="#F44336" Foreground="White"
-                    IsEnabled="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                    Padding="15,5" 
+                    Margin="5"
+                    Background="{StaticResource DangerButtonBrush}" 
+                    Foreground="White"
+                    IsEnabled="{Binding IsLoading, Converter={StaticResource InverseBooleanConverter}}"
+                    Cursor="Hand"
+                    FontWeight="SemiBold"/>
         </StackPanel>
 
         <!-- Индикатор загрузки -->
@@ -62,8 +97,14 @@
                 Background="#80000000" 
                 Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}">
             <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                <ProgressBar IsIndeterminate="True" Width="150" Height="20"/>
-                <TextBlock Text="Загрузка..." Margin="0,10,0,0" Foreground="White"/>
+                <ProgressBar IsIndeterminate="True" 
+                             Width="150" 
+                             Height="20"
+                             Foreground="{DynamicResource ProgressBarForegroundBrush}"
+                             Background="{DynamicResource ProgressBarBackgroundBrush}"/>
+                <TextBlock Text="Загрузка..." 
+                           Margin="0,10,0,0" 
+                           Foreground="White"/>
             </StackPanel>
         </Border>
     </Grid>
