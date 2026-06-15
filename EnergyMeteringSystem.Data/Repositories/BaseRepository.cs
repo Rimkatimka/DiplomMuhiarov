@@ -21,9 +21,8 @@ namespace EnergyMeteringSystem.Data.Repositories
             _context.Configuration.AutoDetectChangesEnabled = false;
             _context.Configuration.ProxyCreationEnabled = false;
             _context.Configuration.LazyLoadingEnabled = false;
-
-            // Дополнительные оптимизации
             _context.Configuration.ValidateOnSaveEnabled = false;
+            _context.Database.CommandTimeout = 30;
         }
 
         protected IQueryable<T> Query<T>() where T : class
@@ -145,6 +144,28 @@ namespace EnergyMeteringSystem.Data.Repositories
                 _context?.Dispose();
             }
             _disposed = true;
+        }
+        // Добавь этот метод в BaseRepository
+        public void ForceKillConnection()
+        {
+            try
+            {
+                if (_context.Database.Connection.State == System.Data.ConnectionState.Open)
+                {
+                    _context.Database.Connection.Close();
+                    System.Diagnostics.Debug.WriteLine("[ForceKillConnection] Соединение принудительно закрыто");
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[ForceKillConnection] Ошибка: {ex.Message}");
+            }
+        }
+
+        // Добавь финализатор для гарантированного закрытия
+        ~BaseRepository()
+        {
+            Dispose(false);
         }
     }
 

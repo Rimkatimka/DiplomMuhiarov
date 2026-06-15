@@ -32,7 +32,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
         private CityDto _selectedCity;
         private RegionDto _selectedRegion;
         private bool _isLoadingData = true;
-
+        private bool _disposed = false;
         // Храним задачи для синхронизации
         private Task _regionsLoadTask;
         private Task _objectTypesLoadTask;
@@ -154,7 +154,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
             StreetsList = new ObservableCollection<StreetDto>();
             ObjectTypes = new ObservableCollection<ObjectTypeDto>();
 
-            SaveCommand = new RelayCommand(_ => Save(), _ => CanSave() && !IsLoadingData);
+            SaveCommand = new RelayCommand(_ => SaveAsync(), _ => CanSave() && !IsLoadingData);
             CancelCommand = new RelayCommand(_ => Cancel());
             AddRegionCommand = new RelayCommand(_ => AddRegion());
             AddCityCommand = new RelayCommand(_ => AddCity());
@@ -218,6 +218,14 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
                     });
                 }
             });
+        }
+        public void Dispose()
+        {
+            if (!_disposed)
+            {
+                _objectRepository?.Dispose();
+                _disposed = true;
+            }
         }
 
         private async Task LoadCitiesByRegionAsync(int regionId)
@@ -427,8 +435,14 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
                    string.IsNullOrEmpty(ResidentCountError);
         }
 
-        private void Save()
+        private async Task SaveAsync()
         {
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            System.Diagnostics.Debug.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] НАЧАЛО сохранения объекта");
+            System.Diagnostics.Debug.WriteLine($"  - IsEditMode: {IsEditMode}");
+            System.Diagnostics.Debug.WriteLine($"  - StreetId: {SelectedStreet?.Id}");
+            System.Diagnostics.Debug.WriteLine($"  - ObjectTypeId: {SelectedObjectType?.Id}");
+
             ValidateResidentCount();
 
             if (!string.IsNullOrEmpty(ResidentCountError))
@@ -480,11 +494,26 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
                     _objectRepository.Add(dto);
 
                 OnObjectSaved?.Invoke(this, EventArgs.Empty);
+
+                System.Diagnostics.Debug.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] Вызов репозитория...");
+
+                if (IsEditMode)
+                    await _objectRepository.UpdateAsync(dto);
+                else
+                    await _objectRepository.AddAsync(dto);
+
+                sw.Stop();
+                System.Diagnostics.Debug.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] СОХРАНЕНО за {sw.ElapsedMilliseconds} мс");
+
+                MessageBox.Show("Объект успешно сохранен!", "Успех",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+
+                OnObjectSaved?.Invoke(this, EventArgs.Empty);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка при сохранении: {ex.Message}", "Ошибка",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                _objectRepository.ForceKillConnection(); // Принудительно закрыть соединение
+                MessageBox.Show($"Ошибка: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 

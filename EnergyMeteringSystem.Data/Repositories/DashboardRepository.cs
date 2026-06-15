@@ -45,40 +45,70 @@ namespace EnergyMeteringSystem.Data.Repositories
             return GetDashboardDataAsync().Result;
         }
 
-        public async Task<List<ChartDataPointDto>> GetChartDataAsync(int year)
+        /// <summary>
+        /// Получить СУММУ ПОТРЕБЛЕНИЯ (разница между последним и предыдущим показанием) по месяцам за указанный год
+        /// </summary>
+        public async Task<List<ChartDataPointDto>> GetMonthlyConsumptionAsync(int year)
         {
             var result = new List<ChartDataPointDto>();
-            string[] monthNames = { "Янв", "Фев", "Мар", "Апр", "Май", "Июн", "Июл", "Авг", "Сен", "Окт", "Ноя", "Дек" };
+            string[] monthNames = { "Янв", "Фев", "Мар", "Апр", "Май", "Июн",
+                                    "Июл", "Авг", "Сен", "Окт", "Ноя", "Дек" };
 
             try
             {
-                // ✅ Упрощаем запрос — сначала получаем данные, потом группируем в памяти
+                // Получаем все показания за год
                 var startDate = new DateTime(year, 1, 1);
                 var endDate = new DateTime(year, 12, 31, 23, 59, 59);
 
                 var readings = await _context.MeterReading
                     .Where(r => r.ReadingDate >= startDate && r.ReadingDate <= endDate)
-                    .Select(r => new { r.ReadingDate })
+                    .OrderBy(r => r.MeterId)
+                    .ThenBy(r => r.ReadingDate)
+                    .Select(r => new { r.MeterId, r.ReadingDate, r.Value })
                     .ToListAsync();
 
-                // Группируем в памяти (здесь нет проблем с LINQ to Entities)
-                var grouped = readings
-                    .GroupBy(r => r.ReadingDate.Month)
-                    .Select(g => new { Month = g.Key, Count = g.Count() })
-                    .ToDictionary(x => x.Month, x => x.Count);
+                // Для каждого счетчика вычисляем потребление по месяцам
+                var monthlyConsumption = new Dictionary<int, decimal>();
 
+                var groupedByMeter = readings.GroupBy(r => r.MeterId);
+
+                foreach (var meterGroup in groupedByMeter)
+                {
+                    var orderedReadings = meterGroup.OrderBy(r => r.ReadingDate).ToList();
+
+                    for (int i = 1; i < orderedReadings.Count; i++)
+                    {
+                        var prev = orderedReadings[i - 1];
+                        var curr = orderedReadings[i];
+
+                        decimal consumption = curr.Value - prev.Value;
+                        if (consumption <= 0) continue;
+
+                        int month = curr.ReadingDate.Month;
+
+                        if (!monthlyConsumption.ContainsKey(month))
+                            monthlyConsumption[month] = 0;
+                        monthlyConsumption[month] += consumption;
+                    }
+                }
+
+                // Формируем результат для всех 12 месяцев
                 for (int month = 1; month <= 12; month++)
                 {
+                    decimal consumption = monthlyConsumption.ContainsKey(month) ? monthlyConsumption[month] : 0;
                     result.Add(new ChartDataPointDto
                     {
                         MonthName = monthNames[month - 1],
-                        Consumption = grouped.ContainsKey(month) ? grouped[month] : 0
+                        Consumption = consumption
                     });
+
+                    System.Diagnostics.Debug.WriteLine($"  {monthNames[month - 1]}: {consumption:F0} кВт·ч");
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"GetChartDataAsync ERROR: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"GetMonthlyConsumptionAsync ERROR: {ex.Message}");
+                // Возвращаем заглушку с нулями
                 for (int month = 1; month <= 12; month++)
                 {
                     result.Add(new ChartDataPointDto

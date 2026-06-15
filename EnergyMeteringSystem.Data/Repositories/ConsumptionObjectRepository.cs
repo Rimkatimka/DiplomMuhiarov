@@ -85,6 +85,8 @@ namespace EnergyMeteringSystem.Data.Repositories
 
         public async Task<int> AddAsync(ConsumptionObjectDto dto, CancellationToken cancellationToken = default)
         {
+            System.Diagnostics.Debug.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] AddAsync НАЧАЛО");
+
             var entity = new ConsumptionObject
             {
                 StreetId = dto.StreetId,
@@ -96,12 +98,35 @@ namespace EnergyMeteringSystem.Data.Repositories
             };
 
             _context.ConsumptionObject.Add(entity);
-            await _context.SaveChangesAsync(cancellationToken);
 
-            AuditLogger.Log("INSERT", "ConsumptionObject", entity.Id, null,
-                new { dto.HouseNumber, dto.ApartmentNumber, dto.ObjectTypeId });
+            _context.Configuration.AutoDetectChangesEnabled = true;
 
-            return entity.Id;
+            try
+            {
+                using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30)))
+                using (var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, cts.Token))
+                {
+                    await _context.SaveChangesAsync(linkedCts.Token);
+                }
+                System.Diagnostics.Debug.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] Сохранено! Id={entity.Id}");
+                return entity.Id;
+            }
+            catch (OperationCanceledException)
+            {
+                System.Diagnostics.Debug.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] Таймаут операции!");
+                ForceKillConnection(); // Закрываем соединение
+                throw new TimeoutException("Сохранение заняло слишком много времени");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] Ошибка: {ex.Message}");
+                ForceKillConnection(); // Закрываем соединение при ошибке
+                throw;
+            }
+            finally
+            {
+                _context.Configuration.AutoDetectChangesEnabled = false;
+            }
         }
 
         public void Add(ConsumptionObjectDto dto)
@@ -111,23 +136,34 @@ namespace EnergyMeteringSystem.Data.Repositories
 
         public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
         {
-            var entity = await _context.ConsumptionObject.FindAsync(cancellationToken, id);
+            var entity = await _context.ConsumptionObject
+                .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
+
             if (entity == null) return false;
 
-            bool hasMeters = await Query<Meter>().AnyAsync(m => m.ConsumptionObjectId == id, cancellationToken);
+            // Проверяем наличие счетчиков (быстро)
+            bool hasMeters = await _context.Meter
+                .AnyAsync(m => m.ConsumptionObjectId == id, cancellationToken);
+
             if (hasMeters)
             {
-                throw new System.InvalidOperationException("Нельзя удалить объект, у которого есть счетчики");
+                throw new InvalidOperationException("Нельзя удалить объект, у которого есть счетчики");
             }
 
             var oldValues = new { entity.HouseNumber, entity.ApartmentNumber };
 
             _context.ConsumptionObject.Remove(entity);
-            await _context.SaveChangesAsync(cancellationToken);
 
-            AuditLogger.Log("DELETE", "ConsumptionObject", id, oldValues, null);
+            _context.Configuration.AutoDetectChangesEnabled = true;
+            var result = await _context.SaveChangesAsync(cancellationToken);
+            _context.Configuration.AutoDetectChangesEnabled = false;
 
-            return true;
+            if (result > 0)
+            {
+                AuditLogger.Log("DELETE", "ConsumptionObject", id, oldValues, null);
+            }
+
+            return result > 0;
         }
 
         public void Delete(int id)
@@ -135,30 +171,74 @@ namespace EnergyMeteringSystem.Data.Repositories
             DeleteAsync(id).Wait();
         }
 
+        
+
+        public void Update(ConsumptionObjectDto dto)
+        {
+            UpdateAsync(dto).Wait();
+        }
+
+        /// <summary>
+        /// Получить объекты с фильтрацией (оптимизированный метод)
+        /// </summary>
+        public async Task<List<ConsumptionObjectDto>> GetFilteredAsync(int? regionId = null, int? cityId = null, int? streetId = null, CancellationToken cancellationToken = default)
+        {
+            var query = _context.ConsumptionObject
+                .Include(o => o.Street)
+                .Include(o => o.Street.City)
+                .Include(o => o.Street.City.Region)
+                .Include(o => o.ObjectType)
+                .AsQueryable();
+
+            if (regionId.HasValue && regionId.Value > 0)
+            {
+                query = query.Where(o => o.Street.City.RegionId == regionId.Value);
+            }
+
+            if (cityId.HasValue && cityId.Value > 0)
+            {
+                query = query.Where(o => o.Street.CityId == cityId.Value);
+            }
+
+            if (streetId.HasValue && streetId.Value > 0)
+            {
+                query = query.Where(o => o.StreetId == streetId.Value);
+            }
+
+            return await query
+                .Select(o => new ConsumptionObjectDto
+                {
+                    Id = o.Id,
+                    StreetId = o.StreetId,
+                    Street = o.Street.Name,
+                    City = o.Street.City.Name,
+                    CityId = o.Street.City.Id,
+                    Region = o.Street.City.Region.Name,
+                    RegionId = o.Street.City.Region.Id,
+                    HouseNumber = o.HouseNumber,
+                    ApartmentNumber = o.ApartmentNumber,
+                    ObjectTypeId = o.ObjectTypeId,
+                    ObjectTypeName = o.ObjectType.Name,
+                    TotalArea = o.TotalArea,
+                    ResidentCount = o.ResidentCount
+                })
+                .OrderBy(o => o.City)
+                .ThenBy(o => o.Street)
+                .ThenBy(o => o.HouseNumber)
+                .ToListAsync(cancellationToken);
+        }
         public async Task<bool> UpdateAsync(ConsumptionObjectDto dto, CancellationToken cancellationToken = default)
         {
-            var entity = await _context.ConsumptionObject.FindAsync(cancellationToken, dto.Id);
-            if (entity == null) return false;
+            System.Diagnostics.Debug.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] UpdateAsync НАЧАЛО, Id={dto.Id}");
 
-            var oldValues = new
-            {
-                entity.HouseNumber,
-                entity.ApartmentNumber,
-                entity.TotalArea,
-                entity.ResidentCount,
-                entity.StreetId,
-                entity.ObjectTypeId
-            };
+            var entity = await _context.ConsumptionObject
+                .FirstOrDefaultAsync(o => o.Id == dto.Id, cancellationToken);
 
-            var newValues = new
+            if (entity == null)
             {
-                dto.HouseNumber,
-                dto.ApartmentNumber,
-                dto.TotalArea,
-                dto.ResidentCount,
-                dto.StreetId,
-                dto.ObjectTypeId
-            };
+                System.Diagnostics.Debug.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] Объект с Id={dto.Id} не найден");
+                return false;
+            }
 
             entity.StreetId = dto.StreetId;
             entity.HouseNumber = dto.HouseNumber?.Trim();
@@ -167,16 +247,34 @@ namespace EnergyMeteringSystem.Data.Repositories
             entity.TotalArea = dto.TotalArea;
             entity.ResidentCount = dto.ResidentCount;
 
-            await _context.SaveChangesAsync(cancellationToken);
+            _context.Configuration.AutoDetectChangesEnabled = true;
 
-            AuditLogger.Log("UPDATE", "ConsumptionObject", entity.Id, oldValues, newValues);
+            try
+            {
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+                using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, cts.Token);
 
-            return true;
+                var result = await _context.SaveChangesAsync(linkedCts.Token);
+                System.Diagnostics.Debug.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] UpdateAsync УСПЕШНО, result={result}");
+                return result > 0;
+            }
+            catch (OperationCanceledException)
+            {
+                System.Diagnostics.Debug.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] UpdateAsync ТАЙМАУТ");
+                ForceKillConnection();
+                throw new TimeoutException("Сохранение заняло слишком много времени");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] UpdateAsync ОШИБКА: {ex.Message}");
+                ForceKillConnection();
+                throw;
+            }
+            finally
+            {
+                _context.Configuration.AutoDetectChangesEnabled = false;
+            }
         }
 
-        public void Update(ConsumptionObjectDto dto)
-        {
-            UpdateAsync(dto).Wait();
-        }
     }
 }
