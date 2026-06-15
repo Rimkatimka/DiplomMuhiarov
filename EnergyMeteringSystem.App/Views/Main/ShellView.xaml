@@ -1,189 +1,156 @@
-﻿<Window x:Class="EnergyMeteringSystem.App.Views.Main.ShellView"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Учет электроэнергии" 
-        SizeToContent="Manual"
-        Width="1200"
-        Height="800"
-        MinWidth="900"
-        MinHeight="600"
-        WindowStartupLocation="CenterScreen"
-        xmlns:local="clr-namespace:EnergyMeteringSystem.App.ViewModels.Main">
+﻿<UserControl x:Class="EnergyMeteringSystem.App.Views.Admin.BackupView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:converters="clr-namespace:EnergyMeteringSystem.App.Converters">
 
-    <Window.Resources>
+    <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
-    </Window.Resources>
+        <converters:InverseBooleanConverter x:Key="InverseBooleanConverter"/>
+    </UserControl.Resources>
 
-    <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="Auto"/>
-            <ColumnDefinition Width="*"/>
-        </Grid.ColumnDefinitions>
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
 
-        <!-- Левая панель с меню - использует DynamicResource из App.xaml -->
-        <Border x:Name="MenuPanel" 
-                Grid.Column="0" 
-                Background="{DynamicResource MenuBackgroundBrush}" 
-                Width="250">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
+        <!-- Заголовок -->
+        <TextBlock Grid.Row="0" 
+                   Text="Резервное копирование базы данных" 
+                   FontSize="18" 
+                   FontWeight="Bold" 
+                   Margin="0,0,0,20"
+                   Foreground="{DynamicResource DataGridForegroundBrush}"/>
 
-                <!-- Имя пользователя -->
-                <Border Background="{DynamicResource MenuCardBackgroundBrush}" 
-                        Margin="10" CornerRadius="5" 
-                        Cursor="Hand"
-                        MouseLeftButtonUp="Border_MouseLeftButtonUp">
-                    <StackPanel Margin="10">
-                        <TextBlock Text="Пользователь:" 
-                                   Foreground="{DynamicResource MenuForegroundSecondaryBrush}" 
-                                   FontSize="11"/>
-                        <TextBlock Text="{Binding CurrentUser.DisplayName}" 
-                                   Foreground="{DynamicResource MenuForegroundBrush}" 
-                                   FontSize="14" FontWeight="Bold"
-                                   TextWrapping="Wrap"/>
-                        <TextBlock Text="{Binding CurrentUser.RoleText}" 
-                                   Foreground="{DynamicResource MenuAccentBrush}" 
-                                   FontSize="12"/>
-                        <TextBlock Text="✎ Редактировать профиль" 
-                                   Foreground="{DynamicResource MenuAccentBrush}" 
-                                   FontSize="10"
-                                   Margin="0,5,0,0"
-                                   TextDecorations="Underline"/>
-                    </StackPanel>
-                </Border>
-
-                <!-- Поиск -->
-                <Border Grid.Row="1" 
-                        Background="{DynamicResource MenuCardBackgroundBrush}" 
-                        Margin="10" CornerRadius="4">
-                    <TextBox x:Name="SearchMenuTextBox"
-                             Height="30"
-                             Padding="8"
-                             Background="{DynamicResource MenuInputBackgroundBrush}"
-                             Foreground="{DynamicResource MenuForegroundBrush}"
-                             BorderThickness="0"
-                             FontSize="12"
-                             TextChanged="SearchMenuTextBox_TextChanged"
-                             ToolTip="Поиск по меню"/>
-                </Border>
-
-                <!-- TreeView меню с прокруткой -->
-                <ScrollViewer Grid.Row="2" 
-                              VerticalScrollBarVisibility="Auto" 
-                              HorizontalScrollBarVisibility="Disabled">
-
-                    <TreeView x:Name="MainMenuTree" 
-                              ItemsSource="{Binding FilteredMenuItems}"
-                              SelectedItemChanged="TreeView_SelectedItemChanged"
-                              Background="Transparent"
-                              BorderThickness="0"
-                              Foreground="{DynamicResource MenuForegroundBrush}">
-
-                        <TreeView.ItemTemplate>
-                            <HierarchicalDataTemplate DataType="{x:Type local:MenuItemViewModel}" 
-                                                      ItemsSource="{Binding Children}">
-                                <TextBlock Text="{Binding Title}" Margin="10,5" FontSize="14"/>
-                            </HierarchicalDataTemplate>
-                        </TreeView.ItemTemplate>
-
-                        <TreeView.ItemContainerStyle>
-                            <Style TargetType="TreeViewItem">
-                                <Setter Property="IsExpanded" Value="True"/>
-                                <Setter Property="Background" Value="Transparent"/>
-                                <Setter Property="Foreground" Value="{DynamicResource MenuForegroundBrush}"/>
-                                <Setter Property="Cursor" Value="Hand"/>
-                                <Setter Property="Padding" Value="0"/>
-                                <Style.Triggers>
-                                    <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter Property="Background" Value="{DynamicResource MenuHoverBrush}"/>
-                                    </Trigger>
-                                    <Trigger Property="IsSelected" Value="True">
-                                        <Setter Property="Background" Value="{DynamicResource MenuSelectedBrush}"/>
-                                    </Trigger>
-                                </Style.Triggers>
-                            </Style>
-                        </TreeView.ItemContainerStyle>
-                    </TreeView>
-                </ScrollViewer>
-
-                <!-- Кнопка выхода -->
-                <Button Grid.Row="3" 
-                        x:Name="LogoutButton"
-                        Content="Выйти"
-                        Command="{Binding LogoutCommand}"
-                        Background="{DynamicResource LogoutButtonBrush}"
+        <!-- Создание бэкапа -->
+        <Border Grid.Row="1" 
+                Background="{DynamicResource DataGridAlternatingBrush}" 
+                Padding="10" 
+                CornerRadius="5" 
+                Margin="0,0,0,15"
+                BorderBrush="{DynamicResource DataGridBorderBrush}"
+                BorderThickness="1">
+            <StackPanel>
+                <TextBlock Text="📀 СОЗДАНИЕ РЕЗЕРВНОЙ КОПИИ" 
+                           FontWeight="Bold" 
+                           Margin="0,0,0,10"
+                           Foreground="{DynamicResource DataGridForegroundBrush}"/>
+                <StackPanel Orientation="Horizontal">
+                    <TextBox Text="{Binding BackupPath}" 
+                             Width="400" 
+                             Padding="8,6" 
+                             Margin="5"
+                             IsReadOnly="True"
+                             Background="{DynamicResource DataGridBackgroundBrush}"
+                             Foreground="{DynamicResource DataGridForegroundBrush}"
+                             BorderBrush="{DynamicResource DataGridBorderBrush}"/>
+                    <Button Content="Обзор" 
+                            Command="{Binding BrowseBackupCommand}"
+                            Padding="15,5" 
+                            Margin="5"
+                            IsEnabled="{Binding IsLoading, Converter={StaticResource InverseBooleanConverter}}"
+                            Background="{DynamicResource ButtonBackgroundBrush}"
+                            Foreground="{DynamicResource ButtonForegroundBrush}"/>
+                </StackPanel>
+                <Button Content="Создать резервную копию" 
+                        Command="{Binding CreateBackupCommand}"
+                        Padding="20,8" 
+                        Margin="5,10,5,5"
+                        Background="{StaticResource SuccessButtonBrush}" 
                         Foreground="White"
-                        BorderThickness="0"
-                        Padding="10"
-                        Margin="10"
-                        HorizontalAlignment="Stretch"/>
-            </Grid>
-        </Border>
-
-        <!-- Правая область (контент) -->
-        <Border x:Name="ContentPanel" 
-                Grid.Column="1" 
-                Background="#F5F5F5">
-            <Grid>
-                <!-- Кнопка открытия/закрытия меню -->
-                <Border x:Name="ToggleButtonBorder"
-                        Width="40" Height="40"
+                        Width="200" 
                         HorizontalAlignment="Left"
-                        VerticalAlignment="Top"
-                        Margin="10,10,0,0"
-                        Background="{DynamicResource ButtonBackgroundBrush}"
-                        CornerRadius="20"
-                        Cursor="Hand"
-                        Panel.ZIndex="100">
-
-                    <Border.Style>
-                        <Style TargetType="Border">
-                            <Style.Triggers>
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter Property="Background" Value="{DynamicResource ButtonHoverBrush}"/>
-                                </Trigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Border.Style>
-
-                    <Button x:Name="ToggleMenuButton"
-                            Background="Transparent"
-                            BorderThickness="0"
-                            Cursor="Hand"
-                            Click="ToggleMenu_Click"
-                            ToolTip="Свернуть меню"
-                            Padding="0"
-                            Margin="0">
-
-                        <TextBlock x:Name="ToggleButtonText" 
-                                   Text="◀" 
-                                   FontSize="16" 
-                                   FontWeight="Bold"
-                                   Foreground="White"
-                                   VerticalAlignment="Center"
-                                   HorizontalAlignment="Center"/>
-                    </Button>
-                </Border>
-
-                <ContentControl x:Name="MainContent" 
-                                Content="{Binding CurrentView}"
-                                Margin="50,10,10,10"/>
-            </Grid>
+                        IsEnabled="{Binding IsLoading, Converter={StaticResource InverseBooleanConverter}}"/>
+            </StackPanel>
         </Border>
 
-        <!-- Глобальный индикатор загрузки -->
-        <Border Grid.ColumnSpan="2" 
+        <!-- Восстановление из бэкапа -->
+        <Border Grid.Row="2" 
+                Background="{DynamicResource DataGridSelectedBrush}" 
+                Padding="10" 
+                CornerRadius="5" 
+                Margin="0,0,0,15"
+                BorderBrush="{StaticResource DangerButtonBrush}"
+                BorderThickness="1">
+            <StackPanel>
+                <TextBlock Text="🔄 ВОССТАНОВЛЕНИЕ ИЗ РЕЗЕРВНОЙ КОПИИ" 
+                           FontWeight="Bold" 
+                           Margin="0,0,0,10"
+                           Foreground="{DynamicResource DataGridForegroundBrush}"/>
+                <TextBlock Text="ВНИМАНИЕ: Восстановление заменит все текущие данные!" 
+                           Foreground="{StaticResource DangerButtonBrush}" 
+                           FontSize="11" 
+                           Margin="0,0,0,5"/>
+                <StackPanel Orientation="Horizontal">
+                    <TextBox Text="{Binding RestorePath}" 
+                             Width="400" 
+                             Padding="8,6" 
+                             Margin="5"
+                             IsReadOnly="True"
+                             Background="{DynamicResource DataGridBackgroundBrush}"
+                             Foreground="{DynamicResource DataGridForegroundBrush}"
+                             BorderBrush="{DynamicResource DataGridBorderBrush}"/>
+                    <Button Content="Выбрать файл" 
+                            Command="{Binding BrowseRestoreCommand}"
+                            Padding="15,5" 
+                            Margin="5"
+                            IsEnabled="{Binding IsLoading, Converter={StaticResource InverseBooleanConverter}}"
+                            Background="{DynamicResource ButtonBackgroundBrush}"
+                            Foreground="{DynamicResource ButtonForegroundBrush}"/>
+                </StackPanel>
+                <Button Content="Восстановить из копии" 
+                        Command="{Binding RestoreCommand}"
+                        Padding="20,8" 
+                        Margin="5,10,5,5"
+                        Background="{StaticResource DangerButtonBrush}" 
+                        Foreground="White"
+                        Width="200" 
+                        HorizontalAlignment="Left"
+                        IsEnabled="{Binding IsLoading, Converter={StaticResource InverseBooleanConverter}}"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Статус -->
+        <Border Grid.Row="3" 
+                Background="{DynamicResource DataGridSelectedBrush}" 
+                Padding="10" 
+                CornerRadius="5"
+                BorderBrush="{DynamicResource DataGridBorderBrush}"
+                BorderThickness="1">
+            <StackPanel>
+                <TextBlock Text="📊 СТАТУС" 
+                           FontWeight="Bold" 
+                           Margin="0,0,0,5"
+                           Foreground="{DynamicResource DataGridForegroundBrush}"/>
+                <TextBlock Text="{Binding StatusMessage}" 
+                           TextWrapping="Wrap"
+                           Foreground="{DynamicResource DataGridForegroundBrush}"/>
+                <ProgressBar IsIndeterminate="{Binding IsLoading}" 
+                             Height="5" 
+                             Margin="0,10,0,0"
+                             Foreground="{DynamicResource ProgressBarForegroundBrush}"
+                             Background="{DynamicResource ProgressBarBackgroundBrush}"
+                             Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Оверлей загрузки -->
+        <Border Grid.RowSpan="5" 
                 Background="#80000000" 
                 Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}">
             <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                <ProgressBar IsIndeterminate="True" Width="150" Height="20"/>
-                <TextBlock Text="Загрузка..." Margin="0,10,0,0" Foreground="White"/>
+                <ProgressBar IsIndeterminate="True" 
+                             Width="150" 
+                             Height="20"
+                             Foreground="{DynamicResource ProgressBarForegroundBrush}"
+                             Background="{DynamicResource ProgressBarBackgroundBrush}"/>
+                <TextBlock Text="{Binding StatusMessage}" 
+                           Margin="0,10,0,0" 
+                           Foreground="White"/>
             </StackPanel>
         </Border>
     </Grid>
-</Window>
+</UserControl>

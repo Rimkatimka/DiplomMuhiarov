@@ -1,90 +1,128 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Media;
-using EnergyMeteringSystem.App.Commands;
-using EnergyMeteringSystem.App.Helpers;
+using System.Runtime.CompilerServices;
 
 namespace EnergyMeteringSystem.App.ViewModels.Base
 {
-    public abstract class ValidatableViewModel : ViewModelBase
+    public abstract class ValidatableViewModel : INotifyPropertyChanged
     {
-        private Dictionary<string, bool> _fieldValidations = new();
-        private Button _saveButton;
-        private string _validationMessage;
+        // Правильный тип - Dictionary<string, List<string>>
+        protected Dictionary<string, List<string>> _fieldValidations = new();
 
-        public string ValidationMessage
+        // Добавляет ошибку для поля
+        protected void AddError(string propertyName, string error)
         {
-            get => _validationMessage;
-            set => SetProperty(ref _validationMessage, value);
+            if (!_fieldValidations.ContainsKey(propertyName))
+                _fieldValidations[propertyName] = new List<string>();
+
+            if (!_fieldValidations[propertyName].Contains(error))
+                _fieldValidations[propertyName].Add(error);
+
+            OnPropertyChanged(propertyName);
+            OnPropertyChanged(nameof(HasErrors));
         }
 
-        public bool CanSave => _fieldValidations.Values.All(v => v);
-
-        public RelayCommand ValidateFieldsCommand { get; set; }
-
-        protected ValidatableViewModel()
+        // Удаляет ошибку для поля
+        protected void RemoveError(string propertyName, string error)
         {
-            ValidateFieldsCommand = new RelayCommand(_ => ValidateAllFields());
-        }
-
-        public void RegisterField(string fieldName, FrameworkElement control, bool isValid)
-        {
-            _fieldValidations[fieldName] = isValid;
-        }
-
-        public void UpdateField(string fieldName, bool isValid)
-        {
-            if (_fieldValidations.ContainsKey(fieldName))
+            if (_fieldValidations.ContainsKey(propertyName))
             {
-                _fieldValidations[fieldName] = isValid;
-                OnPropertyChanged(nameof(CanSave));
+                _fieldValidations[propertyName].Remove(error);
 
-                var missingMessage = ValidationService.GetMissingFieldsMessage(_fieldValidations);
-                ValidationMessage = missingMessage;
+                if (_fieldValidations[propertyName].Count == 0)
+                    _fieldValidations.Remove(propertyName);
+            }
 
-                if (_saveButton != null)
-                {
-                    ValidationService.UpdateButtonState(_saveButton, CanSave, missingMessage);
-                }
+            OnPropertyChanged(propertyName);
+            OnPropertyChanged(nameof(HasErrors));
+        }
+
+        // Очищает все ошибки для поля
+        protected void ClearErrors(string propertyName)
+        {
+            if (_fieldValidations.ContainsKey(propertyName))
+            {
+                _fieldValidations.Remove(propertyName);
+                OnPropertyChanged(propertyName);
+                OnPropertyChanged(nameof(HasErrors));
             }
         }
 
-        public void BindSaveButton(Button button)
+        // Очищает все ошибки для всех полей
+        protected void ClearAllErrors()
         {
-            _saveButton = button;
-            ValidationService.UpdateButtonState(_saveButton, CanSave, ValidationMessage);
+            _fieldValidations.Clear();
+            OnPropertyChanged(nameof(HasErrors));
         }
 
-        public virtual void ValidateAllFields()
-        {
-            // Переопределить в наследнике
-            OnPropertyChanged(nameof(CanSave));
-        }
+        // Проверяет, есть ли ошибки
+        public bool HasErrors => _fieldValidations.Count > 0;
 
-        protected void HighlightFields(DependencyObject parent)
+        // Получает все ошибки для поля (через индексатор)
+        public string this[string propertyName]
         {
-            var validations = _fieldValidations.ToDictionary(
-                kvp => FindControlByName(parent, kvp.Key),
-                kvp => kvp.Value
-            );
-            ValidationService.HighlightRequiredFields(parent, validations);
-        }
-
-        private FrameworkElement FindControlByName(DependencyObject parent, string name)
-        {
-            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+            get
             {
-                var child = VisualTreeHelper.GetChild(parent, i);
-                if (child is FrameworkElement element && element.Name == name)
-                    return element;
-
-                var result = FindControlByName(child, name);
-                if (result != null)
-                    return result;
+                if (_fieldValidations.ContainsKey(propertyName))
+                    return string.Join(Environment.NewLine, _fieldValidations[propertyName]);
+                return null;
             }
-            return null;
+        }
+
+        // Получает список ошибок для поля
+        public List<string> GetErrors(string propertyName)
+        {
+            if (_fieldValidations.ContainsKey(propertyName))
+                return _fieldValidations[propertyName];
+            return new List<string>();
+        }
+
+        // Проверяет, есть ли ошибка у поля
+        public bool HasError(string propertyName)
+        {
+            return _fieldValidations.ContainsKey(propertyName) && _fieldValidations[propertyName].Count > 0;
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        // Вспомогательный метод для установки значения с валидацией
+        protected bool SetProperty<T>(ref T field, T value, [CallerMemberName] string propertyName = null)
+        {
+            if (EqualityComparer<T>.Default.Equals(field, value))
+                return false;
+
+            field = value;
+            OnPropertyChanged(propertyName);
+            return true;
+        }
+
+        // Вспомогательный метод с валидацией
+        protected bool SetPropertyWithValidation<T>(ref T field, T value, Func<T, bool> validate, string errorMessage, [CallerMemberName] string propertyName = null)
+        {
+            // Сначала удаляем старые ошибки для этого поля
+            ClearErrors(propertyName);
+
+            // Валидация
+            if (validate != null && !validate(value))
+            {
+                AddError(propertyName, errorMessage);
+                return false;
+            }
+
+            // Если валидация пройдена, обновляем значение
+            if (EqualityComparer<T>.Default.Equals(field, value))
+                return false;
+
+            field = value;
+            OnPropertyChanged(propertyName);
+            return true;
         }
     }
 }
