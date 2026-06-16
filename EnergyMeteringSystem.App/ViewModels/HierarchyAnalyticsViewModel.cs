@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using EnergyMeteringSystem.App.Commands;
@@ -14,7 +13,6 @@ namespace EnergyMeteringSystem.App.ViewModels.Analytics
     public class HierarchyAnalyticsViewModel : ViewModelBase
     {
         private readonly HierarchyAnalyticsRepository _repository;
-        private readonly RegionRepository _regionRepository;
 
         private int _selectedYear;
         private string _selectedMonthName;
@@ -25,15 +23,36 @@ namespace EnergyMeteringSystem.App.ViewModels.Analytics
         private bool _showRegionDetail;
         private bool _showCityDetail;
         private bool _showStreetDetail;
+        private bool _hasSelectedRegion;
+
+        // Поиск
+        private string _searchCities;
+        private string _searchStreets;
 
         public ObservableCollection<int> Years { get; set; }
         public ObservableCollection<string> Months { get; set; }
         public ObservableCollection<RegionAnalyticsDto> Regions { get; set; }
         public ObservableCollection<ObjectAnalyticsDto> TopObjects { get; set; }
-        public ObservableCollection<CityAnalyticsDto> SelectedCities { get; set; }
-        public ObservableCollection<StreetAnalyticsDto> SelectedStreets { get; set; }
-        public ObservableCollection<ObjectAnalyticsDto> CityTopObjects { get; set; }
-        public ObservableCollection<ObjectAnalyticsDto> StreetTopObjects { get; set; }
+        public ObservableCollection<CityAnalyticsDto> Cities { get; set; }
+        public ObservableCollection<StreetAnalyticsDto> Streets { get; set; }
+        public ObservableCollection<ObjectAnalyticsDto> StreetObjects { get; set; }
+
+        // Отфильтрованные коллекции для поиска
+        public ObservableCollection<CityAnalyticsDto> FilteredCities { get; set; }
+        public ObservableCollection<StreetAnalyticsDto> FilteredStreets { get; set; }
+
+        // Свойства для выбранных данных
+        public RegionAnalyticsDto SelectedRegionData
+        {
+            get => _selectedRegionData;
+            set => SetProperty(ref _selectedRegionData, value);
+        }
+
+        public bool HasSelectedRegion
+        {
+            get => _hasSelectedRegion;
+            set => SetProperty(ref _hasSelectedRegion, value);
+        }
 
         public int SelectedYear
         {
@@ -41,7 +60,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Analytics
             set
             {
                 if (SetProperty(ref _selectedYear, value))
-                    _ = LoadDataAsync();
+                    LoadData();
             }
         }
 
@@ -54,7 +73,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Analytics
                 {
                     int monthIndex = Months.IndexOf(value) + 1;
                     if (monthIndex > 0)
-                        _ = LoadDataAsync();
+                        LoadData();
                 }
             }
         }
@@ -65,14 +84,10 @@ namespace EnergyMeteringSystem.App.ViewModels.Analytics
             set
             {
                 if (SetProperty(ref _selectedRegion, value) && value != null)
-                    _ = LoadRegionDetailAsync();
+                {
+                    LoadRegionDetail();
+                }
             }
-        }
-
-        public RegionAnalyticsDto SelectedRegionData
-        {
-            get => _selectedRegionData;
-            set => SetProperty(ref _selectedRegionData, value);
         }
 
         public CityAnalyticsDto SelectedCity
@@ -81,7 +96,9 @@ namespace EnergyMeteringSystem.App.ViewModels.Analytics
             set
             {
                 if (SetProperty(ref _selectedCity, value) && value != null)
+                {
                     LoadCityDetail();
+                }
             }
         }
 
@@ -91,7 +108,9 @@ namespace EnergyMeteringSystem.App.ViewModels.Analytics
             set
             {
                 if (SetProperty(ref _selectedStreet, value) && value != null)
+                {
                     LoadStreetDetail();
+                }
             }
         }
 
@@ -113,24 +132,47 @@ namespace EnergyMeteringSystem.App.ViewModels.Analytics
             set => SetProperty(ref _showStreetDetail, value);
         }
 
-        public AsyncRelayCommand RefreshCommand { get; }
-        public RelayCommand BackToRegionsCommand { get; }
-        public RelayCommand BackToCityCommand { get; }
-        public RelayCommand BackToStreetCommand { get; }
+        // Свойства поиска
+        public string SearchCities
+        {
+            get => _searchCities;
+            set
+            {
+                if (SetProperty(ref _searchCities, value))
+                    FilterCities();
+            }
+        }
+
+        public string SearchStreets
+        {
+            get => _searchStreets;
+            set
+            {
+                if (SetProperty(ref _searchStreets, value))
+                    FilterStreets();
+            }
+        }
+
+        // Команды
+        public RelayCommand<RegionAnalyticsDto> SelectRegionCommand { get; }
+        public ICommand RefreshCommand { get; }
+        public ICommand BackToRegionsCommand { get; }
+        public ICommand BackToCityCommand { get; }
+        public ICommand BackToStreetCommand { get; }
 
         public HierarchyAnalyticsViewModel()
         {
             _repository = new HierarchyAnalyticsRepository();
-            _regionRepository = new RegionRepository();
 
             Years = new ObservableCollection<int>();
             Months = new ObservableCollection<string>();
             Regions = new ObservableCollection<RegionAnalyticsDto>();
             TopObjects = new ObservableCollection<ObjectAnalyticsDto>();
-            SelectedCities = new ObservableCollection<CityAnalyticsDto>();
-            SelectedStreets = new ObservableCollection<StreetAnalyticsDto>();
-            CityTopObjects = new ObservableCollection<ObjectAnalyticsDto>();
-            StreetTopObjects = new ObservableCollection<ObjectAnalyticsDto>();
+            Cities = new ObservableCollection<CityAnalyticsDto>();
+            Streets = new ObservableCollection<StreetAnalyticsDto>();
+            StreetObjects = new ObservableCollection<ObjectAnalyticsDto>();
+            FilteredCities = new ObservableCollection<CityAnalyticsDto>();
+            FilteredStreets = new ObservableCollection<StreetAnalyticsDto>();
 
             for (int i = 2020; i <= DateTime.Today.Year; i++)
                 Years.Add(i);
@@ -143,99 +185,119 @@ namespace EnergyMeteringSystem.App.ViewModels.Analytics
             _selectedYear = DateTime.Today.Year;
             _selectedMonthName = Months[DateTime.Today.Month - 1];
 
-            RefreshCommand = new AsyncRelayCommand(async () => await LoadDataAsync());
+            // Инициализация команд
+            SelectRegionCommand = new RelayCommand<RegionAnalyticsDto>(SelectRegion);
+            RefreshCommand = new RelayCommand(_ => LoadData());
             BackToRegionsCommand = new RelayCommand(_ => BackToRegions());
             BackToCityCommand = new RelayCommand(_ => BackToCity());
             BackToStreetCommand = new RelayCommand(_ => BackToStreet());
 
-            _ = LoadDataAsync();
+            LoadData();
         }
 
-        private async Task LoadDataAsync()
+        private void LoadData()
         {
-            await ExecuteAsync(async () =>
+            try
             {
                 int month = Months.IndexOf(SelectedMonthName) + 1;
-                var data = await _repository.GetAnalyticsByRegionAsync(_selectedYear, month);
+                var data = _repository.GetAnalyticsByRegion(_selectedYear, month);
 
                 Regions.Clear();
                 foreach (var item in data)
                     Regions.Add(item);
 
+                // Сброс состояния
                 ShowRegionDetail = false;
                 ShowCityDetail = false;
                 ShowStreetDetail = false;
                 SelectedRegionData = null;
+                HasSelectedRegion = false;
                 SelectedRegion = null;
                 SelectedCity = null;
                 SelectedStreet = null;
-                SelectedCities.Clear();
-                SelectedStreets.Clear();
+                Cities.Clear();
+                Streets.Clear();
                 TopObjects.Clear();
-                CityTopObjects.Clear();
-                StreetTopObjects.Clear();
-            }, "Ошибка загрузки данных");
+                StreetObjects.Clear();
+                FilteredCities.Clear();
+                FilteredStreets.Clear();
+
+                // Сбрасываем выделение
+                foreach (var region in Regions)
+                {
+                    region.IsSelected = false;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка загрузки данных: {ex.Message}", "Ошибка",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
-        private async Task LoadRegionDetailAsync()
+        private void SelectRegion(RegionAnalyticsDto region)
+        {
+            if (region == null) return;
+
+            // Снимаем выделение со всех регионов
+            foreach (var r in Regions)
+            {
+                r.IsSelected = false;
+            }
+
+            // Выделяем выбранный
+            region.IsSelected = true;
+
+            // Устанавливаем данные
+            SelectedRegionData = region;
+            HasSelectedRegion = true;
+
+            // Загружаем детали
+            SelectedRegion = region;
+        }
+
+        private void LoadRegionDetail()
         {
             if (SelectedRegion == null) return;
 
-            await ExecuteAsync(async () =>
+            try
             {
                 int month = Months.IndexOf(SelectedMonthName) + 1;
-                var data = await _repository.GetAnalyticsByRegionIdAsync(SelectedRegion.RegionId, _selectedYear, month);
+                var data = _repository.GetAnalyticsByRegionId(SelectedRegion.RegionId, _selectedYear, month);
+
+                if (data == null) return;
 
                 SelectedRegionData = data;
                 ShowRegionDetail = true;
+                ShowCityDetail = false;
+                ShowStreetDetail = false;
 
-                // ТОП-10 объектов региона
-                var topObjects = await _repository.GetTopObjectsByRegionAsync(SelectedRegion.RegionId, _selectedYear, month, 10);
+                Cities.Clear();
+                FilteredCities.Clear();
+
+                if (data.Cities != null)
+                {
+                    foreach (var city in data.Cities)
+                        Cities.Add(city);
+                }
+
+                FilterCities();
+
+                var topObjects = _repository.GetTopObjectsByRegion(SelectedRegion.RegionId, _selectedYear, month, 10);
                 TopObjects.Clear();
                 foreach (var obj in topObjects)
                 {
-                    string cityName = GetCityNameByStreet(obj.Address);
-                    obj.Address = $"{cityName}, {obj.Address}";
                     obj.Percentage = SelectedRegionData.TotalConsumption > 0
                         ? (obj.Consumption / SelectedRegionData.TotalConsumption) * 100
                         : 0;
                     TopObjects.Add(obj);
                 }
-
-                // Обогащаем адреса в иерархии
-                if (SelectedRegionData?.Cities != null)
-                {
-                    foreach (var city in SelectedRegionData.Cities)
-                    {
-                        foreach (var street in city.Streets)
-                        {
-                            foreach (var obj in street.Objects)
-                            {
-                                obj.Address = $"{city.CityName}, {street.StreetName}";
-                                obj.Percentage = SelectedRegionData.TotalConsumption > 0
-                                    ? (obj.Consumption / SelectedRegionData.TotalConsumption) * 100
-                                    : 0;
-                            }
-                        }
-                    }
-                }
-            }, "Ошибка загрузки данных региона");
-        }
-
-        private string GetCityNameByStreet(string streetName)
-        {
-            if (SelectedRegionData?.Cities != null)
-            {
-                foreach (var city in SelectedRegionData.Cities)
-                {
-                    foreach (var street in city.Streets)
-                    {
-                        if (street.StreetName == streetName)
-                            return city.CityName;
-                    }
-                }
             }
-            return "";
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка загрузки данных региона: {ex.Message}", "Ошибка",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void LoadCityDetail()
@@ -244,38 +306,65 @@ namespace EnergyMeteringSystem.App.ViewModels.Analytics
 
             try
             {
+                System.Diagnostics.Debug.WriteLine($"=== LoadCityDetail: {SelectedCity.CityName} ===");
+                System.Diagnostics.Debug.WriteLine($"Streets count in city: {SelectedCity.Streets?.Count ?? 0}");
+
                 ShowCityDetail = true;
                 ShowStreetDetail = false;
                 SelectedStreet = null;
 
-                SelectedStreets.Clear();
+                Streets.Clear();
+                FilteredStreets.Clear();
+
+                if (SelectedCity.Streets != null && SelectedCity.Streets.Any())
+                {
+                    foreach (var street in SelectedCity.Streets)
+                    {
+                        Streets.Add(street);
+                        System.Diagnostics.Debug.WriteLine($"  Street added: {street.StreetName}, Objects: {street.Objects?.Count ?? 0}");
+                    }
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine("  НЕТ УЛИЦ В ГОРОДЕ!");
+                }
+
+                FilterStreets();
+
+                System.Diagnostics.Debug.WriteLine($"Streets after filter: {FilteredStreets.Count}");
+                System.Diagnostics.Debug.WriteLine($"Streets in collection: {Streets.Count}");
+
+                StreetObjects.Clear();
+                var allObjects = new ObservableCollection<ObjectAnalyticsDto>();
+
                 if (SelectedCity.Streets != null)
                 {
                     foreach (var street in SelectedCity.Streets)
-                        SelectedStreets.Add(street);
-                }
-
-                CityTopObjects.Clear();
-
-                var allObjects = new ObservableCollection<ObjectAnalyticsDto>();
-                foreach (var street in SelectedCity.Streets)
-                {
-                    foreach (var obj in street.Objects)
                     {
-                        obj.Percentage = SelectedRegionData?.TotalConsumption > 0
-                            ? (obj.Consumption / SelectedRegionData.TotalConsumption) * 100
-                            : 0;
-                        allObjects.Add(obj);
+                        if (street.Objects != null)
+                        {
+                            foreach (var obj in street.Objects)
+                            {
+                                obj.Percentage = SelectedRegionData?.TotalConsumption > 0
+                                    ? (obj.Consumption / SelectedRegionData.TotalConsumption) * 100
+                                    : 0;
+                                allObjects.Add(obj);
+                            }
+                        }
                     }
                 }
 
                 foreach (var obj in allObjects.OrderByDescending(o => o.Consumption).Take(10))
                 {
-                    CityTopObjects.Add(obj);
+                    StreetObjects.Add(obj);
                 }
+
+                System.Diagnostics.Debug.WriteLine($"StreetObjects count: {StreetObjects.Count}");
             }
             catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine($"LoadCityDetail ERROR: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine(ex.StackTrace);
                 MessageBox.Show($"Ошибка загрузки данных города: {ex.Message}", "Ошибка",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
@@ -288,14 +377,17 @@ namespace EnergyMeteringSystem.App.ViewModels.Analytics
             try
             {
                 ShowStreetDetail = true;
-                StreetTopObjects.Clear();
+                StreetObjects.Clear();
 
-                foreach (var obj in SelectedStreet.Objects.OrderByDescending(o => o.Consumption).Take(10))
+                if (SelectedStreet.Objects != null)
                 {
-                    obj.Percentage = SelectedRegionData?.TotalConsumption > 0
-                        ? (obj.Consumption / SelectedRegionData.TotalConsumption) * 100
-                        : 0;
-                    StreetTopObjects.Add(obj);
+                    foreach (var obj in SelectedStreet.Objects.OrderByDescending(o => o.Consumption).Take(10))
+                    {
+                        obj.Percentage = SelectedRegionData?.TotalConsumption > 0
+                            ? (obj.Consumption / SelectedRegionData.TotalConsumption) * 100
+                            : 0;
+                        StreetObjects.Add(obj);
+                    }
                 }
             }
             catch (Exception ex)
@@ -305,20 +397,67 @@ namespace EnergyMeteringSystem.App.ViewModels.Analytics
             }
         }
 
+        private void FilterCities()
+        {
+            FilteredCities.Clear();
+
+            if (string.IsNullOrWhiteSpace(SearchCities))
+            {
+                foreach (var city in Cities)
+                    FilteredCities.Add(city);
+                return;
+            }
+
+            var lower = SearchCities.ToLower();
+            foreach (var city in Cities.Where(c => c.CityName.ToLower().Contains(lower)))
+                FilteredCities.Add(city);
+        }
+
+        private void FilterStreets()
+        {
+            FilteredStreets.Clear();
+
+            System.Diagnostics.Debug.WriteLine($"FilterStreets: Streets.Count={Streets.Count}, SearchStreets='{SearchStreets}'");
+
+            if (string.IsNullOrWhiteSpace(SearchStreets))
+            {
+                foreach (var street in Streets)
+                    FilteredStreets.Add(street);
+                System.Diagnostics.Debug.WriteLine($"FilterStreets: added {FilteredStreets.Count} streets");
+                return;
+            }
+
+            var lower = SearchStreets.ToLower();
+            foreach (var street in Streets.Where(s => s.StreetName.ToLower().Contains(lower)))
+                FilteredStreets.Add(street);
+
+            System.Diagnostics.Debug.WriteLine($"FilterStreets: filtered to {FilteredStreets.Count} streets");
+        }
+
         private void BackToRegions()
         {
             ShowRegionDetail = false;
             ShowCityDetail = false;
             ShowStreetDetail = false;
             SelectedRegionData = null;
+            HasSelectedRegion = false;
             SelectedRegion = null;
             SelectedCity = null;
             SelectedStreet = null;
-            SelectedCities.Clear();
-            SelectedStreets.Clear();
+            Cities.Clear();
+            FilteredCities.Clear();
+            Streets.Clear();
+            FilteredStreets.Clear();
             TopObjects.Clear();
-            CityTopObjects.Clear();
-            StreetTopObjects.Clear();
+            StreetObjects.Clear();
+
+            foreach (var region in Regions)
+            {
+                region.IsSelected = false;
+            }
+
+            SearchCities = string.Empty;
+            SearchStreets = string.Empty;
         }
 
         private void BackToCity()
@@ -326,14 +465,16 @@ namespace EnergyMeteringSystem.App.ViewModels.Analytics
             ShowCityDetail = false;
             ShowStreetDetail = false;
             SelectedStreet = null;
-            CityTopObjects.Clear();
-            StreetTopObjects.Clear();
+            Streets.Clear();
+            FilteredStreets.Clear();
+            StreetObjects.Clear();
+            SearchStreets = string.Empty;
         }
 
         private void BackToStreet()
         {
             ShowStreetDetail = false;
-            StreetTopObjects.Clear();
+            StreetObjects.Clear();
         }
     }
 }

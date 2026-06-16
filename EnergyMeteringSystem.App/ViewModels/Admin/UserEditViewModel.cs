@@ -27,7 +27,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Admin
         private bool _showEmailError;
         private string _passwordError;
         private bool _hasPasswordError;
-
+        public bool CanEditRole => IsAdmin && !IsSelfEdit;
         public ObservableCollection<UserRoleDto> Roles => _roles;
 
         public string Username

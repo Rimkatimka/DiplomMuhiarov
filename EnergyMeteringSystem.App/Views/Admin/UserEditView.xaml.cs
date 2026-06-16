@@ -15,6 +15,19 @@ namespace EnergyMeteringSystem.App.Views.Admin
             InitializeComponent();
             _viewModel = viewModel;
             DataContext = viewModel;
+
+            viewModel.OnSaved += (s, e) =>
+            {
+                // Закрываем окно
+                var window = Window.GetWindow(this);
+                window?.Close();
+            };
+
+            viewModel.OnCancelled += (s, e) =>
+            {
+                var window = Window.GetWindow(this);
+                window?.Close();
+            };
         }
 
         private void TextBox_PreviewTextInput(object sender, TextCompositionEventArgs e)

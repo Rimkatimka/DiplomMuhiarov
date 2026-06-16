@@ -64,39 +64,31 @@ namespace EnergyMeteringSystem.Data.Repositories
             {
                 var endDate = to.AddDays(1);
 
+                System.Diagnostics.Debug.WriteLine($"AuditRepository.GetByDateAsync: from={from:dd.MM.yyyy}, to={to:dd.MM.yyyy}");
+
                 var logs = await Query<AuditLog>()
                     .Where(a => a.ActionTime >= from && a.ActionTime < endDate)
                     .OrderByDescending(a => a.ActionTime)
-                    .Take(DEFAULT_TAKE_COUNT)
-                    .Select(a => new
+                    .Take(1000)
+                    .Select(a => new AuditLogDto
                     {
-                        a.Id,
-                        a.UserId,
-                        a.ActionTime,
-                        a.ActionType,
-                        a.TableName,
-                        a.RecordId,
-                        a.OldValuesJson,
-                        a.NewValuesJson,
-                        UserFullName = a.User.FullName
+                        Id = a.Id,
+                        UserId = a.UserId,
+                        UserName = a.User.FullName ?? "Система",
+                        ActionTime = a.ActionTime,
+                        ActionType = a.ActionType,
+                        TableName = a.TableName,
+                        RecordId = a.RecordId,
+                        Details = GetDetailsFromJson(a.OldValuesJson, a.NewValuesJson, a.ActionType)
                     })
                     .ToListAsync();
 
-                return logs.Select(a => new AuditLogDto
-                {
-                    Id = a.Id,
-                    UserId = a.UserId,
-                    UserName = a.UserFullName ?? "Система",
-                    ActionTime = a.ActionTime,
-                    ActionType = a.ActionType,
-                    TableName = a.TableName,
-                    RecordId = a.RecordId,
-                    Details = GetDetailsFromJson(a.OldValuesJson, a.NewValuesJson, a.ActionType)
-                }).ToList();
+                System.Diagnostics.Debug.WriteLine($"AuditRepository.GetByDateAsync: загружено {logs.Count} записей");
+                return logs;
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"AuditRepository.GetByDate error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"AuditRepository.GetByDateAsync error: {ex.Message}");
                 return new List<AuditLogDto>();
             }
         }

@@ -1,5 +1,6 @@
 ﻿using EnergyMeteringSystem.App.Commands;
 using EnergyMeteringSystem.App.ViewModels.Admin;
+using EnergyMeteringSystem.App.ViewModels.Analytics;
 using EnergyMeteringSystem.App.ViewModels.Base;
 using EnergyMeteringSystem.App.ViewModels.Directories;
 using EnergyMeteringSystem.Core.Models.DTO;
@@ -358,7 +359,11 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
 
         private void OpenHierarchyAnalytics()
         {
-            CurrentView = new Views.Analytics.HierarchyAnalyticsView();
+            // ✅ ПРАВИЛЬНО - создаем ViewModel и передаем ее во View
+            var viewModel = new HierarchyAnalyticsViewModel();
+            var view = new Views.Analytics.HierarchyAnalyticsView();
+            view.DataContext = viewModel;  // ← ЭТО ВАЖНО!
+            CurrentView = view;
         }
 
         private void OpenReadingInput()

@@ -1,23 +1,36 @@
-﻿using System.Text.RegularExpressions;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Input;
-using EnergyMeteringSystem.App.Helpers;
-using EnergyMeteringSystem.App.ViewModels.Directories;
+﻿using EnergyMeteringSystem.App.Helpers;
 using EnergyMeteringSystem.Services;
+using System.Text.RegularExpressions;
+using System.Windows;
+using System.Windows.Input;
 
 namespace EnergyMeteringSystem.App.Views.Directories
 {
     public partial class StreetEditView : Window
     {
+        private readonly ViewModels.Directories.StreetEditViewModel _viewModel;
+
         public StreetEditView()
         {
             InitializeComponent();
+            _viewModel = DataContext as ViewModels.Directories.StreetEditViewModel;
+
+            if (_viewModel != null)
+            {
+                _viewModel.OnStreetSaved += (s, e) => Close();
+
+                this.Closing += (s, e) =>
+                {
+                    if (DialogService.ConfirmCancel())
+                    {
+                        e.Cancel = true;
+                    }
+                };
+            }
         }
 
         private void TextBox_PreviewTextInput_StreetName(object sender, TextCompositionEventArgs e)
         {
-            // Разрешаем русские буквы, латиницу, пробелы, точки и дефисы
             string pattern = @"^[a-zA-Zа-яА-ЯёЁ\s.-]+$";
             if (!Regex.IsMatch(e.Text, pattern))
             {

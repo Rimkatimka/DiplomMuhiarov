@@ -11,17 +11,13 @@ using System.Windows;
 
 namespace EnergyMeteringSystem.App.ViewModels.Objects
 {
-    public class ConsumptionObjectEditViewModel : ViewModelBase
+    public class ConsumptionObjectEditViewModel : EditViewModelBase<ConsumptionObjectDto, ConsumptionObjectRepository>
     {
-        private readonly ConsumptionObjectRepository _objectRepository;
         private readonly StreetRepository _streetRepository;
         private readonly ObjectTypeRepository _typeRepository;
         private readonly CityRepository _cityRepository;
         private readonly RegionRepository _regionRepository;
 
-        public event EventHandler OnObjectSaved;
-
-        private ConsumptionObjectDto _object;
         private StreetDto _selectedStreet;
         private ObjectTypeDto _selectedObjectType;
         private string _houseNumber;
@@ -32,8 +28,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
         private CityDto _selectedCity;
         private RegionDto _selectedRegion;
         private bool _isLoadingData = true;
-        private bool _disposed = false;
-        // Храним задачи для синхронизации
+
         private Task _regionsLoadTask;
         private Task _objectTypesLoadTask;
 
@@ -133,17 +128,55 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
         public bool HasResidentCountError => !string.IsNullOrEmpty(ResidentCountError);
         public bool IsPrivateHouse => SelectedObjectType?.Name == "Частный дом";
         public bool IsApartmentNumberEnabled => !IsPrivateHouse;
-        public bool IsEditMode { get; private set; }
 
-        public RelayCommand SaveCommand { get; }
-        public RelayCommand CancelCommand { get; }
-        public RelayCommand AddRegionCommand { get; }
-        public RelayCommand AddCityCommand { get; }
-        public RelayCommand AddStreetCommand { get; }
+        private RelayCommand _addRegionCommand;
+        private RelayCommand _addCityCommand;
+        private RelayCommand _addStreetCommand;
 
-        public ConsumptionObjectEditViewModel(ConsumptionObjectDto existingObject = null)
+        public RelayCommand AddRegionCommand => _addRegionCommand ?? (_addRegionCommand = new RelayCommand(_ => AddRegion()));
+        public RelayCommand AddCityCommand => _addCityCommand ?? (_addCityCommand = new RelayCommand(_ => AddCity()));
+        public RelayCommand AddStreetCommand => _addStreetCommand ?? (_addStreetCommand = new RelayCommand(_ => AddStreet()));
+
+        // Конструктор для добавления
+        public ConsumptionObjectEditViewModel()
+            : base(new ConsumptionObjectRepository(), null)
         {
-            _objectRepository = new ConsumptionObjectRepository();
+            InitializeRepositories();
+            InitializeCommands();  // ← ДОЛЖЕН БЫТЬ ВЫЗВАН
+            Title = "Добавление объекта";
+            IsEditMode = false;
+
+            HouseNumber = string.Empty;
+            ApartmentNumber = string.Empty;
+            TotalArea = 0;
+            ResidentCount = null;
+
+            LoadDataAsync();
+        }
+
+        // Конструктор для редактирования
+        public ConsumptionObjectEditViewModel(ConsumptionObjectDto existingObject)
+            : base(new ConsumptionObjectRepository(), existingObject)
+        {
+            InitializeRepositories();
+            InitializeCommands();  // ← ДОЛЖЕН БЫТЬ ВЫЗВАН
+            Title = "Редактирование объекта";
+            IsEditMode = true;
+
+            _originalItem = existingObject;
+            HouseNumber = existingObject.HouseNumber;
+            ApartmentNumber = existingObject.ApartmentNumber;
+            TotalArea = existingObject.TotalArea ?? 0;
+            ResidentCount = existingObject.ResidentCount;
+
+            _regionsLoadTask = LoadRegionsAsync();
+            _objectTypesLoadTask = LoadObjectTypesAsync();
+
+            Task.Run(async () => await LoadCityAndStreetAsync(existingObject));
+        }
+
+        private void InitializeRepositories()
+        {
             _streetRepository = new StreetRepository();
             _typeRepository = new ObjectTypeRepository();
             _cityRepository = new CityRepository();
@@ -153,42 +186,14 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
             Cities = new ObservableCollection<CityDto>();
             StreetsList = new ObservableCollection<StreetDto>();
             ObjectTypes = new ObservableCollection<ObjectTypeDto>();
+        }
 
-            SaveCommand = new RelayCommand(_ => SaveAsync(), _ => CanSave() && !IsLoadingData);
-            CancelCommand = new RelayCommand(_ => Cancel());
+        private void InitializeCommands()
+        {
+            // ✅ Инициализация команд - ДОБАВЛЯЕМ
             AddRegionCommand = new RelayCommand(_ => AddRegion());
             AddCityCommand = new RelayCommand(_ => AddCity());
             AddStreetCommand = new RelayCommand(_ => AddStreet());
-
-            IsLoadingData = true;
-
-            // ✅ СОХРАНЯЕМ ЗАДАЧИ ДЛЯ СИНХРОНИЗАЦИИ
-            _regionsLoadTask = LoadRegionsAsync();
-            _objectTypesLoadTask = LoadObjectTypesAsync();
-
-            if (existingObject != null)
-            {
-                IsEditMode = true;
-                _object = existingObject;
-
-                // Заполняем простые поля сразу
-                HouseNumber = existingObject.HouseNumber;
-                ApartmentNumber = existingObject.ApartmentNumber;
-                TotalArea = existingObject.TotalArea ?? 0;
-                ResidentCount = existingObject.ResidentCount;
-
-                // ✅ ЗАПУСКАЕМ ЗАГРУЗКУ ГЕО-ДАННЫХ С ОЖИДАНИЕМ
-                Task.Run(async () => await LoadCityAndStreetAsync(existingObject));
-            }
-            else
-            {
-                IsEditMode = false;
-                HouseNumber = string.Empty;
-                ApartmentNumber = string.Empty;
-                TotalArea = 0;
-                ResidentCount = null;
-                IsLoadingData = false;
-            }
         }
 
         private async Task LoadRegionsAsync()
@@ -219,14 +224,6 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
                 }
             });
         }
-        public void Dispose()
-        {
-            if (!_disposed)
-            {
-                _objectRepository?.Dispose();
-                _disposed = true;
-            }
-        }
 
         private async Task LoadCitiesByRegionAsync(int regionId)
         {
@@ -250,80 +247,50 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
             });
         }
 
-        // ✅ ИСПРАВЛЕННЫЙ МЕТОД — СИНХРОНИЗАЦИЯ ЧЕРЕЗ ДОЖИДАНИЕ ЗАДАЧ
         private async Task LoadCityAndStreetAsync(ConsumptionObjectDto obj)
         {
             try
             {
-                System.Diagnostics.Debug.WriteLine("=== LoadCityAndStreetAsync: НАЧАЛО ===");
-
-                // ✅ ЖДЁМ ЗАГРУЗКИ РЕГИОНОВ
                 await _regionsLoadTask;
-                System.Diagnostics.Debug.WriteLine($"Регионы загружены: {Regions.Count}");
-
-                // ✅ ЖДЁМ ЗАГРУЗКИ ТИПОВ
                 await _objectTypesLoadTask;
-                System.Diagnostics.Debug.WriteLine($"Типы загружены: {ObjectTypes.Count}");
 
-                // Получаем улицу
                 var street = await _streetRepository.GetByIdAsync(obj.StreetId);
-                if (street == null)
-                {
-                    System.Diagnostics.Debug.WriteLine($"❌ Улица с ID={obj.StreetId} не найдена");
-                    return;
-                }
-                System.Diagnostics.Debug.WriteLine($"✅ Улица: {street.Name}, CityId={street.CityId}");
+                if (street == null) return;
 
-                // Получаем город
                 var city = await _cityRepository.GetByIdAsync(street.CityId);
-                if (city == null)
-                {
-                    System.Diagnostics.Debug.WriteLine($"❌ Город с ID={street.CityId} не найден");
-                    return;
-                }
-                System.Diagnostics.Debug.WriteLine($"✅ Город: {city.Name}, RegionId={city.RegionId}");
+                if (city == null) return;
 
-                // Всё дальнейшее — в UI-потоке
                 await Application.Current.Dispatcher.InvokeAsync(async () =>
                 {
-                    // Выбираем регион
                     SelectedRegion = Regions.FirstOrDefault(r => r.Id == city.RegionId);
-                    System.Diagnostics.Debug.WriteLine($"SelectedRegion: {SelectedRegion?.Name}");
-
                     if (SelectedRegion != null)
                     {
-                        // ✅ ЖДЁМ ЗАГРУЗКИ ГОРОДОВ
                         await LoadCitiesByRegionAsync(SelectedRegion.Id);
-                        System.Diagnostics.Debug.WriteLine($"Городов загружено: {Cities.Count}");
-
                         SelectedCity = Cities.FirstOrDefault(c => c.Id == city.Id);
-                        System.Diagnostics.Debug.WriteLine($"SelectedCity: {SelectedCity?.Name}");
-
                         if (SelectedCity != null)
                         {
-                            // ✅ ЖДЁМ ЗАГРУЗКИ УЛИЦ
                             await LoadStreetsByCityAsync(SelectedCity.Id);
-                            System.Diagnostics.Debug.WriteLine($"Улиц загружено: {StreetsList.Count}");
-
                             SelectedStreet = StreetsList.FirstOrDefault(s => s.Id == obj.StreetId);
-                            System.Diagnostics.Debug.WriteLine($"SelectedStreet: {SelectedStreet?.Name}");
                         }
                     }
-
-                    // Выбираем тип объекта
                     SelectedObjectType = ObjectTypes.FirstOrDefault(t => t.Id == obj.ObjectTypeId);
-                    System.Diagnostics.Debug.WriteLine($"SelectedObjectType: {SelectedObjectType?.Name}");
                 });
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"❌ LoadCityAndStreetAsync ERROR: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"LoadCityAndStreetAsync ERROR: {ex.Message}");
             }
             finally
             {
                 IsLoadingData = false;
-                System.Diagnostics.Debug.WriteLine("=== LoadCityAndStreetAsync: ЗАВЕРШЕНО ===");
             }
+        }
+
+        private async void LoadDataAsync()
+        {
+            await LoadRegionsAsync();
+            await LoadObjectTypesAsync();
+            IsLoadingData = false;
         }
 
         private void AddRegion()
@@ -425,7 +392,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
             return Math.Max(1, (int)Math.Floor(totalArea / normPerPerson));
         }
 
-        private bool CanSave()
+        protected override bool CanSave()
         {
             return SelectedRegion != null &&
                    SelectedCity != null &&
@@ -435,91 +402,32 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
                    string.IsNullOrEmpty(ResidentCountError);
         }
 
-        private async Task SaveAsync()
+        protected override void LoadItem(ConsumptionObjectDto item)
         {
-            var sw = System.Diagnostics.Stopwatch.StartNew();
-            System.Diagnostics.Debug.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] НАЧАЛО сохранения объекта");
-            System.Diagnostics.Debug.WriteLine($"  - IsEditMode: {IsEditMode}");
-            System.Diagnostics.Debug.WriteLine($"  - StreetId: {SelectedStreet?.Id}");
-            System.Diagnostics.Debug.WriteLine($"  - ObjectTypeId: {SelectedObjectType?.Id}");
+            // Загрузка выполняется в конструкторе
+        }
 
-            ValidateResidentCount();
-
-            if (!string.IsNullOrEmpty(ResidentCountError))
+        protected override ConsumptionObjectDto GetDto()
+        {
+            return new ConsumptionObjectDto
             {
-                MessageBox.Show(ResidentCountError, "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
-            if (SelectedStreet == null)
-            {
-                MessageBox.Show("Выберите улицу из списка", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
-            if (SelectedCity == null)
-            {
-                MessageBox.Show("Выберите город из списка", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
-            if (SelectedRegion == null)
-            {
-                MessageBox.Show("Выберите регион из списка", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
-            if (SelectedObjectType == null)
-            {
-                MessageBox.Show("Выберите тип объекта", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
-            var dto = new ConsumptionObjectDto
-            {
-                Id = _object?.Id ?? 0,
-                StreetId = SelectedStreet.Id,
+                Id = _originalItem?.Id ?? 0,
+                StreetId = SelectedStreet?.Id ?? 0,
                 HouseNumber = HouseNumber,
                 ApartmentNumber = ApartmentNumber,
-                ObjectTypeId = SelectedObjectType.Id,
+                ObjectTypeId = SelectedObjectType?.Id ?? 0,
                 TotalArea = TotalArea,
                 ResidentCount = ResidentCount
             };
-
-            try
-            {
-                if (IsEditMode)
-                    _objectRepository.Update(dto);
-                else
-                    _objectRepository.Add(dto);
-
-                OnObjectSaved?.Invoke(this, EventArgs.Empty);
-
-                System.Diagnostics.Debug.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] Вызов репозитория...");
-
-                if (IsEditMode)
-                    await _objectRepository.UpdateAsync(dto);
-                else
-                    await _objectRepository.AddAsync(dto);
-
-                sw.Stop();
-                System.Diagnostics.Debug.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] СОХРАНЕНО за {sw.ElapsedMilliseconds} мс");
-
-                MessageBox.Show("Объект успешно сохранен!", "Успех",
-                    MessageBoxButton.OK, MessageBoxImage.Information);
-
-                OnObjectSaved?.Invoke(this, EventArgs.Empty);
-            }
-            catch (Exception ex)
-            {
-                _objectRepository.ForceKillConnection(); // Принудительно закрыть соединение
-                MessageBox.Show($"Ошибка: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
         }
 
-        private void Cancel()
+        protected override async Task SaveToRepositoryAsync(ConsumptionObjectDto dto)
         {
-            OnObjectSaved?.Invoke(this, EventArgs.Empty);
+            if (IsEditMode)
+                await _repository.UpdateAsync(dto);
+            else
+                await _repository.AddAsync(dto);
         }
+
     }
 }

@@ -1,6 +1,8 @@
 ﻿
 using EnergyMeteringSystem.App.Commands;
 using System;
+using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows.Input;
 
@@ -75,6 +77,28 @@ namespace EnergyMeteringSystem.App.ViewModels.Base
         protected virtual void Cancel()
         {
             OnCancelled?.Invoke(this, EventArgs.Empty);
+        }
+        private bool _hasChanges;
+
+        public bool HasChanges
+        {
+            get => _hasChanges;
+            set => SetProperty(ref _hasChanges, value);
+        }
+
+        // В SetProperty добавляем отслеживание изменений
+        protected override bool SetProperty<T>(ref T storage, T value, [CallerMemberName] string propertyName = null)
+        {
+            if (EqualityComparer<T>.Default.Equals(storage, value))
+                return false;
+
+            storage = value;
+            OnPropertyChanged(propertyName);
+
+            // ✅ Отмечаем, что были изменения
+            HasChanges = true;
+
+            return true;
         }
     }
 }

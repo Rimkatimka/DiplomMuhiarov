@@ -125,48 +125,65 @@ namespace EnergyMeteringSystem.App.ViewModels.Analytics
             await ExecuteAsync(async () =>
             {
                 int month = Months.IndexOf(SelectedMonthName) + 1;
+                System.Diagnostics.Debug.WriteLine($"LoadDataAsync: Year={SelectedYear}, Month={month}");
+
                 var data = await _repository.GetConsumptionDataAsync(_selectedYear, month);
+
+                System.Diagnostics.Debug.WriteLine($"LoadDataAsync: TopObjects={data.TopObjects?.Count}, TotalConsumption={data.TotalConsumption}");
 
                 // Массовое обновление UI
                 BeginBatchUpdate();
 
                 TopObjects.Clear();
-                foreach (TopObjectDto item in data.TopObjects)
-                    TopObjects.Add(item);
+                if (data.TopObjects != null)
+                {
+                    foreach (var item in data.TopObjects)
+                        TopObjects.Add(item);
+                }
 
                 TotalConsumption = data.TotalConsumption;
                 AverageConsumption = data.AverageConsumption;
                 MaxConsumption = data.MaxConsumption;
 
-                var top10 = data.TopObjects.Take(10).ToList();
+                var top10 = data.TopObjects?.Take(10).ToList() ?? new System.Collections.Generic.List<TopObjectDto>();
 
-                // Короткие названия для графика
-                TopObjectsLabels = top10.Select(o => o.Address.Length > 20
-                    ? o.Address.Substring(0, 20) + "..."
-                    : o.Address).ToArray();
-
-                TopObjectsSeries = new SeriesCollection
+                if (top10.Any())
                 {
-                    new ColumnSeries
+                    TopObjectsLabels = top10.Select(o => o.Address.Length > 20
+                        ? o.Address.Substring(0, 20) + "..."
+                        : o.Address).ToArray();
+
+                    TopObjectsSeries = new SeriesCollection
                     {
-                        Title = "Потребление",
-                        Values = new ChartValues<decimal>(top10.Select(o => o.Consumption)),
-                        DataLabels = true,
-                        LabelPoint = point => $"{point.Y:F0} кВт·ч",
-                        FontSize = 7
-                    }
-                };
+                        new ColumnSeries
+                        {
+                            Title = "Потребление",
+                            Values = new ChartValues<decimal>(top10.Select(o => o.Consumption)),
+                            DataLabels = true,
+                            LabelPoint = point => $"{point.Y:F0} кВт·ч",
+                            FontSize = 7
+                        }
+                    };
+                }
+                else
+                {
+                    TopObjectsLabels = Array.Empty<string>();
+                    TopObjectsSeries = new SeriesCollection();
+                }
 
                 TypeDistributionSeries = new SeriesCollection();
-                foreach (TypeDistributionDto type in data.TypeDistribution)
+                if (data.TypeDistribution != null)
                 {
-                    TypeDistributionSeries.Add(new PieSeries
+                    foreach (var type in data.TypeDistribution)
                     {
-                        Title = type.TypeName,
-                        Values = new ChartValues<decimal> { type.Consumption },
-                        DataLabels = true,
-                        LabelPoint = point => $"{type.TypeName}: {point.Y:F0} кВт·ч"
-                    });
+                        TypeDistributionSeries.Add(new PieSeries
+                        {
+                            Title = type.TypeName,
+                            Values = new ChartValues<decimal> { type.Consumption },
+                            DataLabels = true,
+                            LabelPoint = point => $"{type.TypeName}: {point.Y:F0} кВт·ч"
+                        });
+                    }
                 }
 
                 EndBatchUpdate();

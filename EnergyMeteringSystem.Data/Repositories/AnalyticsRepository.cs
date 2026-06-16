@@ -10,141 +10,134 @@ namespace EnergyMeteringSystem.Data.Repositories
 {
     public class AnalyticsRepository : BaseRepository
     {
-        // Существующий синхронный метод (оставляем для совместимости)
-        public AnalyticsDataDto GetConsumptionData(int year, int month)
-        {
-            return GetConsumptionDataAsync(year, month).Result;
-        }
-
-        // ✅ ОПТИМИЗИРОВАННЫЙ АСИНХРОННЫЙ МЕТОД
         public async Task<AnalyticsDataDto> GetConsumptionDataAsync(int year, int month)
         {
+            System.Diagnostics.Debug.WriteLine($"GetConsumptionDataAsync: Year={year}, Month={month}");
+
             var result = new AnalyticsDataDto();
 
-            DateTime startDate = new DateTime(year, month, 1);
-            DateTime endDate = startDate.AddMonths(1).AddDays(-1);
-
-            // ========== 1. Получаем все показания за месяц одним запросом ==========
-            var readingsForMonth = await Query<MeterReading>()
-                .Where(r => r.ReadingDate >= startDate && r.ReadingDate <= endDate)
-                .GroupBy(r => r.MeterId)
-                .Select(g => g.OrderByDescending(r => r.ReadingDate).FirstOrDefault())
-                .ToListAsync();
-
-            if (!readingsForMonth.Any())
-                return result;
-
-            // ========== 2. Получаем ВСЕ предыдущие показания одним запросом ==========
-            var meterIds = readingsForMonth.Select(r => r.MeterId).Distinct().ToList();
-
-            var previousReadings = await Query<MeterReading>()
-                .Where(r => meterIds.Contains(r.MeterId) && readingsForMonth.Any(rm => rm.ReadingDate > r.ReadingDate))
-                .GroupBy(r => r.MeterId)
-                .Select(g => g.OrderByDescending(r => r.ReadingDate).FirstOrDefault())
-                .ToDictionaryAsync(r => r.MeterId, r => r);
-
-            // ========== 3. Получаем информацию о счетчиках одним запросом ==========
-            var meterInfos = await Query<Meter>()
-                .Where(m => meterIds.Contains(m.Id))
-                .Select(m => new { m.Id, m.ConsumptionObjectId })
-                .ToDictionaryAsync(m => m.Id, m => m.ConsumptionObjectId);
-
-            // ========== 4. Получаем информацию об объектах одним запросом ==========
-            var objectIds = meterInfos.Values.Distinct().ToList();
-
-            var objectInfos = await Query<ConsumptionObject>()
-                .Where(o => objectIds.Contains(o.Id))
-                .Select(o => new {
-                    o.Id,
-                    o.HouseNumber,
-                    o.ApartmentNumber,
-                    o.StreetId,
-                    o.ObjectTypeId,
-                    StreetName = o.Street.Name,
-                    ObjectTypeName = o.ObjectType.Name
-                })
-                .ToDictionaryAsync(o => o.Id, o => o);
-
-            // ========== 5. Формируем результат без дополнительных запросов ==========
-            var consumptionByObject = new List<ConsumptionTemp>();
-
-            foreach (var reading in readingsForMonth)
+            try
             {
-                if (reading == null) continue;
+                var startDate = new DateTime(year, month, 1);
+                var endDate = startDate.AddMonths(1).AddDays(-1);
+                var prevMonthDate = startDate.AddMonths(-1);
 
-                // Получаем предыдущее показание из словаря
-                previousReadings.TryGetValue(reading.MeterId, out var prevReading);
+                // Получаем показания за текущий и предыдущий месяц
+                var readings = await _context.MeterReading
+                    .Include(r => r.Meter)
+                    .Include(r => r.Meter.ConsumptionObject)
+                    .Include(r => r.Meter.ConsumptionObject.Street)
+                    .Include(r => r.Meter.ConsumptionObject.Street.City)
+                    .Include(r => r.Meter.ConsumptionObject.Street.City.Region)
+                    .Include(r => r.Meter.ConsumptionObject.ObjectType)
+                    .Where(r => r.ReadingDate >= prevMonthDate && r.ReadingDate <= endDate)
+                    .OrderBy(r => r.MeterId)
+                    .ThenBy(r => r.ReadingDate)
+                    .ToListAsync();
 
-                decimal consumption = prevReading != null
-                    ? reading.Value - prevReading.Value
-                    : reading.Value;
+                if (!readings.Any()) return result;
 
-                if (consumption <= 0) continue;
+                var consumptionByObject = new Dictionary<int, (string Address, string ObjectType, decimal Consumption)>();
 
-                // Получаем ID объекта из словаря
-                if (!meterInfos.TryGetValue(reading.MeterId, out var objectId))
-                    continue;
+                var groupedByMeter = readings.GroupBy(r => r.MeterId);
 
-                // Получаем информацию об объекте из словаря
-                if (!objectInfos.TryGetValue(objectId, out var objectInfo))
-                    continue;
-
-                consumptionByObject.Add(new ConsumptionTemp
+                foreach (var meterGroup in groupedByMeter)
                 {
-                    ObjectId = objectInfo.Id,
-                    Address = (objectInfo.StreetName ?? "") + ", д. " + objectInfo.HouseNumber +
-                              (!string.IsNullOrEmpty(objectInfo.ApartmentNumber) ? ", кв. " + objectInfo.ApartmentNumber : ""),
-                    ObjectType = objectInfo.ObjectTypeName ?? "Неизвестно",
-                    Consumption = consumption
-                });
+                    var orderedReadings = meterGroup.OrderBy(r => r.ReadingDate).ToList();
+                    var meter = meterGroup.First().Meter;
+
+                    if (meter?.ConsumptionObject == null) continue;
+
+                    var obj = meter.ConsumptionObject;
+                    var street = obj.Street;
+                    var city = street?.City;
+                    var region = city?.Region;
+                    var objectType = obj.ObjectType;
+
+                    string fullAddress = $"{region?.Name}, {city?.Name}, {street?.Name}, {obj.HouseNumber}";
+                    if (!string.IsNullOrEmpty(obj.ApartmentNumber))
+                        fullAddress += $"/{obj.ApartmentNumber}";
+
+                    // Находим показания за текущий месяц
+                    var currentReadings = orderedReadings
+                        .Where(r => r.ReadingDate >= startDate && r.ReadingDate <= endDate)
+                        .ToList();
+
+                    if (!currentReadings.Any()) continue;
+
+                    var currentValue = currentReadings.Last().Value;
+
+                    // Находим показания за предыдущий месяц (или начальное)
+                    decimal prevValue = meter.InitialReading;
+                    var prevReadings = orderedReadings
+                        .Where(r => r.ReadingDate < startDate)
+                        .ToList();
+
+                    if (prevReadings.Any())
+                    {
+                        prevValue = prevReadings.Last().Value;
+                    }
+
+                    decimal consumption = currentValue - prevValue;
+                    if (consumption <= 0) continue;
+
+                    if (!consumptionByObject.ContainsKey(obj.Id))
+                    {
+                        consumptionByObject[obj.Id] = (fullAddress, objectType?.Name ?? "Неизвестно", 0);
+                    }
+
+                    var existing = consumptionByObject[obj.Id];
+                    consumptionByObject[obj.Id] = (existing.Address, existing.ObjectType, existing.Consumption + consumption);
+                }
+
+                // Формируем результат
+                var objectList = consumptionByObject.Select(x => new
+                {
+                    x.Key,
+                    x.Value.Address,
+                    x.Value.ObjectType,
+                    x.Value.Consumption
+                }).ToList();
+
+                result.TotalConsumption = objectList.Sum(x => x.Consumption);
+                result.MaxConsumption = objectList.Any() ? objectList.Max(x => x.Consumption) : 0;
+                result.AverageConsumption = objectList.Any() ? result.TotalConsumption / objectList.Count : 0;
+
+                // ТОП объекты
+                result.TopObjects = objectList
+                    .OrderByDescending(x => x.Consumption)
+                    .Take(15)
+                    .Select((x, index) => new TopObjectDto
+                    {
+                        Rank = index + 1,
+                        ObjectId = x.Key,
+                        Address = x.Address,
+                        ObjectType = x.ObjectType,
+                        Consumption = x.Consumption,
+                        Percentage = result.TotalConsumption > 0 ? (x.Consumption / result.TotalConsumption) * 100 : 0
+                    })
+                    .ToList();
+
+                // Распределение по типам
+                result.TypeDistribution = objectList
+                    .GroupBy(x => x.ObjectType)
+                    .Select(g => new TypeDistributionDto
+                    {
+                        TypeName = g.Key,
+                        Consumption = g.Sum(x => x.Consumption),
+                        Percentage = result.TotalConsumption > 0 ? (g.Sum(x => x.Consumption) / result.TotalConsumption) * 100 : 0
+                    })
+                    .ToList();
+
+                System.Diagnostics.Debug.WriteLine($"Итог: Объектов={result.TopObjects.Count}, Типов={result.TypeDistribution.Count}");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"GetConsumptionDataAsync ОШИБКА: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine(ex.StackTrace);
             }
 
-            // ========== 6. Формируем результат ==========
-            result.TotalConsumption = consumptionByObject.Sum(x => x.Consumption);
-            result.MaxConsumption = consumptionByObject.Any()
-                ? consumptionByObject.Max(x => x.Consumption)
-                : 0;
-            result.AverageConsumption = consumptionByObject.Any()
-                ? result.TotalConsumption / consumptionByObject.Count
-                : 0;
-
-            result.TopObjects = consumptionByObject
-                .OrderByDescending(x => x.Consumption)
-                .Take(15)
-                .Select((x, index) => new TopObjectDto
-                {
-                    Rank = index + 1,
-                    ObjectId = x.ObjectId,
-                    Address = x.Address,
-                    ObjectType = x.ObjectType,
-                    Consumption = x.Consumption,
-                    Percentage = result.TotalConsumption > 0
-                        ? (x.Consumption / result.TotalConsumption) * 100
-                        : 0
-                })
-                .ToList();
-
-            result.TypeDistribution = consumptionByObject
-                .GroupBy(x => x.ObjectType)
-                .Select(g => new TypeDistributionDto
-                {
-                    TypeName = g.Key,
-                    Consumption = g.Sum(x => x.Consumption),
-                    Percentage = result.TotalConsumption > 0
-                        ? (g.Sum(x => x.Consumption) / result.TotalConsumption) * 100
-                        : 0
-                })
-                .ToList();
-
             return result;
-        }
-
-        private class ConsumptionTemp
-        {
-            public int ObjectId { get; set; }
-            public string Address { get; set; }
-            public string ObjectType { get; set; }
-            public decimal Consumption { get; set; }
         }
     }
 }

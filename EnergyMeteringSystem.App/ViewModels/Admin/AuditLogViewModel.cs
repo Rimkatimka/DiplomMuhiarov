@@ -38,7 +38,6 @@ namespace EnergyMeteringSystem.App.ViewModels.Admin
             }
         }
 
-        // ✅ ИСПРАВЛЕНО: оборачиваем List в ObservableCollection
         public ObservableCollection<AuditLogDto> FilteredLogs => new ObservableCollection<AuditLogDto>(FilteredItemsList);
 
         public AuditLogDto SelectedLog
@@ -55,6 +54,9 @@ namespace EnergyMeteringSystem.App.ViewModels.Admin
             AddCommand = null;
             EditCommand = null;
             DeleteCommand = null;
+
+            // ✅ ПРИНУДИТЕЛЬНАЯ ЗАГРУЗКА
+            _ = LoadDataAsync();
         }
 
         protected override async Task LoadDataAsync()
@@ -65,7 +67,8 @@ namespace EnergyMeteringSystem.App.ViewModels.Admin
 
                 var list = await _repository.GetByDateAsync(FromDate, ToDate);
 
-                // ✅ ИСПРАВЛЕНО: используем ItemsList
+                System.Diagnostics.Debug.WriteLine($"AuditLogViewModel: загружено {list.Count} записей");
+
                 ItemsList.Clear();
                 foreach (var log in list)
                 {
@@ -74,7 +77,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Admin
 
                 ApplyFilter();
 
-                System.Diagnostics.Debug.WriteLine($"AuditLogViewModel: loaded {ItemsList.Count} logs, filtered {FilteredItemsList.Count}");
+                System.Diagnostics.Debug.WriteLine($"AuditLogViewModel: после фильтрации {FilteredItemsList.Count} записей");
             }, "Ошибка загрузки журнала аудита");
         }
 

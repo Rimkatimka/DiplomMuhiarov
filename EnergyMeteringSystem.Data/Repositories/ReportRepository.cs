@@ -24,20 +24,15 @@ namespace EnergyMeteringSystem.Data.Repositories
 
             try
             {
-                // ✅ ПРОСТОЙ ЗАПРОС - ПОЛУЧАЕМ ТОЛЬКО ПОКАЗАНИЯ
+                // Получаем все показания за период
                 var readings = await _context.MeterReading
                     .Where(r => r.ReadingDate >= startDate && r.ReadingDate <= endDate)
                     .OrderBy(r => r.MeterId)
                     .ThenBy(r => r.ReadingDate)
                     .ToListAsync();
 
-                System.Diagnostics.Debug.WriteLine($"  Найдено показаний: {readings.Count}");
-
                 if (!readings.Any())
-                {
-                    System.Diagnostics.Debug.WriteLine("  Нет показаний за период");
                     return new List<ConsumptionReportDto>();
-                }
 
                 var result = new List<ConsumptionReportDto>();
 
@@ -49,7 +44,6 @@ namespace EnergyMeteringSystem.Data.Repositories
                     var meterId = meterGroup.Key;
                     var orderedReadings = meterGroup.OrderBy(r => r.ReadingDate).ToList();
 
-                    // Получаем информацию о счетчике и объекте
                     var meter = await _context.Meter
                         .Include(m => m.ConsumptionObject)
                         .Include(m => m.ConsumptionObject.Street)
@@ -66,17 +60,17 @@ namespace EnergyMeteringSystem.Data.Repositories
                     var region = city?.Region;
                     var objectType = obj.ObjectType;
 
-                    // Если только одно показание - используем InitialReading
+                    string fullAddress = $"{region?.Name}, {city?.Name}, {street?.Name}, {obj.HouseNumber}";
+                    if (!string.IsNullOrEmpty(obj.ApartmentNumber))
+                        fullAddress += $"/{obj.ApartmentNumber}";
+
+                    // ✅ Если только одно показание за период - берем InitialReading как начало
                     if (orderedReadings.Count == 1)
                     {
                         var reading = orderedReadings.First();
                         decimal consumption = reading.Value - meter.InitialReading;
 
                         if (consumption <= 0) continue;
-
-                        string fullAddress = $"{region?.Name}, {city?.Name}, {street?.Name}, {obj.HouseNumber}";
-                        if (!string.IsNullOrEmpty(obj.ApartmentNumber))
-                            fullAddress += $"/{obj.ApartmentNumber}";
 
                         result.Add(new ConsumptionReportDto
                         {
@@ -93,29 +87,28 @@ namespace EnergyMeteringSystem.Data.Repositories
                     }
                     else
                     {
-                        // Несколько показаний - берем первое и последнее
-                        var first = orderedReadings.First();
-                        var last = orderedReadings.Last();
-                        decimal consumption = last.Value - first.Value;
-
-                        if (consumption <= 0) continue;
-
-                        string fullAddress = $"{region?.Name}, {city?.Name}, {street?.Name}, {obj.HouseNumber}";
-                        if (!string.IsNullOrEmpty(obj.ApartmentNumber))
-                            fullAddress += $"/{obj.ApartmentNumber}";
-
-                        result.Add(new ConsumptionReportDto
+                        // ✅ Несколько показаний - считаем ПОСЛЕДОВАТЕЛЬНУЮ разницу
+                        for (int i = 0; i < orderedReadings.Count; i++)
                         {
-                            ObjectId = obj.Id,
-                            Address = fullAddress,
-                            MeterSerial = meter.SerialNumber,
-                            StartDate = first.ReadingDate,
-                            EndDate = last.ReadingDate,
-                            StartValue = first.Value,
-                            EndValue = last.Value,
-                            Consumption = consumption,
-                            ObjectType = objectType?.Name ?? "Не указан"
-                        });
+                            var current = orderedReadings[i];
+                            decimal startValue = (i == 0) ? meter.InitialReading : orderedReadings[i - 1].Value;
+                            decimal consumption = current.Value - startValue;
+
+                            if (consumption <= 0) continue;
+
+                            result.Add(new ConsumptionReportDto
+                            {
+                                ObjectId = obj.Id,
+                                Address = fullAddress,
+                                MeterSerial = meter.SerialNumber,
+                                StartDate = (i == 0) ? meter.InstallationDate : orderedReadings[i - 1].ReadingDate,
+                                EndDate = current.ReadingDate,
+                                StartValue = startValue,
+                                EndValue = current.Value,
+                                Consumption = consumption,
+                                ObjectType = objectType?.Name ?? "Не указан"
+                            });
+                        }
                     }
                 }
 
@@ -125,7 +118,6 @@ namespace EnergyMeteringSystem.Data.Repositories
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"ОШИБКА: {ex.Message}");
-                System.Diagnostics.Debug.WriteLine(ex.StackTrace);
                 return new List<ConsumptionReportDto>();
             }
         }
@@ -171,6 +163,20 @@ namespace EnergyMeteringSystem.Data.Repositories
                 return new List<MonthlyConsumptionDto>();
             }
         }
+        public async Task<List<RawReadingDto>> GetRawReadingsForPeriodAsync(DateTime from, DateTime to)
+        {
+            var readings = await _context.MeterReading
+                .Where(r => r.ReadingDate >= from && r.ReadingDate <= to)
+                .Select(r => new RawReadingDto
+                {
+                    MeterId = r.MeterId,
+                    ReadingDate = r.ReadingDate,
+                    Value = r.Value
+                })
+                .ToListAsync();
+
+            return readings;
+        }
     }
 
     // ✅ ВСПОМОГАТЕЛЬНЫЙ DTO ДЛЯ ДИНАМИКИ
@@ -179,5 +185,11 @@ namespace EnergyMeteringSystem.Data.Repositories
         public int Year { get; set; }
         public int Month { get; set; }
         public decimal TotalConsumption { get; set; }
+    }
+    public class RawReadingDto
+    {
+        public int MeterId { get; set; }
+        public DateTime ReadingDate { get; set; }
+        public decimal Value { get; set; }
     }
 }

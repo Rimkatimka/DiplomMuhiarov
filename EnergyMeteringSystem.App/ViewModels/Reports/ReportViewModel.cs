@@ -66,16 +66,15 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
 
             InitializeYearsAndMonths();
 
-            _startDate = new DateTime(DateTime.Today.Year - 1, 1, 1);
-            _endDate = DateTime.Today;
+            _startYear = 2025;
+            _startMonth = 1;
+            _endYear = 2025;
+            _endMonth = 12;
 
-            _startYear = _startDate.Year;
-            _startMonth = _startDate.Month;
-            _endYear = _endDate.Year;
-            _endMonth = _endDate.Month;
-            _startMonthName = Months[_startMonth - 1];
-            _endMonthName = Months[_endMonth - 1];
-
+            _startDate = new DateTime(2025, 1, 1);
+            _endDate = new DateTime(2025, 12, 31);
+            _startMonthName = Months[0];  // Январь
+            _endMonthName = Months[11];
             TopObjectsSeries = new SeriesCollection();
             MonthlySeries = new SeriesCollection();
 
@@ -364,9 +363,9 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
             }
         }
 
-        public bool ShowPeriodFilter => SelectedReportType == 0 || SelectedReportType == 1 || SelectedReportType == 2 || SelectedReportType == 4 || SelectedReportType == 5 || SelectedReportType == 7 || SelectedReportType == 8;
-        public bool ShowYearFilter => SelectedReportType == 3;
-        public bool ShowMonthlyFilter => SelectedReportType == 3;
+        public bool ShowPeriodFilter => SelectedReportType == 0 || SelectedReportType == 1 || SelectedReportType == 2 || SelectedReportType == 3 || SelectedReportType == 4 || SelectedReportType == 5 || SelectedReportType == 7 || SelectedReportType == 8;
+        public bool ShowYearFilter => false;
+        public bool ShowMonthlyFilter => false;
         public bool ShowSummary => SelectedReportType == 0 || SelectedReportType == 1 || SelectedReportType == 2 || SelectedReportType == 3 || SelectedReportType == 4;
 
         public AsyncRelayCommand ExportCommand { get; }
@@ -634,51 +633,85 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
         {
             try
             {
-                System.Diagnostics.Debug.WriteLine("LoadMonthlyDynamicsReportAsync: НАЧАЛО");
-                System.Diagnostics.Debug.WriteLine($"  StartYear: {_startYear}, StartMonth: {_startMonth}");
-                System.Diagnostics.Debug.WriteLine($"  EndYear: {_endYear}, EndMonth: {_endMonth}");
-
                 var monthlyData = new List<MonthlyRecord>();
 
-                DateTime current = new DateTime(_startYear, _startMonth, 1);
-                DateTime end = new DateTime(_endYear, _endMonth, 1);
+                DateTime periodStart = new DateTime(_startYear, _startMonth, 1);
+                DateTime periodEnd = new DateTime(_endYear, _endMonth, DateTime.DaysInMonth(_endYear, _endMonth));
 
-                while (current <= end)
+                // +1 месяц до начала — чтобы было "предыдущее" показание для первого месяца периода
+                DateTime fetchFrom = periodStart.AddMonths(-1);
+
+                var allReadings = await _reportRepository.GetRawReadingsForPeriodAsync(fetchFrom, periodEnd);
+
+                // Для каждого счётчика и месяца берём максимальное значение (последнее показание)
+                var byMeterMonth = allReadings
+                    .GroupBy(r => new { r.MeterId, r.ReadingDate.Year, r.ReadingDate.Month })
+                    .Select(g => new {
+                        g.Key.MeterId,
+                        g.Key.Year,
+                        g.Key.Month,
+                        Value = g.Max(r => r.Value)
+                    })
+                    .OrderBy(x => x.MeterId).ThenBy(x => x.Year).ThenBy(x => x.Month)
+                    .ToList();
+
+                // Словарь: (год, месяц) → суммарное потребление по всем счётчикам
+                var consumptionByMonth = new Dictionary<(int Year, int Month), decimal>();
+                DateTime cur = periodStart;
+                while (cur <= periodEnd)
                 {
-                    int year = current.Year;
-                    int month = current.Month;
+                    consumptionByMonth[(cur.Year, cur.Month)] = 0;
+                    cur = cur.AddMonths(1);
+                }
 
-                    DateTime monthStart = new DateTime(year, month, 1);
-                    DateTime monthEnd = new DateTime(year, month, DateTime.DaysInMonth(year, month));
+                // По каждому счётчику считаем разницу между соседними месяцами
+                foreach (var meterId in byMeterMonth.Select(x => x.MeterId).Distinct())
+                {
+                    var meterReadings = byMeterMonth
+                        .Where(x => x.MeterId == meterId)
+                        .OrderBy(x => x.Year).ThenBy(x => x.Month)
+                        .ToList();
 
-                    // ✅ ЛОГИРУЕМ ЗАПРОС
-                    System.Diagnostics.Debug.WriteLine($"Запрос за {month}.{year}: {monthStart:dd.MM.yyyy} - {monthEnd:dd.MM.yyyy}");
+                    for (int i = 1; i < meterReadings.Count; i++)
+                    {
+                        var curr = meterReadings[i];
+                        var prev = meterReadings[i - 1];
 
-                    var readings = await _reportRepository.GetConsumptionReportOptimizedAsync(monthStart, monthEnd);
+                        // Пропускаем если этот месяц вне нашего периода (это был fetchFrom)
+                        if (!consumptionByMonth.ContainsKey((curr.Year, curr.Month)))
+                            continue;
 
-                    // ✅ СУММИРУЕМ ПОТРЕБЛЕНИЕ
-                    decimal consumption = readings.Sum(r => r.Consumption);
+                        decimal consumption = curr.Value - prev.Value;
+                        if (consumption > 0)
+                            consumptionByMonth[(curr.Year, curr.Month)] += consumption;
+                    }
+                }
 
-                    System.Diagnostics.Debug.WriteLine($"  Найдено записей: {readings.Count}, Потребление: {consumption}");
-
+                // Строим список записей в порядке месяцев
+                cur = periodStart;
+                while (cur <= periodEnd)
+                {
                     monthlyData.Add(new MonthlyRecord
                     {
-                        Year = year,
-                        Month = month,
-                        MonthName = Months[month - 1],
-                        Consumption = consumption
+                        Year = cur.Year,
+                        Month = cur.Month,
+                        MonthName = Months[cur.Month - 1],
+                        Consumption = consumptionByMonth.ContainsKey((cur.Year, cur.Month))
+                                        ? consumptionByMonth[(cur.Year, cur.Month)]
+                                        : 0
                     });
-
-                    current = current.AddMonths(1);
+                    cur = cur.AddMonths(1);
                 }
 
                 var maxMonth = monthlyData.OrderByDescending(x => x.Consumption).FirstOrDefault();
-
+                // Прямо перед _monthlyDynamicsData = new MonthlyDynamicsReport{...}
+                foreach (var kvp in consumptionByMonth.OrderBy(x => x.Key.Year).ThenBy(x => x.Key.Month))
+                    System.Diagnostics.Debug.WriteLine($"DEBUG {kvp.Key.Month}/{kvp.Key.Year} = {kvp.Value}");
                 _monthlyDynamicsData = new MonthlyDynamicsReport
                 {
                     Title = "Динамика потребления по месяцам",
-                    PeriodStart = new DateTime(_startYear, _startMonth, 1),
-                    PeriodEnd = new DateTime(_endYear, _endMonth, DateTime.DaysInMonth(_endYear, _endMonth)),
+                    PeriodStart = periodStart,
+                    PeriodEnd = periodEnd,
                     Records = monthlyData,
                     TotalConsumption = monthlyData.Sum(x => x.Consumption),
                     AverageConsumption = monthlyData.Any() ? monthlyData.Average(x => x.Consumption) : 0,
@@ -686,31 +719,24 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
                     MaxMonth = maxMonth?.MonthName ?? ""
                 };
 
-                System.Diagnostics.Debug.WriteLine($"Загружено месяцев: {monthlyData.Count}");
-                System.Diagnostics.Debug.WriteLine($"Общее потребление: {_monthlyDynamicsData.TotalConsumption}");
-
-                // ✅ ОБНОВЛЯЕМ ГРАФИК
-                if (IsChartMode && _monthlyDynamicsData.Records.Any())
+                if (_monthlyDynamicsData.Records.Any())
                 {
                     MonthLabels = _monthlyDynamicsData.Records.Select(x => $"{x.MonthName}\n{x.Year}").ToArray();
                     MonthlySeries = new SeriesCollection
             {
                 new ColumnSeries
                 {
-                    Title = "Потребление, кВт·ч",
-                    Values = new ChartValues<decimal>(_monthlyDynamicsData.Records.Select(x => x.Consumption)),
+                    Title      = "Потребление, кВт·ч",
+                    Values     = new ChartValues<decimal>(_monthlyDynamicsData.Records.Select(x => x.Consumption)),
                     DataLabels = true,
                     LabelPoint = point => $"{point.Y:F0}"
                 }
             };
-
-                    System.Diagnostics.Debug.WriteLine($"График обновлен: {MonthLabels.Length} месяцев");
                 }
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"ОШИБКА в LoadMonthlyDynamicsReportAsync: {ex.Message}");
-                System.Diagnostics.Debug.WriteLine(ex.StackTrace);
                 _monthlyDynamicsData = new MonthlyDynamicsReport
                 {
                     Title = "Динамика потребления по месяцам",

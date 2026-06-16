@@ -6,18 +6,28 @@ using System.Windows.Input;
 
 namespace EnergyMeteringSystem.App.Views.Directories
 {
-    /// <summary>
-    /// Логика взаимодействия для DirectoryEditView.xaml
-    /// </summary>
     public partial class DirectoryEditView : Window
     {
+        private readonly DirectoryEditViewModel _viewModel;
+
         public DirectoryEditView(DirectoryEditViewModel viewModel)
         {
             InitializeComponent();
+            _viewModel = viewModel;
             DataContext = viewModel;
 
-            viewModel.OnDirectorySaved += (s, e) => Close();
+            viewModel.OnSaved += (s, e) => Close();
+            viewModel.OnCancelled += (s, e) => Close();
+
+            this.Closing += (s, e) =>
+            {
+                if (_viewModel.HasChanges && DialogService.ConfirmCancel())
+                {
+                    e.Cancel = true;
+                }
+            };
         }
+
         private void TextBox_PreviewTextInput_General(object sender, TextCompositionEventArgs e)
         {
             string pattern = @"^[a-zA-Zа-яА-ЯёЁ0-9\s.-]+$";
