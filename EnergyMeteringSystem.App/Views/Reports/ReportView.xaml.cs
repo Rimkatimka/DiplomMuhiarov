@@ -1,31 +1,94 @@
 ﻿using EnergyMeteringSystem.App.ViewModels.Reports;
+using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Windows;
 using System.Windows.Controls;
 
 namespace EnergyMeteringSystem.App.Views.Reports
 {
-    /// <summary>
-    /// Логика взаимодействия для ReportView.xaml
-    /// </summary>
     public partial class ReportView : UserControl
     {
+        private Window _parentWindow;
+
         public ReportView()
         {
             InitializeComponent();
             DataContext = new ReportViewModel();
+
+            // Подписываемся на загрузку контрола
+            this.Loaded += ReportView_Loaded;
+            this.Unloaded += ReportView_Unloaded;
         }
 
-        public void RefreshColumns()
+        private void ReportView_Loaded(object sender, RoutedEventArgs e)
         {
-            if (MainDataGrid != null && MainDataGrid.ItemsSource != null)
+            // Находим родительское окно
+            _parentWindow = Window.GetWindow(this);
+            if (_parentWindow != null)
             {
-                var columns = MainDataGrid.Columns.ToList();
-                MainDataGrid.AutoGenerateColumns = false;
-                MainDataGrid.Columns.Clear();
-                MainDataGrid.AutoGenerateColumns = true;
-                MainDataGrid.ItemsSource = null;
-                MainDataGrid.ItemsSource = (System.Collections.IEnumerable)((DataContext as ViewModels.Reports.ReportViewModel)?.CurrentData);
+                // Подписываемся на изменение размера окна
+                _parentWindow.SizeChanged += ParentWindow_SizeChanged;
+
+                // Первоначальное обновление ширины
+                RefreshColumnsWidth();
+            }
+        }
+
+        private void ReportView_Unloaded(object sender, RoutedEventArgs e)
+        {
+            // Отписываемся от события при выгрузке
+            if (_parentWindow != null)
+            {
+                _parentWindow.SizeChanged -= ParentWindow_SizeChanged;
+                _parentWindow = null;
+            }
+        }
+
+        private void ParentWindow_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            // Обновляем ширину колонок при изменении размера окна
+            RefreshColumnsWidth();
+        }
+
+        private void RefreshColumnsWidth()
+        {
+            if (MainDataGrid == null || MainDataGrid.Columns.Count == 0) return;
+
+            // Получаем фактическую ширину DataGrid
+            double totalWidth = MainDataGrid.ActualWidth;
+
+            // Если ширина = 0, пробуем получить ширину родителя
+            if (totalWidth <= 0)
+            {
+                var parent = MainDataGrid.Parent as FrameworkElement;
+                if (parent != null)
+                {
+                    totalWidth = parent.ActualWidth - 20; // Отступы
+                }
+            }
+
+            if (totalWidth <= 0) return;
+
+            // Считаем количество видимых колонок
+            int visibleColumns = 0;
+            foreach (var col in MainDataGrid.Columns)
+            {
+                if (col.Visibility == Visibility.Visible)
+                    visibleColumns++;
+            }
+
+            if (visibleColumns == 0) return;
+
+            // Равномерно распределяем ширину
+            double baseWidth = totalWidth / visibleColumns;
+
+            foreach (var col in MainDataGrid.Columns)
+            {
+                if (col.Visibility == Visibility.Visible)
+                {
+                    // Устанавливаем ширину с небольшим запасом
+                    col.Width = new DataGridLength(baseWidth, DataGridLengthUnitType.Star);
+                }
             }
         }
 
@@ -40,11 +103,7 @@ namespace EnergyMeteringSystem.App.Views.Reports
                 e.PropertyName == "MeterId" || e.PropertyName == "StreetId" ||
                 e.PropertyName == "CityId" || e.PropertyName == "RegionId" ||
                 e.PropertyName == "PeriodText" || e.PropertyName == "ConsumptionText" ||
-                e.PropertyName == "StatusColor" || e.PropertyName == "VerificationStatusColor" ||
-                e.PropertyName == "PreviousDisplay" || e.PropertyName == "CurrentDisplay" ||
-                e.PropertyName == "DifferenceDisplay" || e.PropertyName == "DifferencePercentDisplay" ||
-                e.PropertyName == "ConsumptionPerAreaDisplay" || e.PropertyName == "ConsumptionPerPersonDisplay" ||
-                e.PropertyName == "VerificationDateDisplay" || e.PropertyName == "NextVerificationDateDisplay")
+                e.PropertyName == "StatusColor" || e.PropertyName == "VerificationStatusColor")
             {
                 e.Cancel = true;
                 return;
@@ -87,8 +146,6 @@ namespace EnergyMeteringSystem.App.Views.Reports
                 {"OverdueText", "Просрочка"},
                 
                 // Даты
-                {"StartDate", "Дата начала"},
-                {"EndDate", "Дата окончания"},
                 {"StartValue", "Нач. показание"},
                 {"EndValue", "Кон. показание"},
                 {"PreviousConsumption", "Пред. потребление"},
@@ -124,11 +181,9 @@ namespace EnergyMeteringSystem.App.Views.Reports
                 {"ActionTime", "Время"},
                 {"UserDisplay", "Пользователь"},
                 {"DisplayDetails", "Детали"},
-                {"StatusColor", "Цвет статуса"},
                 {"StatusText", "Статус"},
                 {"Amount", "Сумма"},
                 {"Tariff", "Тариф"},
-                {"ConsumptionText", "Потребление"},
                 {"ObjectTitle", "Объект"},
                 {"RegionName", "Регион"},
                 {"CityName", "Город"},
@@ -157,7 +212,7 @@ namespace EnergyMeteringSystem.App.Views.Reports
             // ============================================================
             if (e.Column is DataGridTextColumn textColumn)
             {
-                // ----- 3.1. Десятичные числа (N2) -----
+                // Десятичные числа (N2)
                 if (e.PropertyName == "Consumption" || e.PropertyName == "Value" ||
                     e.PropertyName == "StartValue" || e.PropertyName == "EndValue" ||
                     e.PropertyName == "DebtAmount" || e.PropertyName == "Amount" ||
@@ -169,7 +224,7 @@ namespace EnergyMeteringSystem.App.Views.Reports
                     textColumn.Binding.StringFormat = "N2";
                 }
 
-                // ----- 3.2. Целые числа (N0) -----
+                // Целые числа (N0)
                 if (e.PropertyName == "DaysLeft" || e.PropertyName == "ResidentCount" ||
                     e.PropertyName == "ServiceLifeYears" || e.PropertyName == "Rank" ||
                     e.PropertyName == "ObjectsCount" || e.PropertyName == "MetersCount" ||
@@ -179,24 +234,23 @@ namespace EnergyMeteringSystem.App.Views.Reports
                     textColumn.Binding.StringFormat = "N0";
                 }
 
-                // ----- 3.3. Проценты (F2) -----
+                // Проценты (F2)
                 if (e.PropertyName == "Percentage" || e.PropertyName == "DifferencePercent")
                 {
                     textColumn.Binding.StringFormat = "F2";
                 }
 
-                // ----- 3.4. Даты (dd.MM.yyyy) -----
+                // Даты (dd.MM.yyyy)
                 if (e.PropertyName == "ReadingDate" || e.PropertyName == "VerificationDate" ||
                     e.PropertyName == "NextVerificationDate" || e.PropertyName == "InstallationDate" ||
                     e.PropertyName == "LastVerificationDate" || e.PropertyName == "RemovalDate" ||
-                    e.PropertyName == "StartDate" || e.PropertyName == "EndDate" ||
                     e.PropertyName == "ActionTime" || e.PropertyName == "CreatedAt" ||
                     e.PropertyName == "CreatedText")
                 {
                     textColumn.Binding.StringFormat = "dd.MM.yyyy";
                 }
 
-                // ----- 3.5. Дата + Время (dd.MM.yyyy HH:mm) -----
+                // Дата + Время (dd.MM.yyyy HH:mm)
                 if (e.PropertyName == "EnteredAt" || e.PropertyName == "LastLoginText")
                 {
                     textColumn.Binding.StringFormat = "dd.MM.yyyy HH:mm";
@@ -204,34 +258,12 @@ namespace EnergyMeteringSystem.App.Views.Reports
             }
 
             // ============================================================
-            // 4. ШИРИНА КОЛОНОК
+            // 4. ОБНОВЛЯЕМ ШИРИНУ ПОСЛЕ СОЗДАНИЯ ВСЕХ КОЛОНОК
             // ============================================================
-            if (e.PropertyName == "Address" || e.PropertyName == "FullName" ||
-                e.PropertyName == "DisplayDetails" || e.PropertyName == "Comment")
+            this.Dispatcher.BeginInvoke(new Action(() =>
             {
-                e.Column.Width = new DataGridLength(1, DataGridLengthUnitType.Star);
-            }
-            else if (e.PropertyName == "Consumption" || e.PropertyName == "Value")
-            {
-                e.Column.Width = new DataGridLength(120);
-            }
-            else if (e.PropertyName == "Percentage" || e.PropertyName == "DifferencePercent")
-            {
-                e.Column.Width = new DataGridLength(80);
-            }
-            else if (e.PropertyName == "PeriodDisplay" || e.PropertyName == "PeriodText")
-            {
-                e.Column.Width = new DataGridLength(130);
-            }
-            else if (e.PropertyName == "Rank" || e.PropertyName == "DaysLeft" ||
-                     e.PropertyName == "ObjectsCount" || e.PropertyName == "MetersCount")
-            {
-                e.Column.Width = new DataGridLength(70);
-            }
-            else
-            {
-                e.Column.Width = new DataGridLength(100);
-            }
+                RefreshColumnsWidth();
+            }), System.Windows.Threading.DispatcherPriority.Background);
         }
     }
 }

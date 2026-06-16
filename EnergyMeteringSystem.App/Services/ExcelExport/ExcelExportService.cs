@@ -117,6 +117,7 @@ namespace EnergyMeteringSystem.App.Services.ExcelExport
             {
                 excel = new Excel.Application();
                 excel.Visible = false;
+                excel.DisplayAlerts = false;
                 workbook = excel.Workbooks.Add();
                 worksheet = (Excel.Worksheet)workbook.Worksheets[1];
                 worksheet.Name = "Отчет";
@@ -153,7 +154,6 @@ namespace EnergyMeteringSystem.App.Services.ExcelExport
                     worksheet.Cells[row, i + 1] = headers[i];
                 }
 
-                // Стиль заголовков таблицы
                 var headerRange = worksheet.Range[worksheet.Cells[row, 1], worksheet.Cells[row, tableLastColumn]];
                 headerRange.Font.Bold = true;
                 headerRange.Interior.Color = System.Drawing.Color.FromArgb(45, 63, 94);
@@ -222,13 +222,12 @@ namespace EnergyMeteringSystem.App.Services.ExcelExport
                 tableRange.Borders.LineStyle = Excel.XlLineStyle.xlContinuous;
                 tableRange.Borders.Weight = Excel.XlBorderWeight.xlThin;
 
-                // ========== ГРАФИК (с заголовком внутри) ==========
+                // ГРАФИК
                 if (chartData != null && chartData.Any())
                 {
                     int chartStartCol = tableLastColumn + 2;
                     int chartDataRow = dataStartRow;
 
-                    // Данные для графика (заголовки колонок)
                     worksheet.Cells[chartDataRow, chartStartCol] = "Категория";
                     worksheet.Cells[chartDataRow, chartStartCol + 1] = "Значение, кВт·ч";
                     worksheet.Rows[chartDataRow].Font.Bold = true;
@@ -243,7 +242,6 @@ namespace EnergyMeteringSystem.App.Services.ExcelExport
                         chartRow++;
                     }
 
-                    // Создаем график
                     Excel.Range chartRange = worksheet.Range[
                         worksheet.Cells[chartDataRow, chartStartCol],
                         worksheet.Cells[chartRow - 1, chartStartCol + 1]];
@@ -258,7 +256,6 @@ namespace EnergyMeteringSystem.App.Services.ExcelExport
                     chart.SetSourceData(chartRange);
                     chart.ChartType = chartType;
 
-                    // ✅ ЗАГОЛОВОК ВНУТРИ ГРАФИКА
                     chart.HasTitle = true;
                     chart.ChartTitle.Text = chartTitle;
                     chart.ChartTitle.Font.Size = 12;
@@ -278,7 +275,11 @@ namespace EnergyMeteringSystem.App.Services.ExcelExport
                 worksheet.Columns.AutoFit();
                 workbook.SaveAs(dialog.FileName);
 
+                // ✅ ЗАКРЫВАЕМ EXCEL БЕЗОПАСНО
+                SafeCloseExcel(worksheet, workbook, excel);
+
                 System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(dialog.FileName) { UseShellExecute = true });
+
                 MessageBox.Show($"Отчет с графиком сохранен:\n{dialog.FileName}", "Успех",
                     MessageBoxButton.OK, MessageBoxImage.Information);
                 return true;
@@ -291,12 +292,83 @@ namespace EnergyMeteringSystem.App.Services.ExcelExport
             }
             finally
             {
-                if (workbook != null) workbook.Close(false);
-                if (excel != null) excel.Quit();
-                if (worksheet != null) System.Runtime.InteropServices.Marshal.ReleaseComObject(worksheet);
-                if (workbook != null) System.Runtime.InteropServices.Marshal.ReleaseComObject(workbook);
-                if (excel != null) System.Runtime.InteropServices.Marshal.ReleaseComObject(excel);
+                // Дополнительная очистка
+                try
+                {
+                    if (worksheet != null)
+                    {
+                        System.Runtime.InteropServices.Marshal.ReleaseComObject(worksheet);
+                        worksheet = null;
+                    }
+                }
+                catch { }
+
+                try
+                {
+                    if (workbook != null)
+                    {
+                        System.Runtime.InteropServices.Marshal.ReleaseComObject(workbook);
+                        workbook = null;
+                    }
+                }
+                catch { }
+
+                try
+                {
+                    if (excel != null)
+                    {
+                        System.Runtime.InteropServices.Marshal.ReleaseComObject(excel);
+                        excel = null;
+                    }
+                }
+                catch { }
+
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+                GC.Collect();
             }
+        }
+
+        /// <summary>
+        /// Безопасное закрытие Excel
+        /// </summary>
+        private void SafeCloseExcel(Excel.Worksheet worksheet, Excel.Workbook workbook, Excel.Application excel)
+        {
+            try
+            {
+                if (workbook != null)
+                {
+                    try { workbook.Close(false); } catch { }
+                    System.Runtime.InteropServices.Marshal.ReleaseComObject(workbook);
+                    workbook = null;
+                }
+            }
+            catch { }
+
+            try
+            {
+                if (excel != null)
+                {
+                    try { excel.Quit(); } catch { }
+                    System.Runtime.InteropServices.Marshal.ReleaseComObject(excel);
+                    excel = null;
+                }
+            }
+            catch { }
+
+            try
+            {
+                if (worksheet != null)
+                {
+                    System.Runtime.InteropServices.Marshal.ReleaseComObject(worksheet);
+                    worksheet = null;
+                }
+            }
+            catch { }
+
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
         }
 
         // ========== ВСЕ СТАРЫЕ МЕТОДЫ СОЗДАНИЯ ЛИСТОВ (остаются без изменений) ==========
@@ -681,6 +753,7 @@ namespace EnergyMeteringSystem.App.Services.ExcelExport
             {
                 excel = new Excel.Application();
                 excel.Visible = false;
+                excel.DisplayAlerts = false;
                 workbook = excel.Workbooks.Add();
                 worksheet = (Excel.Worksheet)workbook.Worksheets[1];
                 worksheet.Name = "Отчет";
@@ -715,7 +788,6 @@ namespace EnergyMeteringSystem.App.Services.ExcelExport
                     worksheet.Cells[row, i + 1] = headers[i];
                 }
 
-                // Стиль заголовков таблицы
                 var headerRange = worksheet.Range[worksheet.Cells[row, 1], worksheet.Cells[row, tableLastColumn]];
                 headerRange.Font.Bold = true;
                 headerRange.Interior.Color = System.Drawing.Color.FromArgb(45, 63, 94);
@@ -774,13 +846,12 @@ namespace EnergyMeteringSystem.App.Services.ExcelExport
                 tableRange.Borders.LineStyle = Excel.XlLineStyle.xlContinuous;
                 tableRange.Borders.Weight = Excel.XlBorderWeight.xlThin;
 
-                // ========== ПЕРВЫЙ ГРАФИК (с заголовком внутри) ==========
+                // ПЕРВЫЙ ГРАФИК
                 if (chart1Data != null && chart1Data.Any())
                 {
                     int chartStartCol = tableLastColumn + 2;
                     int chartDataRow = dataStartRow;
 
-                    // Данные для графика
                     worksheet.Cells[chartDataRow, chartStartCol] = "Категория";
                     worksheet.Cells[chartDataRow, chartStartCol + 1] = "Значение, кВт·ч";
                     worksheet.Rows[chartDataRow].Font.Bold = true;
@@ -795,7 +866,6 @@ namespace EnergyMeteringSystem.App.Services.ExcelExport
                         chartRow++;
                     }
 
-                    // Создаем график
                     Excel.Range chartRange = worksheet.Range[
                         worksheet.Cells[chartDataRow, chartStartCol],
                         worksheet.Cells[chartRow - 1, chartStartCol + 1]];
@@ -810,7 +880,6 @@ namespace EnergyMeteringSystem.App.Services.ExcelExport
                     chart.SetSourceData(chartRange);
                     chart.ChartType = chart1Type;
 
-                    // ✅ ЗАГОЛОВОК ВНУТРИ ПЕРВОГО ГРАФИКА
                     chart.HasTitle = true;
                     chart.ChartTitle.Text = chart1Title;
                     chart.ChartTitle.Font.Size = 12;
@@ -827,13 +896,12 @@ namespace EnergyMeteringSystem.App.Services.ExcelExport
                     }
                 }
 
-                // ========== ВТОРОЙ ГРАФИК (под первым, с заголовком внутри) ==========
+                // ВТОРОЙ ГРАФИК
                 if (chart2Data != null && chart2Data.Any())
                 {
                     int chart2StartCol = tableLastColumn + 2;
-
-                    // Данные для второго графика (на 25 строк ниже)
                     int chart2DataRow = dataStartRow + 25;
+
                     worksheet.Cells[chart2DataRow, chart2StartCol] = "Категория";
                     worksheet.Cells[chart2DataRow, chart2StartCol + 1] = "Значение, кВт·ч";
                     worksheet.Rows[chart2DataRow].Font.Bold = true;
@@ -848,7 +916,6 @@ namespace EnergyMeteringSystem.App.Services.ExcelExport
                         chart2Row++;
                     }
 
-                    // Создаем второй график
                     Excel.Range chart2Range = worksheet.Range[
                         worksheet.Cells[chart2DataRow, chart2StartCol],
                         worksheet.Cells[chart2Row - 1, chart2StartCol + 1]];
@@ -863,27 +930,22 @@ namespace EnergyMeteringSystem.App.Services.ExcelExport
                     chart2.SetSourceData(chart2Range);
                     chart2.ChartType = chart2Type;
 
-                    // ✅ ЗАГОЛОВОК ВНУТРИ ВТОРОГО ГРАФИКА
                     chart2.HasTitle = true;
                     chart2.ChartTitle.Text = chart2Title;
                     chart2.ChartTitle.Font.Size = 12;
                     chart2.ChartTitle.Font.Bold = true;
 
-                    if (chart2Type == Excel.XlChartType.xlColumnClustered)
-                    {
-                        chart2.ApplyDataLabels(Excel.XlDataLabelsType.xlDataLabelsShowValue);
-                        chart2.Legend.Position = Excel.XlLegendPosition.xlLegendPositionTop;
-                    }
-                    else
-                    {
-                        chart2.ApplyDataLabels(Excel.XlDataLabelsType.xlDataLabelsShowValue);
-                    }
+                    chart2.ApplyDataLabels(Excel.XlDataLabelsType.xlDataLabelsShowValue);
                 }
 
                 worksheet.Columns.AutoFit();
                 workbook.SaveAs(dialog.FileName);
 
+                // ✅ ЗАКРЫВАЕМ EXCEL БЕЗОПАСНО
+                SafeCloseExcel(worksheet, workbook, excel);
+
                 System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(dialog.FileName) { UseShellExecute = true });
+
                 MessageBox.Show($"Отчет с графиками сохранен:\n{dialog.FileName}", "Успех",
                     MessageBoxButton.OK, MessageBoxImage.Information);
                 return true;
@@ -896,11 +958,39 @@ namespace EnergyMeteringSystem.App.Services.ExcelExport
             }
             finally
             {
-                if (workbook != null) workbook.Close(false);
-                if (excel != null) excel.Quit();
-                if (worksheet != null) System.Runtime.InteropServices.Marshal.ReleaseComObject(worksheet);
-                if (workbook != null) System.Runtime.InteropServices.Marshal.ReleaseComObject(workbook);
-                if (excel != null) System.Runtime.InteropServices.Marshal.ReleaseComObject(excel);
+                try
+                {
+                    if (worksheet != null)
+                    {
+                        System.Runtime.InteropServices.Marshal.ReleaseComObject(worksheet);
+                        worksheet = null;
+                    }
+                }
+                catch { }
+
+                try
+                {
+                    if (workbook != null)
+                    {
+                        System.Runtime.InteropServices.Marshal.ReleaseComObject(workbook);
+                        workbook = null;
+                    }
+                }
+                catch { }
+
+                try
+                {
+                    if (excel != null)
+                    {
+                        System.Runtime.InteropServices.Marshal.ReleaseComObject(excel);
+                        excel = null;
+                    }
+                }
+                catch { }
+
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+                GC.Collect();
             }
         }
     }

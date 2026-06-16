@@ -156,23 +156,32 @@
                 </Grid>
             </Border>
 
-            <!-- Таблица -->
             <DataGrid Grid.Row="2" 
-                      x:Name="MainDataGrid" 
-                      ItemsSource="{Binding CurrentData}"
-                      AutoGenerateColumns="True"
-                      IsReadOnly="True"
-                      Margin="0,0,0,10"
-                      MinHeight="200"
-                      MaxHeight="400"
-                      AutoGeneratingColumn="DataGrid_AutoGeneratingColumn"
-                      AlternatingRowBackground="{DynamicResource DataGridAlternatingBrush}"
-                      AlternationCount="2"
-                      Background="{DynamicResource DataGridBackgroundBrush}"
-                      BorderBrush="{DynamicResource DataGridBorderBrush}"
-                      RowHeaderWidth="0"
-                      ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}"
-                      CellStyle="{StaticResource DataGridCellStyle}"/>
+          x:Name="MainDataGrid" 
+          ItemsSource="{Binding CurrentData}"
+          AutoGenerateColumns="True"
+          IsReadOnly="True"
+          Margin="0,0,0,10"
+          MinHeight="200"
+          MaxHeight="400"
+          AutoGeneratingColumn="DataGrid_AutoGeneratingColumn"
+          AlternatingRowBackground="{DynamicResource DataGridAlternatingBrush}"
+          AlternationCount="2"
+          Background="{DynamicResource DataGridBackgroundBrush}"
+          BorderBrush="{DynamicResource DataGridBorderBrush}"
+          RowHeaderWidth="0"
+          ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}"
+          CellStyle="{StaticResource DataGridCellStyle}"
+          HorizontalAlignment="Stretch"
+          HorizontalContentAlignment="Stretch"
+          Width="Auto">
+                <DataGrid.Resources>
+                    <Style TargetType="DataGridColumnHeader">
+                        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                        <Setter Property="FontWeight" Value="SemiBold"/>
+                    </Style>
+                </DataGrid.Resources>
+            </DataGrid>
 
             <!-- Графики -->
             <Border Grid.Row="3" 

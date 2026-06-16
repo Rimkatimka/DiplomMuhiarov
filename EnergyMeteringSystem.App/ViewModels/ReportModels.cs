@@ -41,24 +41,15 @@ namespace EnergyMeteringSystem.App.Models
             {
                 if (StartDate.Month == EndDate.Month && StartDate.Year == EndDate.Year)
                 {
-                    return GetMonthName(StartDate.Month) + " " + StartDate.Year;
-                }
-                else if (StartDate.Year == EndDate.Year)
-                {
-                    return $"{GetMonthName(StartDate.Month)} - {GetMonthName(EndDate.Month)} {StartDate.Year}";
+                    string[] months = { "Янв", "Фев", "Мар", "Апр", "Май", "Июн",
+                                    "Июл", "Авг", "Сен", "Окт", "Ноя", "Дек" };
+                    return months[StartDate.Month - 1] + " " + StartDate.Year;
                 }
                 else
                 {
-                    return $"{GetMonthName(StartDate.Month)} {StartDate.Year} - {GetMonthName(EndDate.Month)} {EndDate.Year}";
+                    return $"{StartDate:dd.MM.yyyy} - {EndDate:dd.MM.yyyy}";
                 }
             }
-        }
-
-        private string GetMonthName(int month)
-        {
-            string[] months = { "Янв", "Фев", "Мар", "Апр", "Май", "Июн",
-                            "Июл", "Авг", "Сен", "Окт", "Ноя", "Дек" };
-            return months[month - 1];
         }
     }
 
