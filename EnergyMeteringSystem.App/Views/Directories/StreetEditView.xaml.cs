@@ -23,7 +23,7 @@ namespace EnergyMeteringSystem.App.Views.Directories
                 {
                     if (DialogService.ConfirmCancel())
                     {
-                        e.Cancel = true;
+                        e.Cancel = false;
                     }
                 };
             }

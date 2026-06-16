@@ -30,7 +30,36 @@ namespace EnergyMeteringSystem.App.Models
         public decimal Consumption { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
+
+        // Старый период (скрыт)
         public string PeriodText => $"{StartDate:dd.MM.yyyy} - {EndDate:dd.MM.yyyy}";
+
+        // Новый период (показывается вместо дат)
+        public string PeriodDisplay
+        {
+            get
+            {
+                if (StartDate.Month == EndDate.Month && StartDate.Year == EndDate.Year)
+                {
+                    return GetMonthName(StartDate.Month) + " " + StartDate.Year;
+                }
+                else if (StartDate.Year == EndDate.Year)
+                {
+                    return $"{GetMonthName(StartDate.Month)} - {GetMonthName(EndDate.Month)} {StartDate.Year}";
+                }
+                else
+                {
+                    return $"{GetMonthName(StartDate.Month)} {StartDate.Year} - {GetMonthName(EndDate.Month)} {EndDate.Year}";
+                }
+            }
+        }
+
+        private string GetMonthName(int month)
+        {
+            string[] months = { "Янв", "Фев", "Мар", "Апр", "Май", "Июн",
+                            "Июл", "Авг", "Сен", "Окт", "Ноя", "Дек" };
+            return months[month - 1];
+        }
     }
 
     // 2. ТОП-10 объектов

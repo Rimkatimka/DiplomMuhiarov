@@ -138,7 +138,17 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
         public ConsumptionObjectEditViewModel()
             : base(new ConsumptionObjectRepository(), null)
         {
-            InitializeRepositories();
+            // Инициализация репозиториев прямо в конструкторе
+            _streetRepository = new StreetRepository();
+            _typeRepository = new ObjectTypeRepository();
+            _cityRepository = new CityRepository();
+            _regionRepository = new RegionRepository();
+
+            // Инициализация коллекций
+            Regions = new ObservableCollection<RegionDto>();
+            Cities = new ObservableCollection<CityDto>();
+            StreetsList = new ObservableCollection<StreetDto>();
+            ObjectTypes = new ObservableCollection<ObjectTypeDto>();
 
             AddRegionCommand = new RelayCommand(_ => AddRegion());
             AddCityCommand = new RelayCommand(_ => AddCity());
@@ -159,7 +169,17 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
         public ConsumptionObjectEditViewModel(ConsumptionObjectDto existingObject)
             : base(new ConsumptionObjectRepository(), existingObject)
         {
-            InitializeRepositories();
+            // Инициализация репозиториев прямо в конструкторе
+            _streetRepository = new StreetRepository();
+            _typeRepository = new ObjectTypeRepository();
+            _cityRepository = new CityRepository();
+            _regionRepository = new RegionRepository();
+
+            // Инициализация коллекций
+            Regions = new ObservableCollection<RegionDto>();
+            Cities = new ObservableCollection<CityDto>();
+            StreetsList = new ObservableCollection<StreetDto>();
+            ObjectTypes = new ObservableCollection<ObjectTypeDto>();
 
             Title = "Редактирование объекта";
             IsEditMode = true;
@@ -178,19 +198,6 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
             _objectTypesLoadTask = LoadObjectTypesAsync();
 
             _ = LoadCityAndStreetAsync(existingObject);
-        }
-
-        private void InitializeRepositories()
-        {
-            _streetRepository = new StreetRepository();
-            _typeRepository = new ObjectTypeRepository();
-            _cityRepository = new CityRepository();
-            _regionRepository = new RegionRepository();
-
-            Regions = new ObservableCollection<RegionDto>();
-            Cities = new ObservableCollection<CityDto>();
-            StreetsList = new ObservableCollection<StreetDto>();
-            ObjectTypes = new ObservableCollection<ObjectTypeDto>();
         }
 
         private async Task LoadRegionsAsync()

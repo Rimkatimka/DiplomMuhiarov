@@ -21,7 +21,7 @@ namespace EnergyMeteringSystem.App.Views.Objects
             {
                 if (_viewModel.HasChanges && DialogService.ConfirmCancel())
                 {
-                    e.Cancel = true;
+                    e.Cancel = false;
                 }
             };
         }

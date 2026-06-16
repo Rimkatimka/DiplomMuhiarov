@@ -28,6 +28,37 @@ namespace EnergyMeteringSystem.App.Views.Admin
                 var window = Window.GetWindow(this);
                 window?.Close();
             };
+
+            // ✅ ПОДПИСКА НА СОБЫТИЕ ЗАКРЫТИЯ ОКНА
+            this.Loaded += (s, e) =>
+            {
+                var window = Window.GetWindow(this);
+                if (window != null)
+                {
+                    window.Closing += Window_Closing;
+                }
+            };
+        }
+
+        // ✅ ОБРАБОТЧИК ЗАКРЫТИЯ ОКНА
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            if (_viewModel.HasChanges)
+            {
+                // Спрашиваем пользователя
+                var result = MessageBox.Show(
+                    "Вы уверены, что хотите закрыть окно?\n\nВсе несохраненные данные будут потеряны.",
+                    "Подтверждение закрытия",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Question);
+
+                // Если пользователь нажал "Нет" - отменяем закрытие
+                if (result == MessageBoxResult.No)
+                {
+                    e.Cancel = true;
+                }
+                // Если "Да" - закрываемся
+            }
         }
 
         private void TextBox_PreviewTextInput(object sender, TextCompositionEventArgs e)

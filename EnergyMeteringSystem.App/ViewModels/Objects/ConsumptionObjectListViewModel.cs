@@ -286,7 +286,8 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
             var editView = new Views.Objects.ConsumptionObjectEditView(editViewModel);
             editView.Owner = Application.Current.MainWindow;
 
-            editViewModel.OnObjectSaved += async (s, e) =>
+            // ✅ ИСПОЛЬЗУЙТЕ OnSaved (из базового класса)
+            editViewModel.OnSaved += async (s, e) =>
             {
                 await LoadDataAsync();
                 editView.Close();
@@ -302,7 +303,8 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
             var editView = new Views.Objects.ConsumptionObjectEditView(editViewModel);
             editView.Owner = Application.Current.MainWindow;
 
-            editViewModel.OnObjectSaved += async (s, e) =>
+            // ✅ ИСПОЛЬЗУЙТЕ OnSaved (из базового класса)
+            editViewModel.OnSaved += async (s, e) =>
             {
                 await LoadDataAsync();
                 editView.Close();
