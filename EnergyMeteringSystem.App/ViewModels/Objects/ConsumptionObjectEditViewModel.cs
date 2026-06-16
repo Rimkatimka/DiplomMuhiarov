@@ -129,20 +129,21 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
         public bool IsPrivateHouse => SelectedObjectType?.Name == "Частный дом";
         public bool IsApartmentNumberEnabled => !IsPrivateHouse;
 
-        private RelayCommand _addRegionCommand;
-        private RelayCommand _addCityCommand;
-        private RelayCommand _addStreetCommand;
-
-        public RelayCommand AddRegionCommand => _addRegionCommand ?? (_addRegionCommand = new RelayCommand(_ => AddRegion()));
-        public RelayCommand AddCityCommand => _addCityCommand ?? (_addCityCommand = new RelayCommand(_ => AddCity()));
-        public RelayCommand AddStreetCommand => _addStreetCommand ?? (_addStreetCommand = new RelayCommand(_ => AddStreet()));
+        // ✅ КОМАНДЫ - инициализируем в конструкторе
+        public RelayCommand AddRegionCommand { get; }
+        public RelayCommand AddCityCommand { get; }
+        public RelayCommand AddStreetCommand { get; }
 
         // Конструктор для добавления
         public ConsumptionObjectEditViewModel()
             : base(new ConsumptionObjectRepository(), null)
         {
             InitializeRepositories();
-            InitializeCommands();  // ← ДОЛЖЕН БЫТЬ ВЫЗВАН
+
+            AddRegionCommand = new RelayCommand(_ => AddRegion());
+            AddCityCommand = new RelayCommand(_ => AddCity());
+            AddStreetCommand = new RelayCommand(_ => AddStreet());
+
             Title = "Добавление объекта";
             IsEditMode = false;
 
@@ -151,7 +152,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
             TotalArea = 0;
             ResidentCount = null;
 
-            LoadDataAsync();
+            _ = LoadDataAsync();
         }
 
         // Конструктор для редактирования
@@ -159,9 +160,13 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
             : base(new ConsumptionObjectRepository(), existingObject)
         {
             InitializeRepositories();
-            InitializeCommands();  // ← ДОЛЖЕН БЫТЬ ВЫЗВАН
+
             Title = "Редактирование объекта";
             IsEditMode = true;
+
+            AddRegionCommand = new RelayCommand(_ => AddRegion());
+            AddCityCommand = new RelayCommand(_ => AddCity());
+            AddStreetCommand = new RelayCommand(_ => AddStreet());
 
             _originalItem = existingObject;
             HouseNumber = existingObject.HouseNumber;
@@ -172,7 +177,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
             _regionsLoadTask = LoadRegionsAsync();
             _objectTypesLoadTask = LoadObjectTypesAsync();
 
-            Task.Run(async () => await LoadCityAndStreetAsync(existingObject));
+            _ = LoadCityAndStreetAsync(existingObject);
         }
 
         private void InitializeRepositories()
@@ -186,14 +191,6 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
             Cities = new ObservableCollection<CityDto>();
             StreetsList = new ObservableCollection<StreetDto>();
             ObjectTypes = new ObservableCollection<ObjectTypeDto>();
-        }
-
-        private void InitializeCommands()
-        {
-            // ✅ Инициализация команд - ДОБАВЛЯЕМ
-            AddRegionCommand = new RelayCommand(_ => AddRegion());
-            AddCityCommand = new RelayCommand(_ => AddCity());
-            AddStreetCommand = new RelayCommand(_ => AddStreet());
         }
 
         private async Task LoadRegionsAsync()
@@ -247,6 +244,13 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
             });
         }
 
+        private async Task LoadDataAsync()
+        {
+            await LoadRegionsAsync();
+            await LoadObjectTypesAsync();
+            IsLoadingData = false;
+        }
+
         private async Task LoadCityAndStreetAsync(ConsumptionObjectDto obj)
         {
             try
@@ -284,13 +288,6 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
             {
                 IsLoadingData = false;
             }
-        }
-
-        private async void LoadDataAsync()
-        {
-            await LoadRegionsAsync();
-            await LoadObjectTypesAsync();
-            IsLoadingData = false;
         }
 
         private void AddRegion()
