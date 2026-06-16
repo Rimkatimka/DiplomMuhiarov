@@ -21,6 +21,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
         private MeterDto _selectedMeter;
         private DateTime _startDate;
         private DateTime _endDate;
+        private bool _isLoading;
 
         public ObservableCollection<ConsumptionObjectDto> Objects { get; set; }
         public ObservableCollection<MeterDto> Meters { get; set; }
@@ -29,6 +30,12 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
         public SeriesCollection SeriesCollection { get; set; }
         public string[] ChartDates { get; set; }
         public Func<double, string> YFormatter { get; set; }
+
+        public bool IsLoading
+        {
+            get => _isLoading;
+            set => SetProperty(ref _isLoading, value);
+        }
 
         public ConsumptionObjectDto SelectedObject
         {
@@ -95,61 +102,132 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
 
             RefreshCommand = new AsyncRelayCommand(async () => await LoadHistoryAsync());
 
+            // Загружаем объекты при создании ViewModel
             _ = LoadObjectsAsync();
         }
 
         private async Task LoadObjectsAsync()
         {
-            await ExecuteAsync(async () =>
+            try
             {
+                IsLoading = true;
+                System.Diagnostics.Debug.WriteLine("LoadObjectsAsync: начало");
+
                 var list = await _objectRepository.GetAllAsync();
+                System.Diagnostics.Debug.WriteLine($"LoadObjectsAsync: загружено {list.Count} объектов");
+
                 Objects.Clear();
                 foreach (var obj in list)
+                {
                     Objects.Add(obj);
-            }, "Ошибка загрузки объектов");
+                }
+
+                // Если есть объекты - выбираем первый
+                if (Objects.Any())
+                {
+                    SelectedObject = Objects.First();
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Ошибка загрузки объектов: {ex.Message}");
+            }
+            finally
+            {
+                IsLoading = false;
+            }
         }
 
         private async Task LoadMetersAsync()
         {
-            await ExecuteAsync(async () =>
+            try
             {
+                IsLoading = true;
                 Meters.Clear();
-                if (_selectedObject == null) return;
 
+                if (_selectedObject == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("LoadMeters: объект не выбран");
+                    return;
+                }
+
+                System.Diagnostics.Debug.WriteLine($"LoadMeters: загружаем счетчики для объекта {_selectedObject.Id}");
                 var list = await _meterRepository.GetByObjectIdAsync(_selectedObject.Id);
+                System.Diagnostics.Debug.WriteLine($"LoadMeters: загружено {list.Count} счетчиков");
+
                 foreach (var meter in list)
+                {
                     Meters.Add(meter);
-            }, "Ошибка загрузки счетчиков");
+                }
+
+                // Если есть счетчики - выбираем первый
+                if (Meters.Any())
+                {
+                    SelectedMeter = Meters.First();
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Ошибка загрузки счетчиков: {ex.Message}");
+            }
+            finally
+            {
+                IsLoading = false;
+            }
         }
 
         private async Task LoadHistoryAsync()
         {
-            await ExecuteAsync(async () =>
+            try
             {
+                IsLoading = true;
                 Readings.Clear();
                 SeriesCollection.Clear();
 
-                if (_selectedMeter == null) return;
+                if (_selectedMeter == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("LoadHistory: счетчик не выбран");
+                    return;
+                }
 
+                System.Diagnostics.Debug.WriteLine($"LoadHistory: загружаем историю для счетчика {_selectedMeter.Id}");
                 var history = await _readingRepository.GetHistoryByMeterIdAsync(_selectedMeter.Id);
+                System.Diagnostics.Debug.WriteLine($"LoadHistory: загружено {history.Count} записей");
 
                 var filtered = history
                     .Where(h => h.ReadingDate >= _startDate && h.ReadingDate <= _endDate)
                     .OrderBy(h => h.ReadingDate)
                     .ToList();
 
-                foreach (var item in filtered)
-                    Readings.Add(item);
+                System.Diagnostics.Debug.WriteLine($"LoadHistory: после фильтрации {filtered.Count} записей");
 
+                foreach (var item in filtered)
+                {
+                    Readings.Add(item);
+                }
+
+                // Обновляем график
                 UpdateChart(filtered);
-            }, "Ошибка загрузки истории");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Ошибка загрузки истории: {ex.Message}");
+            }
+            finally
+            {
+                IsLoading = false;
+            }
         }
 
         private void UpdateChart(System.Collections.Generic.List<MeterReadingHistoryDto> data)
         {
             SeriesCollection.Clear();
 
-            if (!data.Any()) return;
+            if (!data.Any())
+            {
+                System.Diagnostics.Debug.WriteLine("UpdateChart: нет данных для графика");
+                return;
+            }
 
             var values = data.Select(h => (double)h.Value).ToArray();
             var consumptions = data.Select(h => (double)(h.Consumption ?? 0)).ToArray();
@@ -170,6 +248,8 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
                 Values = new ChartValues<double>(consumptions),
                 Fill = System.Windows.Media.Brushes.Orange
             });
+
+            System.Diagnostics.Debug.WriteLine($"UpdateChart: график обновлен с {data.Count} точками");
         }
     }
 }

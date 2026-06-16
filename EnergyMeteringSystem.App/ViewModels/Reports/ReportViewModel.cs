@@ -7,6 +7,7 @@ using EnergyMeteringSystem.Data.Repositories;
 using LiveCharts;
 using LiveCharts.Wpf;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
@@ -633,7 +634,11 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
         {
             try
             {
-                var monthlyData = new System.Collections.Generic.List<MonthlyRecord>();
+                System.Diagnostics.Debug.WriteLine("LoadMonthlyDynamicsReportAsync: НАЧАЛО");
+                System.Diagnostics.Debug.WriteLine($"  StartYear: {_startYear}, StartMonth: {_startMonth}");
+                System.Diagnostics.Debug.WriteLine($"  EndYear: {_endYear}, EndMonth: {_endMonth}");
+
+                var monthlyData = new List<MonthlyRecord>();
 
                 DateTime current = new DateTime(_startYear, _startMonth, 1);
                 DateTime end = new DateTime(_endYear, _endMonth, 1);
@@ -646,8 +651,15 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
                     DateTime monthStart = new DateTime(year, month, 1);
                     DateTime monthEnd = new DateTime(year, month, DateTime.DaysInMonth(year, month));
 
+                    // ✅ ЛОГИРУЕМ ЗАПРОС
+                    System.Diagnostics.Debug.WriteLine($"Запрос за {month}.{year}: {monthStart:dd.MM.yyyy} - {monthEnd:dd.MM.yyyy}");
+
                     var readings = await _reportRepository.GetConsumptionReportOptimizedAsync(monthStart, monthEnd);
+
+                    // ✅ СУММИРУЕМ ПОТРЕБЛЕНИЕ
                     decimal consumption = readings.Sum(r => r.Consumption);
+
+                    System.Diagnostics.Debug.WriteLine($"  Найдено записей: {readings.Count}, Потребление: {consumption}");
 
                     monthlyData.Add(new MonthlyRecord
                     {
@@ -674,28 +686,35 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
                     MaxMonth = maxMonth?.MonthName ?? ""
                 };
 
+                System.Diagnostics.Debug.WriteLine($"Загружено месяцев: {monthlyData.Count}");
+                System.Diagnostics.Debug.WriteLine($"Общее потребление: {_monthlyDynamicsData.TotalConsumption}");
+
+                // ✅ ОБНОВЛЯЕМ ГРАФИК
                 if (IsChartMode && _monthlyDynamicsData.Records.Any())
                 {
                     MonthLabels = _monthlyDynamicsData.Records.Select(x => $"{x.MonthName}\n{x.Year}").ToArray();
                     MonthlySeries = new SeriesCollection
-                    {
-                        new ColumnSeries
-                        {
-                            Title = "Потребление",
-                            Values = new ChartValues<decimal>(_monthlyDynamicsData.Records.Select(x => x.Consumption)),
-                            DataLabels = true,
-                            LabelPoint = point => $"{point.Y:N0}"
-                        }
-                    };
+            {
+                new ColumnSeries
+                {
+                    Title = "Потребление, кВт·ч",
+                    Values = new ChartValues<decimal>(_monthlyDynamicsData.Records.Select(x => x.Consumption)),
+                    DataLabels = true,
+                    LabelPoint = point => $"{point.Y:F0}"
+                }
+            };
+
+                    System.Diagnostics.Debug.WriteLine($"График обновлен: {MonthLabels.Length} месяцев");
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error in LoadMonthlyDynamicsReportAsync: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"ОШИБКА в LoadMonthlyDynamicsReportAsync: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine(ex.StackTrace);
                 _monthlyDynamicsData = new MonthlyDynamicsReport
                 {
                     Title = "Динамика потребления по месяцам",
-                    Records = new System.Collections.Generic.List<MonthlyRecord>()
+                    Records = new List<MonthlyRecord>()
                 };
             }
         }

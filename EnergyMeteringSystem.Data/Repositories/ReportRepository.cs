@@ -20,29 +20,44 @@ namespace EnergyMeteringSystem.Data.Repositories
         // ✅ ОСНОВНОЙ МЕТОД ДЛЯ ОТЧЕТОВ
         public async Task<List<ConsumptionReportDto>> GetConsumptionReportOptimizedAsync(DateTime startDate, DateTime endDate)
         {
+            System.Diagnostics.Debug.WriteLine($"GetConsumptionReportOptimizedAsync: {startDate:dd.MM.yyyy} - {endDate:dd.MM.yyyy}");
+
             try
             {
-                var result = new List<ConsumptionReportDto>();
-
-                // Получаем все показания за период
+                // ✅ ПРОСТОЙ ЗАПРОС - ПОЛУЧАЕМ ТОЛЬКО ПОКАЗАНИЯ
                 var readings = await _context.MeterReading
-                    .Include(r => r.Meter)
-                    .Include(r => r.Meter.ConsumptionObject)
-                    .Include(r => r.Meter.ConsumptionObject.Street)
-                    .Include(r => r.Meter.ConsumptionObject.Street.City)
-                    .Include(r => r.Meter.ConsumptionObject.Street.City.Region)
-                    .Include(r => r.Meter.ConsumptionObject.ObjectType)
                     .Where(r => r.ReadingDate >= startDate && r.ReadingDate <= endDate)
                     .OrderBy(r => r.MeterId)
                     .ThenBy(r => r.ReadingDate)
                     .ToListAsync();
+
+                System.Diagnostics.Debug.WriteLine($"  Найдено показаний: {readings.Count}");
+
+                if (!readings.Any())
+                {
+                    System.Diagnostics.Debug.WriteLine("  Нет показаний за период");
+                    return new List<ConsumptionReportDto>();
+                }
+
+                var result = new List<ConsumptionReportDto>();
 
                 // Группируем по счетчикам
                 var groupedByMeter = readings.GroupBy(r => r.MeterId);
 
                 foreach (var meterGroup in groupedByMeter)
                 {
-                    var meter = meterGroup.First().Meter;
+                    var meterId = meterGroup.Key;
+                    var orderedReadings = meterGroup.OrderBy(r => r.ReadingDate).ToList();
+
+                    // Получаем информацию о счетчике и объекте
+                    var meter = await _context.Meter
+                        .Include(m => m.ConsumptionObject)
+                        .Include(m => m.ConsumptionObject.Street)
+                        .Include(m => m.ConsumptionObject.Street.City)
+                        .Include(m => m.ConsumptionObject.Street.City.Region)
+                        .Include(m => m.ConsumptionObject.ObjectType)
+                        .FirstOrDefaultAsync(m => m.Id == meterId);
+
                     if (meter?.ConsumptionObject == null) continue;
 
                     var obj = meter.ConsumptionObject;
@@ -51,38 +66,66 @@ namespace EnergyMeteringSystem.Data.Repositories
                     var region = city?.Region;
                     var objectType = obj.ObjectType;
 
-                    var orderedReadings = meterGroup.OrderBy(r => r.ReadingDate).ToList();
-                    if (orderedReadings.Count < 2) continue;
-
-                    var first = orderedReadings.First();
-                    var last = orderedReadings.Last();
-                    decimal consumption = last.Value - first.Value;
-
-                    if (consumption <= 0) continue;
-
-                    string fullAddress = $"{region?.Name}, {city?.Name}, {street?.Name}, {obj.HouseNumber}";
-                    if (!string.IsNullOrEmpty(obj.ApartmentNumber))
-                        fullAddress += $"/{obj.ApartmentNumber}";
-
-                    result.Add(new ConsumptionReportDto
+                    // Если только одно показание - используем InitialReading
+                    if (orderedReadings.Count == 1)
                     {
-                        ObjectId = obj.Id,
-                        Address = fullAddress,
-                        MeterSerial = meter.SerialNumber,
-                        StartDate = first.ReadingDate,
-                        EndDate = last.ReadingDate,
-                        StartValue = first.Value,
-                        EndValue = last.Value,
-                        Consumption = consumption,
-                        ObjectType = objectType?.Name ?? "Не указан"
-                    });
+                        var reading = orderedReadings.First();
+                        decimal consumption = reading.Value - meter.InitialReading;
+
+                        if (consumption <= 0) continue;
+
+                        string fullAddress = $"{region?.Name}, {city?.Name}, {street?.Name}, {obj.HouseNumber}";
+                        if (!string.IsNullOrEmpty(obj.ApartmentNumber))
+                            fullAddress += $"/{obj.ApartmentNumber}";
+
+                        result.Add(new ConsumptionReportDto
+                        {
+                            ObjectId = obj.Id,
+                            Address = fullAddress,
+                            MeterSerial = meter.SerialNumber,
+                            StartDate = meter.InstallationDate,
+                            EndDate = reading.ReadingDate,
+                            StartValue = meter.InitialReading,
+                            EndValue = reading.Value,
+                            Consumption = consumption,
+                            ObjectType = objectType?.Name ?? "Не указан"
+                        });
+                    }
+                    else
+                    {
+                        // Несколько показаний - берем первое и последнее
+                        var first = orderedReadings.First();
+                        var last = orderedReadings.Last();
+                        decimal consumption = last.Value - first.Value;
+
+                        if (consumption <= 0) continue;
+
+                        string fullAddress = $"{region?.Name}, {city?.Name}, {street?.Name}, {obj.HouseNumber}";
+                        if (!string.IsNullOrEmpty(obj.ApartmentNumber))
+                            fullAddress += $"/{obj.ApartmentNumber}";
+
+                        result.Add(new ConsumptionReportDto
+                        {
+                            ObjectId = obj.Id,
+                            Address = fullAddress,
+                            MeterSerial = meter.SerialNumber,
+                            StartDate = first.ReadingDate,
+                            EndDate = last.ReadingDate,
+                            StartValue = first.Value,
+                            EndValue = last.Value,
+                            Consumption = consumption,
+                            ObjectType = objectType?.Name ?? "Не указан"
+                        });
+                    }
                 }
 
+                System.Diagnostics.Debug.WriteLine($"  Итоговых записей: {result.Count}");
                 return result;
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"GetConsumptionReportOptimizedAsync ERROR: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"ОШИБКА: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine(ex.StackTrace);
                 return new List<ConsumptionReportDto>();
             }
         }
