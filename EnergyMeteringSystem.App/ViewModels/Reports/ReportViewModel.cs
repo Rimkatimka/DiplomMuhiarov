@@ -52,6 +52,14 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
         private string[] _monthLabels;
         private SeriesCollection _typeDistributionSeries = new SeriesCollection();
 
+        public string TotalConsumptionDisplay => _consumptionData?.TotalConsumption.ToString("N0") ?? "0";
+        public string AverageConsumptionDisplay => _consumptionData?.AverageConsumption.ToString("N2") ?? "0";
+        public string MaxConsumptionDisplay => _consumptionData?.MaxConsumption.ToString("N0") ?? "0";
+        public string MinConsumptionDisplay => _consumptionData?.MinConsumption.ToString("N0") ?? "0";
+        public string AnomalyCountDisplay => _consumptionData?.AnomalyCount.ToString() ?? "0";
+        public string TotalObjectsDisplay => _consumptionData?.TotalObjects.ToString() ?? "0";
+        public string TotalRecordsDisplay => _consumptionData?.TotalRecords.ToString() ?? "0";
+
         public ReportViewModel()
         {
             _reportRepository = new ReportRepository();
@@ -77,6 +85,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
             _endMonthName = Months[11];
             TopObjectsSeries = new SeriesCollection();
             MonthlySeries = new SeriesCollection();
+
 
             _ = LoadReportAsync();
         }
@@ -443,77 +452,49 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
                     Title = "Отчет по потреблению электроэнергии",
                     PeriodStart = StartDate,
                     PeriodEnd = EndDate,
-                    Records = new System.Collections.Generic.List<ConsumptionRecord>(),
-                    TotalConsumption = 0
+                    Records = new List<ConsumptionRecord>(),
+                    TotalConsumption = 0,
+                    AverageConsumption = 0,
+                    MaxConsumption = 0,
+                    MinConsumption = 0,
+                    AnomalyCount = 0
                 };
                 return;
             }
+
+            var records = data.Select(d => new ConsumptionRecord
+            {
+                Address = d.Address,
+                MeterSerial = d.MeterSerial,
+                StartValue = d.StartValue,
+                EndValue = d.EndValue,
+                Consumption = d.Consumption,
+                StartDate = d.StartDate,
+                EndDate = d.EndDate,
+                ObjectType = d.ObjectType ?? "Не указан"
+            }).ToList();
+
+            var totalConsumption = records.Sum(r => r.Consumption);
 
             _consumptionData = new ConsumptionReport
             {
                 Title = "Отчет по потреблению электроэнергии",
                 PeriodStart = StartDate,
                 PeriodEnd = EndDate,
-                Records = data.Select(d => new ConsumptionRecord
-                {
-                    Address = d.Address,
-                    MeterSerial = d.MeterSerial,
-                    StartValue = d.StartValue,
-                    EndValue = d.EndValue,
-                    Consumption = d.Consumption,
-                    StartDate = d.StartDate,
-                    EndDate = d.EndDate
-                }).ToList(),
-                TotalConsumption = data.Sum(d => d.Consumption),
-                TotalObjects = data.Select(d => d.ObjectId).Distinct().Count(),
-                TotalRecords = data.Count
+                Records = records,
+                TotalConsumption = totalConsumption,
+                TotalObjects = records.Select(r => r.Address).Distinct().Count(),
+                TotalRecords = records.Count,
+
+                // ✅ ДОПОЛНИТЕЛЬНЫЕ ИТОГИ
+                AverageConsumption = records.Any() ? totalConsumption / records.Count : 0,
+                MaxConsumption = records.Any() ? records.Max(r => r.Consumption) : 0,
+                MinConsumption = records.Any() ? records.Min(r => r.Consumption) : 0,
+                AnomalyCount = records.Count(r => r.Consumption > 500),
+                ConsumptionByType = records
+                    .GroupBy(r => r.ObjectType)
+                    .ToDictionary(g => g.Key, g => g.Sum(r => r.Consumption))
             };
-
-            var typeDistribution = data
-                .Where(d => !string.IsNullOrEmpty(d.ObjectType))
-                .GroupBy(d => d.ObjectType)
-                .Select(g => new { TypeName = g.Key, Consumption = g.Sum(x => x.Consumption) })
-                .ToList();
-
-            if (typeDistribution.Any())
-            {
-                TypeDistributionSeries = new SeriesCollection();
-                foreach (var type in typeDistribution)
-                {
-                    TypeDistributionSeries.Add(new PieSeries
-                    {
-                        Title = type.TypeName,
-                        Values = new ChartValues<decimal> { type.Consumption },
-                        DataLabels = true,
-                        LabelPoint = point => $"{type.TypeName}: {point.Y:F0} кВт·ч"
-                    });
-                }
-            }
-
-            if (IsChartMode && _consumptionData.Records.Any())
-            {
-                var topByObject = _consumptionData.Records
-                    .GroupBy(r => r.Address)
-                    .Select(g => new { Address = g.Key, Consumption = g.Sum(x => x.Consumption) })
-                    .OrderByDescending(x => x.Consumption)
-                    .Take(10)
-                    .ToList();
-
-                if (topByObject.Any())
-                {
-                    TopObjectsLabels = topByObject.Select(x => x.Address.Length > 25 ? x.Address.Substring(0, 25) + "..." : x.Address).ToArray();
-                    TopObjectsSeries = new SeriesCollection
-                    {
-                        new ColumnSeries
-                        {
-                            Title = "Потребление",
-                            Values = new ChartValues<decimal>(topByObject.Select(x => x.Consumption)),
-                            DataLabels = true,
-                            LabelPoint = point => $"{point.Y:N0}"
-                        }
-                    };
-                }
-            }
         }
 
         private async Task LoadTypeDistributionReportAsync()
@@ -615,7 +596,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Reports
             if (IsChartMode && _topObjectsData.Records.Any())
             {
                 var top10 = _topObjectsData.Records.Take(10).ToList();
-                TopObjectsLabels = top10.Select((o, idx) => (idx + 1).ToString()).ToArray();
+                TopObjectsLabels = top10.Select(o => o.Address).ToArray();
                 TopObjectsSeries = new SeriesCollection
                 {
                     new ColumnSeries

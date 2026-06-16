@@ -69,16 +69,16 @@
                                        Foreground="{DynamicResource DataGridForegroundBrush}"/>
 
                             <lvc:CartesianChart Series="{Binding TopObjectsSeries}" 
-                                                LegendLocation="Top"
-                                                Height="300"
-                                                Width="400"
-                                                DisableAnimations="True"
-                                                Background="{DynamicResource DataGridBackgroundBrush}"
-                                                Foreground="{DynamicResource DataGridForegroundBrush}">
+                    LegendLocation="Top"
+                    Height="300"
+                    Width="400"
+                    DisableAnimations="True"
+                    Background="{DynamicResource DataGridBackgroundBrush}"
+                    Foreground="{DynamicResource DataGridForegroundBrush}">
                                 <lvc:CartesianChart.AxisX>
                                     <lvc:Axis Title="Объект" 
-                                              Labels="{Binding TopObjectsLabels}"
-                                              Foreground="{DynamicResource DataGridForegroundBrush}">
+                  Labels="{Binding TopObjectsLabels}"
+                  Foreground="{DynamicResource DataGridForegroundBrush}">
                                         <lvc:Axis.Separator>
                                             <lvc:Separator Stroke="{DynamicResource DataGridCellBorderBrush}"/>
                                         </lvc:Axis.Separator>
@@ -86,8 +86,8 @@
                                 </lvc:CartesianChart.AxisX>
                                 <lvc:CartesianChart.AxisY>
                                     <lvc:Axis Title="Потребление (кВт·ч)" 
-                                              LabelFormatter="{Binding XFormatter}"
-                                              Foreground="{DynamicResource DataGridForegroundBrush}">
+                  LabelFormatter="{Binding XFormatter}"
+                  Foreground="{DynamicResource DataGridForegroundBrush}">
                                         <lvc:Axis.Separator>
                                             <lvc:Separator Stroke="{DynamicResource DataGridCellBorderBrush}"/>
                                         </lvc:Axis.Separator>

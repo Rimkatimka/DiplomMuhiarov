@@ -19,6 +19,13 @@ namespace EnergyMeteringSystem.App.Models
         public decimal TotalConsumption { get; set; }
         public int TotalObjects { get; set; }
         public int TotalRecords { get; set; }
+
+        // ✅ ДОПОЛНИТЕЛЬНЫЕ ИТОГИ
+        public decimal AverageConsumption { get; set; }
+        public decimal MaxConsumption { get; set; }
+        public decimal MinConsumption { get; set; }
+        public int AnomalyCount { get; set; }
+        public Dictionary<string, decimal> ConsumptionByType { get; set; } = new();
     }
 
     public class ConsumptionRecord
@@ -30,11 +37,8 @@ namespace EnergyMeteringSystem.App.Models
         public decimal Consumption { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
+        public string ObjectType { get; set; } // ✅ ДОБАВИТЬ ДЛЯ ГРУППИРОВКИ
 
-        // Старый период (скрыт)
-        public string PeriodText => $"{StartDate:dd.MM.yyyy} - {EndDate:dd.MM.yyyy}";
-
-        // Новый период (показывается вместо дат)
         public string PeriodDisplay
         {
             get
@@ -45,12 +49,13 @@ namespace EnergyMeteringSystem.App.Models
                                     "Июл", "Авг", "Сен", "Окт", "Ноя", "Дек" };
                     return months[StartDate.Month - 1] + " " + StartDate.Year;
                 }
-                else
-                {
-                    return $"{StartDate:dd.MM.yyyy} - {EndDate:dd.MM.yyyy}";
-                }
+                return $"{StartDate:dd.MM.yyyy} - {EndDate:dd.MM.yyyy}";
             }
         }
+
+        // ✅ ДЛЯ УСЛОВНОГО ФОРМАТИРОВАНИЯ
+        public string AnomalyStatus => Consumption > 500 ? "Аномалия" : "Норма";
+        public string AnomalyColor => Consumption > 500 ? "#FF0000" : "#00AA00";
     }
 
     // 2. ТОП-10 объектов

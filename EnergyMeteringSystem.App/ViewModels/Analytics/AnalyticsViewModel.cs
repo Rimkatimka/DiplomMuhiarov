@@ -104,7 +104,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Analytics
             Months = new ObservableCollection<string>();
             TopObjects = new ObservableCollection<TopObjectDto>();
 
-            for (int i = 2024; i <= DateTime.Today.Year; i++)
+            for (int i = 2020; i <= DateTime.Today.Year; i++)
                 Years.Add(i);
 
             string[] monthNames = { "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
@@ -187,6 +187,11 @@ namespace EnergyMeteringSystem.App.ViewModels.Analytics
                 }
 
                 EndBatchUpdate();
+
+                // ✅ ПРИНУДИТЕЛЬНОЕ ОБНОВЛЕНИЕ UI
+                OnPropertyChanged(nameof(TopObjectsSeries));
+                OnPropertyChanged(nameof(TopObjectsLabels));
+                OnPropertyChanged(nameof(TypeDistributionSeries));
 
             }, "Ошибка загрузки аналитики");
         }

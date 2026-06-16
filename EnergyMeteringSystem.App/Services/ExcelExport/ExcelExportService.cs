@@ -1,5 +1,7 @@
 ﻿using ClosedXML.Excel;
 using EnergyMeteringSystem.App.Models;
+using Microsoft.Office.Interop.Excel;
+using Microsoft.Office.Interop.Word;
 using Microsoft.Win32;
 using System;
 using System.Linq;
@@ -376,34 +378,245 @@ namespace EnergyMeteringSystem.App.Services.ExcelExport
         private IXLWorksheet CreateConsumptionSheet(XLWorkbook workbook, ConsumptionReport report)
         {
             var ws = workbook.Worksheets.Add("Потребление");
+
+            // ===== ЗАГОЛОВОК =====
             ws.Cell(1, 1).Value = report.Title;
             ws.Cell(2, 1).Value = $"Период: {report.PeriodStart:dd.MM.yyyy} - {report.PeriodEnd:dd.MM.yyyy}";
             ws.Cell(3, 1).Value = $"Дата формирования: {report.GeneratedAt:dd.MM.yyyy HH:mm:ss}";
-            _styles.ApplyTitleStyle(ws.Range(1, 1, 1, 6));
-            _styles.ApplyHeaderStyle(ws.Row(5));
-            ws.Cell(5, 1).Value = "Адрес";
-            ws.Cell(5, 2).Value = "Счетчик";
-            ws.Cell(5, 3).Value = "Нач. показание";
-            ws.Cell(5, 4).Value = "Кон. показание";
-            ws.Cell(5, 5).Value = "Потребление, кВт·ч";
-            ws.Cell(5, 6).Value = "Период";
-            int row = 6;
+
+            // Заголовок - только нужные ячейки
+            var titleRange = ws.Range(1, 1, 1, 8);
+            titleRange.Merge();
+            titleRange.Style.Font.Bold = true;
+            titleRange.Style.Font.FontSize = 16;
+            titleRange.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            titleRange.Style.Fill.BackgroundColor = XLColor.FromArgb(45, 63, 94);
+            titleRange.Style.Font.FontColor = XLColor.White;
+
+            // ===== KPI КАРТОЧКИ =====
+            int kpiRow = 4;
+            ws.Cell(kpiRow, 1).Value = "📊 ИТОГИ";
+            ws.Cell(kpiRow, 1).Style.Font.Bold = true;
+            ws.Cell(kpiRow, 1).Style.Font.FontSize = 14;
+            ws.Range(kpiRow, 1, kpiRow, 2).Merge();
+            kpiRow += 1;
+
+            // Заголовки KPI
+            ws.Cell(kpiRow, 1).Value = "Показатель";
+            ws.Cell(kpiRow, 2).Value = "Значение";
+
+            // Фон только на эти две ячейки, а не на всю строку
+            ws.Cell(kpiRow, 1).Style.Font.Bold = true;
+            ws.Cell(kpiRow, 1).Style.Fill.BackgroundColor = XLColor.FromArgb(45, 63, 94);
+            ws.Cell(kpiRow, 1).Style.Font.FontColor = XLColor.White;
+            ws.Cell(kpiRow, 2).Style.Font.Bold = true;
+            ws.Cell(kpiRow, 2).Style.Fill.BackgroundColor = XLColor.FromArgb(45, 63, 94);
+            ws.Cell(kpiRow, 2).Style.Font.FontColor = XLColor.White;
+            kpiRow++;
+
+            int kpiStartRow = kpiRow;
+            var kpiLabels = new string[]
+            {
+        "Общее потребление, кВт·ч:",
+        "Среднее на запись:",
+        "Максимум:",
+        "Минимум:",
+        "Аномалий (>500):",
+        "Всего записей:"
+            };
+
+            foreach (var label in kpiLabels)
+            {
+                ws.Cell(kpiRow, 1).Value = label;
+                kpiRow++;
+            }
+
+            // Фон для KPI (только ячейки, а не вся строка)
+            var kpiRange = ws.Range(kpiStartRow, 1, kpiRow - 1, 2);
+            kpiRange.Style.Fill.BackgroundColor = XLColor.FromArgb(227, 242, 253);
+            kpiRange.Style.Border.OutsideBorder = XLBorderStyleValues.Medium;
+            kpiRange.Style.Border.OutsideBorderColor = XLColor.FromArgb(45, 63, 94);
+
+            // ===== ЗАГОЛОВКИ ТАБЛИЦЫ =====
+            int headerRow = kpiRow + 2;
+
+            // Заголовки таблицы - только ячейки, а не вся строка
+            string[] headers = { "№", "Адрес", "Тип", "Счетчик", "Нач. показание", "Кон. показание", "Потребление, кВт·ч", "Статус" };
+            for (int i = 0; i < headers.Length; i++)
+            {
+                ws.Cell(headerRow, i + 1).Value = headers[i];
+                ws.Cell(headerRow, i + 1).Style.Font.Bold = true;
+                ws.Cell(headerRow, i + 1).Style.Fill.BackgroundColor = XLColor.FromArgb(45, 63, 94);
+                ws.Cell(headerRow, i + 1).Style.Font.FontColor = XLColor.White;
+                ws.Cell(headerRow, i + 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                ws.Cell(headerRow, i + 1).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+            }
+
+            // ===== ДАННЫЕ =====
+            int row = headerRow + 1;
+            int rowIndex = 1;
+            int dataStartRow = row;
+
+            if (report.Records == null || !report.Records.Any())
+            {
+                ws.Cell(row, 1).Value = "Нет данных за выбранный период";
+                return ws;
+            }
+
             foreach (var record in report.Records.OrderByDescending(x => x.Consumption))
             {
-                ws.Cell(row, 1).Value = record.Address;
-                ws.Cell(row, 2).Value = record.MeterSerial;
-                ws.Cell(row, 3).Value = record.StartValue;
-                ws.Cell(row, 4).Value = record.EndValue;
-                ws.Cell(row, 5).Value = record.Consumption;
-                ws.Cell(row, 6).Value = record.PeriodText;
+                ws.Cell(row, 1).Value = rowIndex++;
+                ws.Cell(row, 2).Value = record.Address ?? "Не указан";
+                ws.Cell(row, 3).Value = record.ObjectType ?? "Не указан";
+                ws.Cell(row, 4).Value = record.MeterSerial ?? "Нет номера";
+                ws.Cell(row, 5).Value = Convert.ToDouble(record.StartValue);
+                ws.Cell(row, 6).Value = Convert.ToDouble(record.EndValue);
+                ws.Cell(row, 7).Value = Convert.ToDouble(record.Consumption);
+
+                // Статус через формулу
+                ws.Cell(row, 8).FormulaA1 = $"=IF(G{row}>500,\"⚠ Аномалия\",\"✅ Норма\")";
+
+                // ✅ ФОН ТОЛЬКО НА ЯЧЕЙКУ С ПОТРЕБЛЕНИЕМ, А НЕ НА ВСЮ СТРОКУ
+                if (record.Consumption > 500)
+                {
+                    ws.Cell(row, 7).Style.Font.FontColor = XLColor.Red;
+                    ws.Cell(row, 7).Style.Font.Bold = true;
+                    // ФОН ТОЛЬКО НА ЭТУ ЯЧЕЙКУ
+                    ws.Cell(row, 7).Style.Fill.BackgroundColor = XLColor.FromArgb(255, 200, 200);
+                }
+
+                // ✅ ЧЕРЕДОВАНИЕ СТРОК - ТОЛЬКО ЯЧЕЙКИ
+                if (row % 2 == 0)
+                {
+                    for (int col = 1; col <= 8; col++)
+                    {
+                        ws.Cell(row, col).Style.Fill.BackgroundColor = XLColor.FromArgb(245, 245, 245);
+                    }
+                }
+
                 row++;
             }
-            ws.Cell(row, 4).Value = "ИТОГО:";
-            ws.Cell(row, 5).Value = report.TotalConsumption;
-            ws.Cell(row, 6).Value = $"{report.TotalObjects} объектов, {report.TotalRecords} записей";
-            _styles.ApplyTotalStyle(ws.Range(row, 4, row, 6));
+
+            int dataEndRow = row - 1;
+            string gRange = $"G{dataStartRow}:G{dataEndRow}";
+            string cRange = $"C{dataStartRow}:C{dataEndRow}";
+            string gTotalCell = $"G{dataEndRow + 1}";
+
+            // ===== ЗАПОЛНЯЕМ KPI ФОРМУЛАМИ =====
+            int kpiFormulaRow = kpiStartRow;
+            var kpiFormulas = new string[]
+            {
+        $"=SUM({gRange})",
+        $"=AVERAGE({gRange})",
+        $"=MAX({gRange})",
+        $"=MIN({gRange})",
+        $"=COUNTIF({gRange},\">500\")",
+        $"=COUNTA({gRange})"
+            };
+
+            foreach (var formula in kpiFormulas)
+            {
+                ws.Cell(kpiFormulaRow, 2).FormulaA1 = formula;
+                ws.Cell(kpiFormulaRow, 2).Style.NumberFormat.SetFormat("#,##0.00");
+                kpiFormulaRow++;
+            }
+
+            // ===== ИТОГОВАЯ СТРОКА =====
+            int totalRow = dataEndRow + 1;
+            ws.Cell(totalRow, 6).Value = "ИТОГО:";
+            ws.Cell(totalRow, 6).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+            ws.Cell(totalRow, 7).FormulaA1 = $"=SUM({gRange})";
+            ws.Cell(totalRow, 7).Style.NumberFormat.SetFormat("#,##0.00");
+            ws.Cell(totalRow, 8).FormulaA1 = $"=COUNTA({gRange}) & \" записей\"";
+
+            // ✅ ФОН ТОЛЬКО НА НУЖНЫЕ ЯЧЕЙКИ ИТОГОВОЙ СТРОКИ
+            for (int col = 6; col <= 8; col++)
+            {
+                ws.Cell(totalRow, col).Style.Fill.BackgroundColor = XLColor.FromArgb(217, 225, 242);
+                ws.Cell(totalRow, col).Style.Font.Bold = true;
+            }
+
+            // ===== СВОДКА ПО ТИПАМ (СПРАВА) =====
+            int pivotRow = headerRow + 1;
+            int pivotCol = 10;
+
+            ws.Cell(pivotRow, pivotCol).Value = "📊 СВОДКА ПО ТИПАМ";
+            ws.Cell(pivotRow, pivotCol).Style.Font.Bold = true;
+            ws.Cell(pivotRow, pivotCol).Style.Font.FontSize = 14;
+            ws.Range(pivotRow, pivotCol, pivotRow, pivotCol + 2).Merge();
+            pivotRow += 2;
+
+            // Заголовки сводки
+            string[] pivotHeaders = { "Тип объекта", "Потребление, кВт·ч", "Доля, %" };
+            for (int i = 0; i < pivotHeaders.Length; i++)
+            {
+                ws.Cell(pivotRow, pivotCol + i).Value = pivotHeaders[i];
+                ws.Cell(pivotRow, pivotCol + i).Style.Font.Bold = true;
+                ws.Cell(pivotRow, pivotCol + i).Style.Fill.BackgroundColor = XLColor.FromArgb(45, 63, 94);
+                ws.Cell(pivotRow, pivotCol + i).Style.Font.FontColor = XLColor.White;
+                ws.Cell(pivotRow, pivotCol + i).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            }
+            pivotRow++;
+
+            int pivotStartRow = pivotRow;
+            var types = report.Records.Select(r => r.ObjectType ?? "Не указан").Distinct().ToList();
+
+            foreach (var type in types)
+            {
+                ws.Cell(pivotRow, pivotCol).Value = type;
+                ws.Cell(pivotRow, pivotCol + 1).FormulaA1 = $"=SUMIF({cRange},\"{type}\",{gRange})";
+                ws.Cell(pivotRow, pivotCol + 2).FormulaA1 = $"=IF({gTotalCell}>0, {GetColumnLetter(pivotCol + 1)}{pivotRow}/{gTotalCell}*100, 0)";
+                ws.Cell(pivotRow, pivotCol + 2).Style.NumberFormat.SetFormat("#,##0.00");
+
+                // Чередование строк в сводке
+                if ((pivotRow - pivotStartRow) % 2 == 0)
+                {
+                    ws.Cell(pivotRow, pivotCol).Style.Fill.BackgroundColor = XLColor.FromArgb(245, 245, 245);
+                    ws.Cell(pivotRow, pivotCol + 1).Style.Fill.BackgroundColor = XLColor.FromArgb(245, 245, 245);
+                    ws.Cell(pivotRow, pivotCol + 2).Style.Fill.BackgroundColor = XLColor.FromArgb(245, 245, 245);
+                }
+
+                pivotRow++;
+            }
+
+            // ИТОГО по сводной
+            string hRange = $"{GetColumnLetter(pivotCol + 1)}{pivotStartRow}:{GetColumnLetter(pivotCol + 1)}{pivotRow - 1}";
+            string iRange = $"{GetColumnLetter(pivotCol + 2)}{pivotStartRow}:{GetColumnLetter(pivotCol + 2)}{pivotRow - 1}";
+
+            ws.Cell(pivotRow, pivotCol).Value = "ВСЕГО:";
+            ws.Cell(pivotRow, pivotCol + 1).FormulaA1 = $"=SUM({hRange})";
+            ws.Cell(pivotRow, pivotCol + 2).FormulaA1 = $"=SUM({iRange})";
+
+            // Фон для итоговой строки сводки
+            for (int i = 0; i <= 2; i++)
+            {
+                ws.Cell(pivotRow, pivotCol + i).Style.Fill.BackgroundColor = XLColor.FromArgb(217, 225, 242);
+                ws.Cell(pivotRow, pivotCol + i).Style.Font.Bold = true;
+            }
+
+            // ===== ФОРМАТИРОВАНИЕ =====
+            ws.Column(7).Style.NumberFormat.SetFormat("#,##0.00");
+            ws.Column(pivotCol + 1).Style.NumberFormat.SetFormat("#,##0.00");
+            ws.Column(pivotCol + 2).Style.NumberFormat.SetFormat("#,##0.00");
+
             ws.Columns().AdjustToContents();
+            ws.Column(7).Width = 18;
+            ws.Column(pivotCol + 1).Width = 18;
+            ws.Column(pivotCol + 2).Width = 14;
+
             return ws;
+        }
+
+        private string GetColumnLetter(int columnNumber)
+        {
+            string columnLetter = "";
+            while (columnNumber > 0)
+            {
+                int modulo = (columnNumber - 1) % 26;
+                columnLetter = Convert.ToChar('A' + modulo) + columnLetter;
+                columnNumber = (columnNumber - modulo) / 26;
+            }
+            return columnLetter;
         }
 
         private IXLWorksheet CreateTopObjectsSheet(XLWorkbook workbook, TopObjectsReport report)
@@ -1002,7 +1215,10 @@ namespace EnergyMeteringSystem.App.Services.ExcelExport
             range.Style.Font.Bold = true;
             range.Style.Font.FontSize = 16;
             range.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            range.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
             range.Merge();
+            range.Style.Fill.BackgroundColor = XLColor.FromArgb(45, 63, 94);
+            range.Style.Font.FontColor = XLColor.White;
         }
 
         public void ApplyHeaderStyle(IXLRow row)
@@ -1011,19 +1227,41 @@ namespace EnergyMeteringSystem.App.Services.ExcelExport
             row.Style.Fill.BackgroundColor = XLColor.FromArgb(45, 63, 94);
             row.Style.Font.FontColor = XLColor.White;
             row.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            row.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+            row.Height = 25;
         }
 
         public void ApplyTotalStyle(IXLRange range)
         {
             range.Style.Font.Bold = true;
             range.Style.Fill.BackgroundColor = XLColor.FromArgb(217, 225, 242);
+            range.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+            range.Style.Font.FontColor = XLColor.FromArgb(45, 63, 94);
         }
 
         public void ApplyKpiStyle(IXLRange range)
         {
             range.Style.Font.Bold = true;
             range.Style.Fill.BackgroundColor = XLColor.FromArgb(227, 242, 253);
+            range.Style.Border.OutsideBorder = XLBorderStyleValues.Medium;
+            range.Style.Border.OutsideBorderColor = XLColor.FromArgb(45, 63, 94);
+            range.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Left;
+            range.Style.Font.FontColor = XLColor.FromArgb(45, 63, 94);
         }
 
+        // ✅ НОВЫЙ СТИЛЬ ДЛЯ АНОМАЛИЙ
+        public void ApplyAnomalyStyle(IXLRange range)
+        {
+            range.Style.Font.FontColor = XLColor.Red;
+            range.Style.Font.Bold = true;
+            range.Style.Fill.BackgroundColor = XLColor.FromArgb(255, 235, 235);
+        }
+
+        // ✅ НОВЫЙ СТИЛЬ ДЛЯ НОРМЫ
+        public void ApplyNormalStyle(IXLRange range)
+        {
+            range.Style.Font.FontColor = XLColor.Green;
+            range.Style.Fill.BackgroundColor = XLColor.FromArgb(235, 255, 235);
+        }
     }
 }
