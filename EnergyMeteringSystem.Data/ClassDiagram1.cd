@@ -1,0 +1,340 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="EnergyMeteringSystem.Data.Database.EnergyMeteringSystemEntities" Collapsed="true">
+    <Position X="48.75" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAFAABIwAAAAAAIAAAQCAAAkEAAAAgAgIIAEQASAAA=</HashCode>
+      <FileName>Database\Model1.Context.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Data.Database.AuditLog" Collapsed="true">
+    <Position X="43.5" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AgADAAAAAAAAAAAACACAAAgAAAAQEAAAAAAAAQIAAAA=</HashCode>
+      <FileName>Database\AuditLog.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Data.Database.City" Collapsed="true">
+    <Position X="45.25" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAGAAAAgAAAAAAAAAAAAAQAAAAAAAAAAAIAAAAAAAA=</HashCode>
+      <FileName>Database\City.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Data.Database.ConsumptionObject" Collapsed="true">
+    <Position X="47" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACAAQAQAQAAEAAAAACAAAAgEAAAAAAkIIAAAAAAAA=</HashCode>
+      <FileName>Database\ConsumptionObject.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Data.Database.EnergySource" Collapsed="true">
+    <Position X="50.5" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACAAAAAAAAAAAAAAAgCAQAAAAAAAAAAAAAAEAAAAA=</HashCode>
+      <FileName>Database\EnergySource.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Data.Database.Meter" Collapsed="true">
+    <Position X="52.25" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAGCABAQAAACAAAAAEQAAAAAEEAAAAAACBAREACBAA=</HashCode>
+      <FileName>Database\Meter.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Data.Database.MeterDataHistory" Collapsed="true">
+    <Position X="43.5" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAADAAAEAAAAAAAAAAAACAgAAAAAAAAAgCAgCAAAgCA=</HashCode>
+      <FileName>Database\MeterDataHistory.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Data.Database.MeterReading" Collapsed="true">
+    <Position X="45.25" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAADAAgFAAAACAACAAAAAAgAAAAAAgAAgAAgAQARAAA=</HashCode>
+      <FileName>Database\MeterReading.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Data.Database.MeterReplacementHistory" Collapsed="true">
+    <Position X="47" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAASBABAAAAAAAIAAAAAAAAgAAAAAAgQgABAAAAAAAA=</HashCode>
+      <FileName>Database\MeterReplacementHistory.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Data.Database.MeterStatus" Collapsed="true">
+    <Position X="48.75" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACAAAAAAAAAAAAAAAAAAQAAAAgAAAAgAAAAAAAAAA=</HashCode>
+      <FileName>Database\MeterStatus.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Data.Database.MeterType" Collapsed="true">
+    <Position X="50.5" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACAAAIAAAAAAAAgAASAAQAAAAAAIAAgAAABAAAEAA=</HashCode>
+      <FileName>Database\MeterType.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Data.Database.ObjectType" Collapsed="true">
+    <Position X="43.5" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACAABAAAAAAAAAAAAAAAQAAAAAAAAAAAAAACAAAAA=</HashCode>
+      <FileName>Database\ObjectType.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Data.Database.ReadingStatus" Collapsed="true">
+    <Position X="48.75" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAGAAAAAAAgAAAAAAAgAAQQAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Database\ReadingStatus.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Data.Database.Region" Collapsed="true">
+    <Position X="50.5" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACAAAAAAAAAAAIAAAgAAQAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Database\Region.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Data.Database.RejectionReason" Collapsed="true">
+    <Position X="52.25" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAGAAAAAAAAAAAAAAAAAAQAAAAAAEAAAAAAAAAAAAA=</HashCode>
+      <FileName>Database\RejectionReason.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Data.Database.Street" Collapsed="true">
+    <Position X="45.25" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACAABBAAAAAAAIIAAAAAQAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Database\Street.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Data.Database.SupplyPoint" Collapsed="true">
+    <Position X="47" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACBAAAAAAAAAAAAAAAAAQAgEAAAAgAAAAAAAAABAA=</HashCode>
+      <FileName>Database\SupplyPoint.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Data.Database.SupplyPointConsumptionObject" Collapsed="true">
+    <Position X="48.75" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAABCAAAAAAAAAAAACAABAAAAAAAAAABAAAIAAAA=</HashCode>
+      <FileName>Database\SupplyPointConsumptionObject.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Data.Database.sysdiagrams" Collapsed="true">
+    <Position X="50.5" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAACAIAAAAAAAAAAAAAAAQAAAFAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Database\sysdiagrams.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Data.Database.User" Collapsed="true">
+    <Position X="52.25" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AACGAAIAACAAAIAAESAAAAAAAAAAAAgAAIAAAAACAAA=</HashCode>
+      <FileName>Database\User.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Data.Database.UserRole" Collapsed="true">
+    <Position X="43.5" Y="4.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAADAAAAAAAgAABAAAAAAAQAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Database\UserRole.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Data.Database.VerificationInterval" Collapsed="true">
+    <Position X="45.25" Y="4.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACCAAAAAAAAAAAAAAAAAAAAEAAIAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Database\VerificationInterval.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Data.Repositories.AnalyticsRepository" Collapsed="true">
+    <Position X="18.5" Y="3" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAA=</HashCode>
+      <FileName>Repositories\AnalyticsRepository.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Data.Repositories.AuditRepository" Collapsed="true">
+    <Position X="14" Y="2" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AgEAAQAAAAEEAAAAAAAAAAAABAggAAAAAgABAAAAIIA=</HashCode>
+      <FileName>Repositories\AuditRepository.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="EnergyMeteringSystem.Data.Repositories.BaseRepository" Collapsed="true">
+    <Position X="20.75" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>QAAAAAQgACAEBAAAAAAAIAAAAABCAAgAQAAAAAiAAAA=</HashCode>
+      <FileName>Repositories\BaseRepository.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Data.Repositories.PaginatedResult&lt;T&gt;" Collapsed="true">
+    <Position X="45.25" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAgAAAAAADAAAAAAAEAAUAAAAAAAAAAAAEAAAAAA=</HashCode>
+      <FileName>Repositories\BaseRepository.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Data.Repositories.CityRepository" Collapsed="true">
+    <Position X="18.5" Y="4" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAMAAAAAAAAAAAAAAAAAAAEABAEAAAhAAgAAAAAAIIA=</HashCode>
+      <FileName>Repositories\CityRepository.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Data.Repositories.ConsumptionObjectRepository" Collapsed="true">
+    <Position X="23" Y="4" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAcABAAAAAAAAAAAAAAAAAEAAAEAAAgAAgAAAAAAIIA=</HashCode>
+      <FileName>Repositories\ConsumptionObjectRepository.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="EnergyMeteringSystem.Data.Repositories.DashboardRepository" Collapsed="true">
+    <Position X="14" Y="3" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAIAAABAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Repositories\DashboardRepository.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="EnergyMeteringSystem.Data.Repositories.EnergySourceRepository" Collapsed="true">
+    <Position X="20.75" Y="3" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAcAAAAAAAAAAAAAAAAAAAEAAAEAAAgAAgAAAAAAIIA=</HashCode>
+      <FileName>Repositories\EnergySourceRepository.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="EnergyMeteringSystem.Data.Repositories.HierarchyAnalyticsRepository" Collapsed="true">
+    <Position X="16.25" Y="2" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAEAABAAAAEAAAAAAA=</HashCode>
+      <FileName>Repositories\HierarchyAnalyticsRepository.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Data.Repositories.MeterReadingRepository" Collapsed="true">
+    <Position X="23" Y="2" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAJABAiFEAAEBACIAAECCAFDAAEAAIAgIAAAAAAAAQA=</HashCode>
+      <FileName>Repositories\MeterReadingRepository.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="EnergyMeteringSystem.Data.Repositories.MeterRepository" Collapsed="true">
+    <Position X="14" Y="4" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAcAAAAAIACAAAAAAAAAAAEAAAEBAAgAAgEAgAAAIJA=</HashCode>
+      <FileName>Repositories\MeterRepository.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="EnergyMeteringSystem.Data.Repositories.MeterStatusRepository" Collapsed="true">
+    <Position X="20.75" Y="4" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAcAAAAAAAAAAAAAAAAAgAEAAAEAAAgAAgAAAAAAIIA=</HashCode>
+      <FileName>Repositories\MeterStatusRepository.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="EnergyMeteringSystem.Data.Repositories.MeterTypeDirectoryRepository" Collapsed="true">
+    <Position X="25.25" Y="4" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAcAAAAAAAAAAAAAAAAAAAEAAAEAAAgAAgAAAAAAIIA=</HashCode>
+      <FileName>Repositories\MeterTypeDirectoryRepository.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="EnergyMeteringSystem.Data.Repositories.MeterTypeRepository" Collapsed="true">
+    <Position X="16.25" Y="3" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAIIA=</HashCode>
+      <FileName>Repositories\MeterTypeRepository.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="EnergyMeteringSystem.Data.Repositories.ObjectTypeRepository" Collapsed="true">
+    <Position X="23" Y="3" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAcAAAAAAAAAAAAAAAAAAAEAAAEAAAgAAgAAAAAAIIA=</HashCode>
+      <FileName>Repositories\ObjectTypeRepository.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="EnergyMeteringSystem.Data.Repositories.ReadingStatusRepository" Collapsed="true">
+    <Position X="18.5" Y="2" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAcAAAAAAAAAAAAAAAAAAAEAAAEAAAgAAgAAAAAAIIA=</HashCode>
+      <FileName>Repositories\ReadingStatusRepository.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="EnergyMeteringSystem.Data.Repositories.RegionRepository" Collapsed="true">
+    <Position X="25.25" Y="2" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAcAAIAAAAAAAAAAAAAAAAEAAAEAAAgAAgAAAAQAIIg=</HashCode>
+      <FileName>Repositories\RegionRepository.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Data.Repositories.RejectionReasonRepository" Collapsed="true">
+    <Position X="16.25" Y="4" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAcAAAAAAAAAAAAAAAAAAAEAAAEAAAgAAgAAAAAAIIA=</HashCode>
+      <FileName>Repositories\RejectionReasonRepository.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="EnergyMeteringSystem.Data.Repositories.ReportRepository" Collapsed="true">
+    <Position X="43.5" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AEAAAAoAAAAABAAAAAAAAAAAAABAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Repositories\ReportRepository.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Data.Repositories.MonthlyConsumptionDto" Collapsed="true">
+    <Position X="52.25" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAQAAAABAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAA=</HashCode>
+      <FileName>Repositories\ReportRepository.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Data.Repositories.RawReadingDto" Collapsed="true">
+    <Position X="47" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAgAAABAAA=</HashCode>
+      <FileName>Repositories\ReportRepository.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Data.Repositories.StreetRepository" Collapsed="true">
+    <Position X="25.25" Y="3" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AQMAAAAAAAAAAAAAAAAIAAEAAAEAAAAAAgAAAAAAIIA=</HashCode>
+      <FileName>Repositories\StreetRepository.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Data.Repositories.UserRepository" Collapsed="true">
+    <Position X="20.75" Y="2" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAcAEAAAAAAAAAAAAAAAAAECAAEAAAgAAgEAABCAIKg=</HashCode>
+      <FileName>Repositories\UserRepository.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="EnergyMeteringSystem.Data.Repositories.VerificationIntervalRepository" Collapsed="true">
+    <Position X="27.25" Y="2" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAcAAAAAAAAAAAAAAAAAAAEAAAEAAAgAAgAAAIAAIIA=</HashCode>
+      <FileName>Repositories\VerificationIntervalRepository.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>

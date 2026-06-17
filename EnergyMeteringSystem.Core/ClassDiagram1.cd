@@ -1,0 +1,361 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="EnergyMeteringSystem.Core.Helpers.PasswordHelper" Collapsed="true">
+    <Position X="5.75" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AACAAAAAAAAEAAAAAAACAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Helpers\PasswordHelper.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Core.Interfaces.Services.ExportFormatResult" Collapsed="true">
+    <Position X="5.75" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAgAAgAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Interfaces\Services\IExportDialogService.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Core.Interfaces.Services.IReadingService" Collapsed="true">
+    <Position X="7.5" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Interfaces\Services\IReadingService.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Core.Models.DTO.AnalyticsDataDto" Collapsed="true">
+    <Position X="0.5" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAQACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAwIA=</HashCode>
+      <FileName>Models\DTO\AnalyticsDataDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Core.Models.DTO.AuditLogDto" Collapsed="true">
+    <Position X="2.25" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAKCAAAAAAABAABAAAAAAAgAAAAQEAAAAQAAAQIACAA=</HashCode>
+      <FileName>Models\DTO\AuditLogDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Core.Models.DTO.ChartDataPointDto" Collapsed="true">
+    <Position X="4" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAA=</HashCode>
+      <FileName>Models\DTO\ChartDataPointDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Core.Models.DTO.CityAnalyticsDto" Collapsed="true">
+    <Position X="7.5" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAQAAABIAAABAAQAAAAAAAAAAgAAAAAAAAAAIAAAAA=</HashCode>
+      <FileName>Models\DTO\CityAnalyticsDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Core.Models.DTO.CityDto" Collapsed="true">
+    <Position X="9.25" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAGAAAAAAgAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\DTO\CityDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Core.Models.DTO.ConsumptionObjectDto" Collapsed="true">
+    <Position X="11" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAGAAQDgAQACEAIAAACAAAAAEAAAACCEAIAAAAAAAA=</HashCode>
+      <FileName>Models\DTO\ConsumptionObjectDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Core.Models.DTO.ConsumptionReportDto" Collapsed="true">
+    <Position X="0.5" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>QAAAAAgAAAABQAQAACAAAAAgAAAAAAAKAIAAAEAAAAA=</HashCode>
+      <FileName>Models\DTO\ConsumptionReportDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Core.Models.DTO.DashboardDto" Collapsed="true">
+    <Position X="2.25" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAABwAAAEAAAAAAIAAAQAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\DTO\DashboardDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Core.Models.DTO.ChartPoint" Collapsed="true">
+    <Position X="5.75" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAA=</HashCode>
+      <FileName>Models\DTO\DashboardDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Core.Models.DTO.DirectoryDto" Collapsed="true">
+    <Position X="4" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACAAAAAAAgAAAAEAAAAAQAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\DTO\DirectoryDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Core.Models.DTO.LoginDto" Collapsed="true">
+    <Position X="9.25" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAQAAAAAAAAAAAAACAAAAAAAgAAA=</HashCode>
+      <FileName>Models\DTO\LoginDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Core.Models.DTO.MeterDto" Collapsed="true">
+    <Position X="0.5" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>BAECiAAIAAAACAACAAAIAAQAAAEAAAEAACBABEAABAA=</HashCode>
+      <FileName>Models\DTO\MeterDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Core.Models.DTO.MeterReadingDto" Collapsed="true">
+    <Position X="4" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAgCAAAAAAAAAAACAAAAAQwAAAAAAgAAAAAgAAABAAA=</HashCode>
+      <FileName>Models\DTO\MeterReadingDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Core.Models.DTO.MeterReadingHistoryDto" Collapsed="true">
+    <Position X="5.75" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACAAgAAAAAAAACAAAAAQQAAAAAAAAAAAAgAAABAAA=</HashCode>
+      <FileName>Models\DTO\MeterReadingHistoryDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Core.Models.DTO.MeterReadingInputDto" Collapsed="true">
+    <Position X="7.5" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAgFAAAACAAAAAAAAAgAAAAAAgAAAAAgAAABAAA=</HashCode>
+      <FileName>Models\DTO\MeterReadingInputDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Core.Models.DTO.MeterReadingVerificationDto" Collapsed="true">
+    <Position X="9.25" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACAAAIAAAAEAACAAAAAQQAAAEAAAACAACgAAABAAA=</HashCode>
+      <FileName>Models\DTO\MeterReadingVerificationDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Core.Models.DTO.MeterStatusDto" Collapsed="true">
+    <Position X="11" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACAAAAAAAgAAAAAAAAAAQAAAAgAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\DTO\MeterStatusDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Core.Models.DTO.MeterTypeDto" Collapsed="true">
+    <Position X="0.5" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACEAAAAAAAAAAAgAESAAQAABAAAIAAAAAABAAAEAA=</HashCode>
+      <FileName>Models\DTO\MeterTypeDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Core.Models.DTO.ObjectAnalyticsDto" Collapsed="true">
+    <Position X="2.25" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>QAAAAAgAAAQAAAAAAAAAAAAAAEgAAAACAIAAAAAAAAA=</HashCode>
+      <FileName>Models\DTO\ObjectAnalyticsDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Core.Models.DTO.ObjectTypeDto" Collapsed="true">
+    <Position X="4" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACAAAAAAAgAAAAAAAAAAQAAAAAAAAAAAAAACAAAAA=</HashCode>
+      <FileName>Models\DTO\ObjectTypeDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Core.Models.DTO.RegionAnalyticsDto" Collapsed="true">
+    <Position X="11" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>EAAUAAAAAAgAFAAAAAAAAAAAAAgAAAAAAAAAAIAAAAA=</HashCode>
+      <FileName>Models\DTO\RegionAnalyticsDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Core.Models.DTO.RegionDto" Collapsed="true">
+    <Position X="0.5" Y="4.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACAAAAAAAAAAAAAAAgAAQAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\DTO\RegionDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Core.Models.DTO.RejectionReasonDto" Collapsed="true">
+    <Position X="2.25" Y="4.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACAAAAAAAAAAAAAAAAAAQAAAAAAEAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\DTO\RejectionReasonDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Core.Models.DTO.StreetAnalyticsDto" Collapsed="true">
+    <Position X="4" Y="4.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAQAAAAAAAABECAAAAAAAAAAAgAAAEAAAAAAIAAAAA=</HashCode>
+      <FileName>Models\DTO\StreetAnalyticsDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Core.Models.DTO.StreetDto" Collapsed="true">
+    <Position X="5.75" Y="4.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACAAABIAAAAAAAIAAAAAQAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\DTO\StreetDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Core.Models.DTO.TopObjectDto" Collapsed="true">
+    <Position X="7.5" Y="4.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>QAABAAgAAAAAAAAAAAAAAAAAAAgAAAACAIAAAAAAAAA=</HashCode>
+      <FileName>Models\DTO\TopObjectDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Core.Models.DTO.TypeDistributionDto" Collapsed="true">
+    <Position X="9.25" Y="4.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAgAAAAAAAAAAAAAAAAAAAgAABAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\DTO\TypeDistributionDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Core.Models.DTO.UserDto" Collapsed="true">
+    <Position X="11" Y="4.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>ABiCEAIEBCAAAIQSESAAAAAACAAAAAAAAAAAEAAAAAA=</HashCode>
+      <FileName>Models\DTO\UserDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Core.Models.DTO.UserRoleDto" Collapsed="true">
+    <Position X="0.5" Y="5.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACAAAAAAAgAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\DTO\UserRoleDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="MeterDataHistoryDto" Collapsed="true">
+    <Position X="11" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACAAAAAAAAAAQAAAAAAAgAAAAAAAAAACAgCAAAgAA=</HashCode>
+      <FileName>Models\DTO\MeterDataHistoryDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="MeterForReadingDto" Collapsed="true">
+    <Position X="2.25" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACAAAAAAAACAAJAAAAACQAAAEAAAAAAAAAAEAABAA=</HashCode>
+      <FileName>Models\DTO\MeterForReadingDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="ReceiptReadingDto" Collapsed="true">
+    <Position X="9.25" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAgAAAAAAAAAEAAAAACAAAEAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\DTO\ReceiptReadingDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.App.DTO.ReadingVerificationDto" Collapsed="true">
+    <Position X="7.5" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACAAAAAAAAEAACIAAAAQCAgAEAAAACAACgAAABAAA=</HashCode>
+      <FileName>Models\DTO\ReadingVerificationDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EnergyMeteringSystem.Data.DTO.VerificationDto" Collapsed="true">
+    <Position X="2.25" Y="5.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACAAAAAAAAEQACAAAAAQQAAAEAAgAAAACgAAABAAA=</HashCode>
+      <FileName>Models\DTO\VerificationDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Interface Name="EnergyMeteringSystem.Core.Interfaces.Repositories.IAuditRepository" Collapsed="true">
+    <Position X="0.5" Y="6.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAEAAAAAAAAAAAAAAgAAAAAAgAAAAAAIAA=</HashCode>
+      <FileName>Interfaces\Repositories\IAuditRepository.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="EnergyMeteringSystem.Core.Interfaces.Repositories.IConsumptionObjectRepository" Collapsed="true">
+    <Position X="5.75" Y="6.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAIA=</HashCode>
+      <FileName>Interfaces\Repositories\IConsumptionObjectRepository.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="EnergyMeteringSystem.Core.Interfaces.Repositories.IDashboardRepository" Collapsed="true">
+    <Position X="7.5" Y="6.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Interfaces\Repositories\IDashboardRepository.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="EnergyMeteringSystem.Core.Interfaces.Repositories.IDirectoryRepository&lt;T&gt;" Collapsed="true">
+    <Position X="9.25" Y="6.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAYAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAgAAAAAAAIA=</HashCode>
+      <FileName>Interfaces\Repositories\IDirectoryRepository.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="EnergyMeteringSystem.Core.Interfaces.Repositories.IMeterReadingRepository" Collapsed="true">
+    <Position X="0.5" Y="7.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAJAAAgEAAAAAAAIAAAACAACAAAAAAAgAAAAAAAAAAA=</HashCode>
+      <FileName>Interfaces\Repositories\IMeterReadingRepository.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="EnergyMeteringSystem.Core.Interfaces.Repositories.IMeterRepository" Collapsed="true">
+    <Position X="2.25" Y="7.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAA=</HashCode>
+      <FileName>Interfaces\Repositories\IMeterRepository.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="EnergyMeteringSystem.Core.Interfaces.Repositories.IMeterTypeRepository" Collapsed="true">
+    <Position X="4" Y="7.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAIIA=</HashCode>
+      <FileName>Interfaces\Repositories\IMeterTypeRepository.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="EnergyMeteringSystem.Core.Interfaces.Repositories.IRejectionReasonRepository" Collapsed="true">
+    <Position X="5.75" Y="7.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAA=</HashCode>
+      <FileName>Interfaces\Repositories\IRejectionReasonRepository.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="EnergyMeteringSystem.Core.Interfaces.Repositories.IReportRepository" Collapsed="true">
+    <Position X="7.5" Y="7.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Interfaces\Repositories\IReportRepository.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="EnergyMeteringSystem.Core.Interfaces.Repositories.IUserRepository" Collapsed="true">
+    <Position X="9.25" Y="7.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAYAEAAAAAAAAAAAAAAAAAACAAAAAAAAAgEAAAAAAKA=</HashCode>
+      <FileName>Interfaces\Repositories\IUserRepository.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="EnergyMeteringSystem.Core.Interfaces.Services.IAuditService" Collapsed="true">
+    <Position X="2.25" Y="6.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Interfaces\Services\IAuditService.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="EnergyMeteringSystem.Core.Interfaces.Services.IAuthService" Collapsed="true">
+    <Position X="4" Y="6.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAKQAAAAAAAYAAAAAAAAAAAAQAAAAAAA=</HashCode>
+      <FileName>Interfaces\Services\IAuthService.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="EnergyMeteringSystem.Core.Interfaces.Services.IExportDialogService" Collapsed="true">
+    <Position X="11" Y="6.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Interfaces\Services\IExportDialogService.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Enum Name="EnergyMeteringSystem.Core.Interfaces.Services.ExportFormat" Collapsed="true">
+    <Position X="0.5" Y="8.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAA=</HashCode>
+      <FileName>Interfaces\Services\IExportDialogService.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>
