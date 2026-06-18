@@ -153,7 +153,6 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
                     idsToRemove.Add(reading);
                 }
 
-                // ✅ УДАЛЯЕМ ИЗ КОЛЛЕКЦИИ
                 foreach (var item in idsToRemove)
                 {
                     Readings.Remove(item);
