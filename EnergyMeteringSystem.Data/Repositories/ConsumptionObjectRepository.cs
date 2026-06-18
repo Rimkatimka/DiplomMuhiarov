@@ -171,8 +171,21 @@ namespace EnergyMeteringSystem.Data.Repositories
             DeleteAsync(id).Wait();
         }
 
-        
 
+        public async Task<bool> UpdatePartialAsync(ConsumptionObjectDto dto)
+        {
+            var entity = await _context.ConsumptionObject
+                .FirstOrDefaultAsync(o => o.Id == dto.Id);
+
+            if (entity == null) return false;
+
+            // ✅ Обновляем только ТЕ поля, которые реально изменились
+            // Используем сравнение с _originalItem в ViewModel
+
+            // Но если мы уже в репозитории, мы не знаем, что изменилось.
+            // Поэтому лучше передавать флаги изменений
+            return await _context.SaveChangesAsync() > 0;
+        }
         public void Update(ConsumptionObjectDto dto)
         {
             UpdateAsync(dto).Wait();

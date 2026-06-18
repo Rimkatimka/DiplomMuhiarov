@@ -1,9 +1,9 @@
-﻿
-using EnergyMeteringSystem.App.Commands;
+﻿using EnergyMeteringSystem.App.Commands;
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Input;
 
 namespace EnergyMeteringSystem.App.ViewModels.Base
@@ -27,16 +27,16 @@ namespace EnergyMeteringSystem.App.ViewModels.Base
             get => _isEditMode;
             set => SetProperty(ref _isEditMode, value);
         }
+
+        public string Title
+        {
+            get => _title;
+            set => SetProperty(ref _title, value);
+        }
         protected void RaiseOnSaved()
         {
             OnSaved?.Invoke(this, EventArgs.Empty);
         }
-        public string Title
-        {
-            get => _title;
-            set => SetProperty(ref _title, value);  // ✅ Добавлен setter
-        }
-
         public ICommand SaveCommand { get; protected set; }
         public ICommand CancelCommand { get; protected set; }
 
@@ -70,6 +70,14 @@ namespace EnergyMeteringSystem.App.ViewModels.Base
             {
                 var dto = GetDto();
                 await SaveToRepositoryAsync(dto);
+
+                // ✅ ПОКАЗЫВАЕМ СООБЩЕНИЕ ОБ УСПЕХЕ
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    string message = IsEditMode ? "Данные успешно обновлены!" : "Новая запись успешно создана!";
+                    MessageBox.Show(message, "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
+                });
+
                 OnSaved?.Invoke(this, EventArgs.Empty);
             }, "Ошибка при сохранении");
         }
@@ -78,6 +86,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Base
         {
             OnCancelled?.Invoke(this, EventArgs.Empty);
         }
+
         private bool _hasChanges;
 
         public bool HasChanges
@@ -86,7 +95,6 @@ namespace EnergyMeteringSystem.App.ViewModels.Base
             set => SetProperty(ref _hasChanges, value);
         }
 
-        // В SetProperty добавляем отслеживание изменений
         protected override bool SetProperty<T>(ref T storage, T value, [CallerMemberName] string propertyName = null)
         {
             if (EqualityComparer<T>.Default.Equals(storage, value))
@@ -94,11 +102,14 @@ namespace EnergyMeteringSystem.App.ViewModels.Base
 
             storage = value;
             OnPropertyChanged(propertyName);
-
-            // ✅ Отмечаем, что были изменения
             HasChanges = true;
-
             return true;
+        }
+
+        // ✅ МЕТОД ДЛЯ ПРИНУДИТЕЛЬНОГО ОБНОВЛЕНИЯ КНОПКИ
+        public void RaiseCanExecuteChanged()
+        {
+            (SaveCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
         }
     }
 }

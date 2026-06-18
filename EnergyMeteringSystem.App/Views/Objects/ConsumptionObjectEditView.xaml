@@ -31,47 +31,100 @@
 
         <TextBlock Grid.Row="0" Grid.Column="0" Text="Регион:" Margin="5" VerticalAlignment="Center"/>
         <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal">
-            <ComboBox ItemsSource="{Binding Regions}" SelectedItem="{Binding SelectedRegion}" DisplayMemberPath="Name" Width="200" Margin="5"/>
-            <Button Command="{Binding AddRegionCommand}" Width="30" Height="30" Margin="0,5,5,5" ToolTip="Добавить регион" Cursor="Hand" Padding="0" Content="+" FontSize="18" FontWeight="Bold"/>
+            <ComboBox ItemsSource="{Binding Regions}" 
+                      SelectedItem="{Binding SelectedRegion, UpdateSourceTrigger=PropertyChanged}"
+                      DisplayMemberPath="Name" 
+                      Width="200" 
+                      Margin="5"/>
+            <Button Command="{Binding AddRegionCommand}" 
+                    Width="30" Height="30" Margin="0,5,5,5" 
+                    ToolTip="Добавить регион" Cursor="Hand" 
+                    Padding="0" Content="+" FontSize="18" FontWeight="Bold"/>
         </StackPanel>
 
         <TextBlock Grid.Row="1" Grid.Column="0" Text="Город:" Margin="5" VerticalAlignment="Center"/>
         <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal">
-            <ComboBox ItemsSource="{Binding Cities}" SelectedItem="{Binding SelectedCity}" DisplayMemberPath="Name" Width="200" Margin="5" IsEnabled="{Binding SelectedRegion, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-            <Button Command="{Binding AddCityCommand}" Width="30" Height="30" Margin="0,5,5,5" ToolTip="Добавить город" Cursor="Hand" Padding="0" Content="+" FontSize="18" FontWeight="Bold" IsEnabled="{Binding SelectedRegion, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+            <ComboBox ItemsSource="{Binding Cities}" 
+                      SelectedItem="{Binding SelectedCity, UpdateSourceTrigger=PropertyChanged}"
+                      DisplayMemberPath="Name" 
+                      Width="200" 
+                      Margin="5" 
+                      IsEnabled="{Binding SelectedRegion, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+            <Button Command="{Binding AddCityCommand}" 
+                    Width="30" Height="30" Margin="0,5,5,5" 
+                    ToolTip="Добавить город" Cursor="Hand" 
+                    Padding="0" Content="+" FontSize="18" FontWeight="Bold" 
+                    IsEnabled="{Binding SelectedRegion, Converter={StaticResource BooleanToVisibilityConverter}}"/>
         </StackPanel>
 
         <TextBlock Grid.Row="2" Grid.Column="0" Text="Улица:" Margin="5" VerticalAlignment="Center"/>
         <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal">
-            <ComboBox ItemsSource="{Binding StreetsList}" SelectedItem="{Binding SelectedStreet}" DisplayMemberPath="Name" Width="200" Margin="5" IsEnabled="{Binding SelectedCity, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-            <Button Command="{Binding AddStreetCommand}" Width="30" Height="30" Margin="0,5,5,5" ToolTip="Добавить улицу" Cursor="Hand" Padding="0" Content="+" FontSize="18" FontWeight="Bold" IsEnabled="{Binding SelectedCity, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+            <ComboBox ItemsSource="{Binding StreetsList}" 
+                      SelectedItem="{Binding SelectedStreet, UpdateSourceTrigger=PropertyChanged}"
+                      DisplayMemberPath="Name" 
+                      Width="200" 
+                      Margin="5" 
+                      IsEnabled="{Binding SelectedCity, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+            <Button Command="{Binding AddStreetCommand}" 
+                    Width="30" Height="30" Margin="0,5,5,5" 
+                    ToolTip="Добавить улицу" Cursor="Hand" 
+                    Padding="0" Content="+" FontSize="18" FontWeight="Bold" 
+                    IsEnabled="{Binding SelectedCity, Converter={StaticResource BooleanToVisibilityConverter}}"/>
         </StackPanel>
 
         <TextBlock Grid.Row="3" Grid.Column="0" Text="Номер дома:" Margin="5" VerticalAlignment="Center"/>
-        <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding HouseNumber, UpdateSourceTrigger=PropertyChanged}" Margin="5" Padding="5" MaxLength="10"/>
+        <TextBox Grid.Row="3" Grid.Column="1" 
+                 Text="{Binding HouseNumber, UpdateSourceTrigger=PropertyChanged}" 
+                 Margin="5" Padding="5" MaxLength="10"/>
 
         <TextBlock Grid.Row="4" Grid.Column="0" Text="Номер квартиры:" Margin="5" VerticalAlignment="Center"/>
-        <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding ApartmentNumber}" Margin="5" Padding="5" MaxLength="10" IsEnabled="{Binding IsApartmentNumberEnabled}"/>
+        <TextBox Grid.Row="4" Grid.Column="1" 
+                 Text="{Binding ApartmentNumber}" 
+                 Margin="5" Padding="5" MaxLength="10" 
+                 IsEnabled="{Binding IsApartmentNumberEnabled}"/>
 
         <TextBlock Grid.Row="5" Grid.Column="0" Text="Тип объекта:" Margin="5" VerticalAlignment="Center"/>
-        <ComboBox Grid.Row="5" Grid.Column="1" ItemsSource="{Binding ObjectTypes}" SelectedItem="{Binding SelectedObjectType}" DisplayMemberPath="Name" Margin="5" Padding="5"/>
+        <ComboBox Grid.Row="5" Grid.Column="1" 
+                  ItemsSource="{Binding ObjectTypes}" 
+                  SelectedItem="{Binding SelectedObjectType, UpdateSourceTrigger=PropertyChanged}"
+                  DisplayMemberPath="Name" 
+                  Margin="5" Padding="5"/>
 
         <TextBlock Grid.Row="6" Grid.Column="0" Text="Общая площадь (м²):" Margin="5" VerticalAlignment="Center"/>
-        <TextBox Grid.Row="6" Grid.Column="1" Text="{Binding TotalArea}" Margin="5" Padding="5"/>
+        <TextBox Grid.Row="6" Grid.Column="1" 
+                 Text="{Binding TotalArea}" 
+                 Margin="5" Padding="5"/>
 
         <TextBlock Grid.Row="7" Grid.Column="0" Text="Количество жильцов:" Margin="5" VerticalAlignment="Center"/>
         <StackPanel Grid.Row="7" Grid.Column="1" Orientation="Vertical">
-            <TextBox Text="{Binding ResidentCount}" Margin="5" Padding="5" MaxLength="3"/>
-            <TextBlock Text="{Binding ResidentCountError}" Foreground="Red" FontSize="10" Margin="5,0,0,0" Visibility="{Binding HasResidentCountError, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+            <TextBox Text="{Binding ResidentCount}" 
+                     Margin="5" Padding="5" MaxLength="3"/>
+            <TextBlock Text="{Binding ResidentCountError}" 
+                       Foreground="Red" FontSize="10" 
+                       Margin="5,0,0,0" 
+                       Visibility="{Binding HasResidentCountError, Converter={StaticResource BooleanToVisibilityConverter}}"/>
         </StackPanel>
 
+        <!-- ✅ КНОПКИ С ПРАВИЛЬНЫМИ ОБРАБОТЧИКАМИ -->
         <StackPanel Grid.Row="8" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
-            <Button x:Name="SaveButton" Content="Сохранить" Command="{Binding SaveCommand}" Margin="5" Padding="15,8" Background="#4CAF50" Foreground="White"/>
-            <Button Content="Отмена" Command="{Binding CancelCommand}" Margin="5" Padding="15,8"/>
+            <Button x:Name="SaveButton" 
+                    Content="Сохранить" 
+                    Click="SaveButton_Click"
+                    Command="{Binding SaveCommand}"
+                    Margin="5" 
+                    Padding="15,8" 
+                    Background="#4CAF50" 
+                    Foreground="White"/>
+            <Button Content="Отмена" 
+                    Click="CancelButton_Click"
+                    Margin="5" 
+                    Padding="15,8"/>
         </StackPanel>
+
+        <!-- Индикатор загрузки -->
         <Border Grid.RowSpan="10" Grid.ColumnSpan="2" 
-        Background="#80000000" 
-        Visibility="{Binding IsLoadingData, Converter={StaticResource BooleanToVisibilityConverter}}">
+                Background="#80000000" 
+                Visibility="{Binding IsLoadingData, Converter={StaticResource BooleanToVisibilityConverter}}">
             <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                 <ProgressBar IsIndeterminate="True" Width="150" Height="20"/>
                 <TextBlock Text="Загрузка данных..." Margin="0,10,0,0" Foreground="White"/>
