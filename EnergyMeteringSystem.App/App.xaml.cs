@@ -1,12 +1,13 @@
 ﻿using EnergyMeteringSystem.App.Helpers;
 using EnergyMeteringSystem.App.Services;
-using EnergyMeteringSystem.Core.Helpers;  // ✅ ДОБАВИТЬ
-using EnergyMeteringSystem.Data.Repositories; // ✅ ДОБАВИТЬ
+using EnergyMeteringSystem.Core.Helpers;
+using EnergyMeteringSystem.Data.Repositories;
 using EnergyMeteringSystem.Services.Export;
 using System;
 using System.Data.SqlClient;
 using System.IO;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 
 namespace EnergyMeteringSystem.App
@@ -34,17 +35,15 @@ namespace EnergyMeteringSystem.App
 
         protected override void OnStartup(StartupEventArgs e)
         {
-            string testHash = EnergyMeteringSystem.Core.Helpers.PasswordHelper.HashPassword("12345");
-            System.Diagnostics.Debug.WriteLine($"ТЕСТ: Хэш для '12345' = '{testHash}'");
-            // ✅ ПОДПИСКА НА СОБЫТИЕ АУДИТА (ДОБАВИТЬ В САМОМ НАЧАЛЕ!)
-            AuditLogger.OnLog += (log) =>
+            AuditLogger.OnLogAsync += async (log) =>
             {
                 try
                 {
-                    System.Diagnostics.Debug.WriteLine($"App: Получен лог - {log.ActionType} на {log.TableName}");
-                    var repository = new AuditRepository();
-                    repository.Log(log);
-                    System.Diagnostics.Debug.WriteLine($"App: Лог сохранен");
+                    await Task.Run(() =>
+                    {
+                        var repository = new AuditRepository();
+                        repository.Log(log);
+                    });
                 }
                 catch (Exception ex)
                 {
@@ -60,13 +59,14 @@ namespace EnergyMeteringSystem.App
 
             base.OnStartup(e);
 
-            var exportDialogService = new ExportDialogService();
-            var exportService = new ExportService(exportDialogService);
+            // ❌ УБИРАЕМ НЕНУЖНЫЕ СЕРВИСЫ ПРИ СТАРТЕ
+            // var exportDialogService = new ExportDialogService();
+            // var exportService = new ExportService(exportDialogService);
 
+            // ✅ ПОКАЗЫВАЕМ ОКНО ВХОДА
             var loginView = new Views.Auth.LoginView();
             loginView.Show();
         }
-
 
         private bool AttachDatabaseIfNeeded()
         {
@@ -80,15 +80,12 @@ namespace EnergyMeteringSystem.App
                     string sourceMdf = DatabasePathHelper.GetSourceDatabasePath();
                     if (File.Exists(sourceMdf))
                     {
-                        // Создаём рабочую папку
                         string workingDir = DatabasePathHelper.GetWorkingDatabaseDirectory();
                         if (!Directory.Exists(workingDir))
                             Directory.CreateDirectory(workingDir);
 
-                        // Копируем MDF
                         File.Copy(sourceMdf, workingMdfPath, true);
 
-                        // Копируем LDF
                         string sourceLdf = DatabasePathHelper.GetSourceDatabaseLogPath();
                         string workingLdfPath = DatabasePathHelper.GetWorkingDatabaseLogPath();
                         if (File.Exists(sourceLdf))
@@ -104,15 +101,14 @@ namespace EnergyMeteringSystem.App
 
                 string masterConnString = $"Data Source={LocalDbInstance};Integrated Security=True;";
 
-                // Останавливаем и запускаем LocalDB для чистой среды
-                StopLocalDb();
-                StartLocalDb();
+                // ✅ УБИРАЕМ ОСТАНОВКУ/ЗАПУСК LocalDB (ЭТО ДОЛГО!)
+                // StopLocalDb();
+                // StartLocalDb();
 
                 using (var connection = new SqlConnection(masterConnString))
                 {
                     connection.Open();
 
-                    // Проверяем, прикреплена ли уже база
                     string checkSql = "SELECT COUNT(*) FROM sys.databases WHERE name = @dbName";
                     using (var cmd = new SqlCommand(checkSql, connection))
                     {
@@ -148,27 +144,20 @@ namespace EnergyMeteringSystem.App
         {
             try
             {
-                // Отключаем базу
                 DetachDatabase();
+                Thread.Sleep(300); // ✅ УМЕНЬШАЕМ ПАУЗУ
 
-                // Небольшая пауза для освобождения файлов
-                Thread.Sleep(500);
-
-                // Копируем файлы из рабочей папки в проект данных
                 string sourceMdf = DatabasePathHelper.GetWorkingDatabasePath();
                 string targetMdf = DatabasePathHelper.GetSourceDatabasePath();
 
                 if (File.Exists(sourceMdf))
                 {
-                    // Создаём папку назначения, если её нет
                     string targetDir = Path.GetDirectoryName(targetMdf);
                     if (!Directory.Exists(targetDir))
                         Directory.CreateDirectory(targetDir);
 
-                    // Копируем MDF
                     File.Copy(sourceMdf, targetMdf, true);
 
-                    // Копируем LDF
                     string sourceLdf = DatabasePathHelper.GetWorkingDatabaseLogPath();
                     string targetLdf = DatabasePathHelper.GetSourceDatabaseLogPath();
 
@@ -178,9 +167,8 @@ namespace EnergyMeteringSystem.App
                     System.Diagnostics.Debug.WriteLine($"База сохранена: {targetMdf}");
                 }
             }
-            catch (Exception ex)
+            catch
             {
-                // Если не удалось через SQL, пробуем через остановку LocalDB
                 TryForceCopyViaLocalDbStop();
             }
         }
@@ -193,11 +181,9 @@ namespace EnergyMeteringSystem.App
             {
                 connection.Open();
 
-                // Закрываем все соединения и открепляем базу
                 string detachSql = $@"
                     USE master;
                     
-                    -- Принудительное закрытие всех соединений
                     DECLARE @killSql NVARCHAR(MAX) = '';
                     SELECT @killSql = @killSql + 'KILL ' + CAST(session_id AS NVARCHAR) + ';'
                     FROM sys.dm_exec_sessions
@@ -209,7 +195,6 @@ namespace EnergyMeteringSystem.App
                         WAITFOR DELAY '00:00:01';
                     END
                     
-                    -- Отсоединение базы
                     IF EXISTS (SELECT 1 FROM sys.databases WHERE name = '{DatabaseName}')
                     BEGIN
                         EXEC sp_detach_db '{DatabaseName}';
@@ -228,7 +213,7 @@ namespace EnergyMeteringSystem.App
             try
             {
                 StopLocalDb();
-                Thread.Sleep(2000); // Даём время на остановку
+                Thread.Sleep(1000);
 
                 string sourceMdf = DatabasePathHelper.GetWorkingDatabasePath();
                 string targetMdf = DatabasePathHelper.GetSourceDatabasePath();
@@ -248,13 +233,11 @@ namespace EnergyMeteringSystem.App
                         File.Copy(sourceLdf, targetLdf, true);
                 }
 
-                // Запускаем LocalDB обратно
                 StartLocalDb();
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Не удалось сохранить базу данных.\n\nОшибка: {ex.Message}\n\n" +
-                    "Попробуйте закрыть Visual Studio и запустить приложение отдельно.",
+                MessageBox.Show($"Не удалось сохранить базу данных.\n\nОшибка: {ex.Message}",
                     "Предупреждение", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
@@ -269,9 +252,9 @@ namespace EnergyMeteringSystem.App
                     Arguments = "/c sqllocaldb stop MSSQLLocalDB",
                     CreateNoWindow = true,
                     UseShellExecute = false
-                })?.WaitForExit();
+                })?.WaitForExit(3000);
             }
-            catch { /* Игнорируем ошибки остановки */ }
+            catch { }
         }
 
         private void StartLocalDb()
@@ -284,9 +267,9 @@ namespace EnergyMeteringSystem.App
                     Arguments = "/c sqllocaldb start MSSQLLocalDB",
                     CreateNoWindow = true,
                     UseShellExecute = false
-                })?.WaitForExit();
+                })?.WaitForExit(3000);
             }
-            catch { /* Игнорируем ошибки запуска */ }
+            catch { }
         }
     }
 }

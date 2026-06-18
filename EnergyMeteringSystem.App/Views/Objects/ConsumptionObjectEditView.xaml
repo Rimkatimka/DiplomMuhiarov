@@ -85,10 +85,10 @@
 
         <TextBlock Grid.Row="5" Grid.Column="0" Text="Тип объекта:" Margin="5" VerticalAlignment="Center"/>
         <ComboBox Grid.Row="5" Grid.Column="1" 
-                  ItemsSource="{Binding ObjectTypes}" 
-                  SelectedItem="{Binding SelectedObjectType, UpdateSourceTrigger=PropertyChanged}"
-                  DisplayMemberPath="Name" 
-                  Margin="5" Padding="5"/>
+          ItemsSource="{Binding ObjectTypes}" 
+          SelectedItem="{Binding SelectedObjectType, UpdateSourceTrigger=PropertyChanged}"
+          DisplayMemberPath="Name" 
+          Margin="5" Padding="5"/>
 
         <TextBlock Grid.Row="6" Grid.Column="0" Text="Общая площадь (м²):" Margin="5" VerticalAlignment="Center"/>
         <TextBox Grid.Row="6" Grid.Column="1" 
@@ -104,17 +104,33 @@
                        Margin="5,0,0,0" 
                        Visibility="{Binding HasResidentCountError, Converter={StaticResource BooleanToVisibilityConverter}}"/>
         </StackPanel>
+        <!-- Норма потребления -->
+        <TextBlock Grid.Row="8" Grid.Column="0" Text="Норма на чел.:" Margin="5" VerticalAlignment="Center"/>
+        <TextBox Grid.Row="8" Grid.Column="1" 
+         Text="{Binding NormConsumption, StringFormat={}{0:F2}}" 
+         Margin="5" Padding="5"
+         IsReadOnly="True"
+         Background="#F0F0F0"/>
+
+        <!-- Итоговая норма -->
+        <TextBlock Grid.Row="9" Grid.Column="0" Text="Итого норма:" Margin="5" VerticalAlignment="Center"/>
+        <TextBox Grid.Row="9" Grid.Column="1" 
+         Text="{Binding TotalNormConsumption, StringFormat={}{0:F2}}" 
+         Margin="5" Padding="5"
+         IsReadOnly="True"
+         Background="#F0F0F0"
+         FontWeight="Bold"/>
 
         <!-- ✅ КНОПКИ С ПРАВИЛЬНЫМИ ОБРАБОТЧИКАМИ -->
         <StackPanel Grid.Row="8" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
             <Button x:Name="SaveButton" 
-                    Content="Сохранить" 
-                    Click="SaveButton_Click"
-                    Command="{Binding SaveCommand}"
-                    Margin="5" 
-                    Padding="15,8" 
-                    Background="#4CAF50" 
-                    Foreground="White"/>
+        Content="Сохранить" 
+        Command="{Binding SaveCommand}"
+        IsEnabled="{Binding CanSave}"
+        Margin="5" 
+        Padding="15,8" 
+        Background="#4CAF50" 
+        Foreground="White"/>
             <Button Content="Отмена" 
                     Click="CancelButton_Click"
                     Margin="5" 

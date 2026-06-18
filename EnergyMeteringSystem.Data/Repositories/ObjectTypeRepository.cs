@@ -16,17 +16,34 @@ namespace EnergyMeteringSystem.Data.Repositories
         public async Task<List<DirectoryDto>> GetAllAsync(CancellationToken cancellationToken = default)
         {
             var data = await Query<ObjectType>()
-                .Select(o => new { o.Id, o.Name, o.NormConsumption })
+                .Select(o => new DirectoryDto
+                {
+                    Id = o.Id,
+                    Name = o.Name,
+                    Description = o.NormConsumption.HasValue ? $"Норма: {o.NormConsumption.Value:F2} кВт·ч/мес" : null,
+                    IsActive = true
+                })
                 .OrderBy(o => o.Name)
                 .ToListAsync(cancellationToken);
 
-            return data.Select(o => new DirectoryDto
-            {
-                Id = o.Id,
-                Name = o.Name,
-                Description = o.NormConsumption.HasValue ? $"Норма: {o.NormConsumption.Value:F2} кВт·ч/мес" : null,
-                IsActive = true
-            }).ToList();
+            return data;
+        }
+
+        // ← ДОБАВЛЕНО
+        public async Task<List<ObjectTypeDto>> GetAllWithNormAsync(CancellationToken cancellationToken = default)
+        {
+            var data = await Query<ObjectType>()
+                .Select(o => new ObjectTypeDto
+                {
+                    Id = o.Id,
+                    Name = o.Name,
+                    Description = o.NormConsumption.HasValue ? $"Норма: {o.NormConsumption.Value:F2} кВт·ч/мес" : null,
+                    NormConsumption = o.NormConsumption
+                })
+                .OrderBy(o => o.Name)
+                .ToListAsync(cancellationToken);
+
+            return data;
         }
 
         public List<DirectoryDto> GetAll()

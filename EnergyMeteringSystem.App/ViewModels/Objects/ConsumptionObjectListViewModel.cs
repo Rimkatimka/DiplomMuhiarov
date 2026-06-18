@@ -316,8 +316,10 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
         {
             if (SelectedItem == null) return;
 
+            var itemToDelete = SelectedItem;
+
             var result = MessageBox.Show(
-                $"Удалить объект \"{SelectedItem.Address}\"?\n\nВсе связанные данные также будут удалены!",
+                $"Удалить объект \"{itemToDelete.Address}\"?",
                 "Подтверждение удаления",
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Warning);
@@ -326,21 +328,26 @@ namespace EnergyMeteringSystem.App.ViewModels.Objects
             {
                 try
                 {
-                    IsLoading = true;
-                    await _repository.DeleteAsync(SelectedItem.Id);
-                    await LoadDataAsync();
+                    await _repository.DeleteAsync(itemToDelete.Id);
+
+                    await Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        if (FilteredItems.Contains(itemToDelete))
+                            FilteredItems.Remove(itemToDelete);
+                        if (Items.Contains(itemToDelete))
+                            Items.Remove(itemToDelete);
+                        SelectedItem = null;
+                    });
+
                     MessageBox.Show("Объект удален", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 catch (Exception ex)
                 {
                     MessageBox.Show($"Ошибка при удалении: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
-                finally
-                {
-                    IsLoading = false;
-                }
             }
         }
+
 
         private void ShowMeters(ConsumptionObjectDto obj)
         {

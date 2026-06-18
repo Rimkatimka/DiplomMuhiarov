@@ -66,25 +66,41 @@ namespace EnergyMeteringSystem.Data.Repositories
 
                 System.Diagnostics.Debug.WriteLine($"AuditRepository.GetByDateAsync: from={from:dd.MM.yyyy}, to={to:dd.MM.yyyy}");
 
-                var logs = await Query<AuditLog>()
+                // ✅ СНАЧАЛА ПОЛУЧАЕМ ДАННЫЕ ИЗ БД
+                var logs = await _context.AuditLog
+                    .Include(a => a.User)
                     .Where(a => a.ActionTime >= from && a.ActionTime < endDate)
                     .OrderByDescending(a => a.ActionTime)
                     .Take(1000)
-                    .Select(a => new AuditLogDto
+                    .Select(a => new
                     {
-                        Id = a.Id,
-                        UserId = a.UserId,
-                        UserName = a.User.FullName ?? "Система",
-                        ActionTime = a.ActionTime,
-                        ActionType = a.ActionType,
-                        TableName = a.TableName,
-                        RecordId = a.RecordId,
-                        Details = GetDetailsFromJson(a.OldValuesJson, a.NewValuesJson, a.ActionType)
+                        a.Id,
+                        a.UserId,
+                        UserName = a.User.FullName,
+                        a.ActionTime,
+                        a.ActionType,
+                        a.TableName,
+                        a.RecordId,
+                        a.OldValuesJson,
+                        a.NewValuesJson
                     })
                     .ToListAsync();
 
-                System.Diagnostics.Debug.WriteLine($"AuditRepository.GetByDateAsync: загружено {logs.Count} записей");
-                return logs;
+                // ✅ ПОТОМ ПРЕОБРАЗУЕМ В ПАМЯТИ (где можно использовать GetDetailsFromJson)
+                var result = logs.Select(a => new AuditLogDto
+                {
+                    Id = a.Id,
+                    UserId = a.UserId,
+                    UserName = a.UserName ?? "Система",
+                    ActionTime = a.ActionTime,
+                    ActionType = a.ActionType,
+                    TableName = a.TableName,
+                    RecordId = a.RecordId,
+                    Details = GetDetailsFromJson(a.OldValuesJson, a.NewValuesJson, a.ActionType)
+                }).ToList();
+
+                System.Diagnostics.Debug.WriteLine($"AuditRepository.GetByDateAsync: загружено {result.Count} записей");
+                return result;
             }
             catch (Exception ex)
             {

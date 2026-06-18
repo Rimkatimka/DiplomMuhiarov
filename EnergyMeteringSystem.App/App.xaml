@@ -147,18 +147,45 @@
             <Setter Property="Foreground" Value="{StaticResource DataGridForegroundBrush}"/>
             <Setter Property="Background" Value="Transparent"/>
         </Style>
-
+        
         <!-- Стиль строки DataGrid при выделении -->
+        <!-- Стиль строки DataGrid -->
         <Style TargetType="DataGridRow">
+            <!-- ✅ БАЗОВЫЕ НАСТРОЙКИ (ОБЯЗАТЕЛЬНО) -->
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Foreground" Value="{StaticResource DataGridForegroundBrush}"/>
+
             <Style.Triggers>
+                <!-- ✅ ЧЕРЕДОВАНИЕ ЦВЕТА (если нужно) -->
+                <Trigger Property="AlternationIndex" Value="1">
+                    <Setter Property="Background" Value="{StaticResource DataGridAlternatingBrush}"/>
+                </Trigger>
+
+                <!-- ✅ ВЫДЕЛЕНИЕ -->
                 <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="{StaticResource DataGridSelectedBrush}"/>
-                    <Setter Property="Foreground" Value="{StaticResource DataGridSelectedForegroundBrush}"/>
+                    <Setter Property="Background" Value="#E3F2FD"/>
+                    <Setter Property="BorderBrush" Value="#2196F3"/>
+                    <Setter Property="BorderThickness" Value="2"/>
+                    <Setter Property="Foreground" Value="#1A237E"/>
                 </Trigger>
+
+                <!-- ✅ НАВЕДЕНИЕ -->
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="{StaticResource DataGridSelectedBrush}"/>
-                    <Setter Property="Foreground" Value="{StaticResource DataGridSelectedForegroundBrush}"/>
+                    <Setter Property="Background" Value="#F5F5F5"/>
                 </Trigger>
+
+                <!-- ✅ ВЫДЕЛЕНИЕ + НАВЕДЕНИЕ -->
+                <MultiTrigger>
+                    <MultiTrigger.Conditions>
+                        <Condition Property="IsSelected" Value="True"/>
+                        <Condition Property="IsMouseOver" Value="True"/>
+                    </MultiTrigger.Conditions>
+                    <Setter Property="Background" Value="#BBDEFB"/>
+                    <Setter Property="BorderBrush" Value="#1976D2"/>
+                    <Setter Property="BorderThickness" Value="2"/>
+                </MultiTrigger>
             </Style.Triggers>
         </Style>
 
