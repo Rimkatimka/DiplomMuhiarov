@@ -24,6 +24,54 @@ namespace EnergyMeteringSystem.App.Helpers
         }
 
         /// <summary>
+        /// Путь к активной базе данных.
+        /// Приоритет: bin\Database → EnergyMeteringSystem.App\Database → EnergyMeteringSystem.Data\Database
+        /// </summary>
+        public static string GetActiveDatabasePath()
+        {
+            string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+
+            string workingPath = Path.Combine(baseDir, "Database", "EnergyMeteringSystem.mdf");
+            if (File.Exists(workingPath))
+                return Path.GetFullPath(workingPath);
+
+            try
+            {
+                string solutionDir = GetSolutionDirectory(baseDir);
+
+                string appProjectPath = Path.Combine(solutionDir, "EnergyMeteringSystem.App", "Database", "EnergyMeteringSystem.mdf");
+                if (File.Exists(appProjectPath))
+                    return appProjectPath;
+
+                string dataProjectPath = Path.Combine(solutionDir, "EnergyMeteringSystem.Data", "Database", "EnergyMeteringSystem.mdf");
+                if (File.Exists(dataProjectPath))
+                    return dataProjectPath;
+            }
+            catch
+            {
+                // fallback below
+            }
+
+            return GetSourceDatabasePath();
+        }
+
+        public static string GetActiveDatabaseLogPath()
+        {
+            string mdfPath = GetActiveDatabasePath();
+            string directory = Path.GetDirectoryName(mdfPath) ?? string.Empty;
+
+            string logPath = Path.Combine(directory, "EnergyMeteringSystem_log.ldf");
+            if (File.Exists(logPath))
+                return logPath;
+
+            logPath = Path.Combine(directory, "EnergyMeteringSystem.ldf");
+            if (File.Exists(logPath))
+                return logPath;
+
+            return Path.Combine(directory, "EnergyMeteringSystem_log.ldf");
+        }
+
+        /// <summary>
         /// Полный путь к MDF файлу в проекте данных
         /// </summary>
         public static string GetSourceDatabasePath()

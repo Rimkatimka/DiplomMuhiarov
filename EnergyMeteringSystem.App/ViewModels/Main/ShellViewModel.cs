@@ -1,4 +1,5 @@
-﻿using EnergyMeteringSystem.App.Commands;
+﻿// EnergyMeteringSystem.App/ViewModels/Main/ShellViewModel.cs
+using EnergyMeteringSystem.App.Commands;
 using EnergyMeteringSystem.App.ViewModels.Admin;
 using EnergyMeteringSystem.App.ViewModels.Analytics;
 using EnergyMeteringSystem.App.ViewModels.Base;
@@ -6,6 +7,9 @@ using EnergyMeteringSystem.App.ViewModels.Directories;
 using EnergyMeteringSystem.Core.Models.DTO;
 using EnergyMeteringSystem.Data.Repositories;
 using EnergyMeteringSystem.Services.Auth;
+using EnergyMeteringSystem.Services.DynamicForms.Services;
+using Microsoft.Extensions.DependencyInjection;
+using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
@@ -20,6 +24,9 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
         private MenuItemViewModel _selectedMenuItem;
         private string _searchText;
         private ObservableCollection<MenuItemViewModel> _filteredMenuItems;
+
+        // ✅ Доступ к ServiceProvider
+        private IServiceProvider ServiceProvider => ((App)Application.Current).ServiceProvider;
 
         public UserDto CurrentUser
         {
@@ -74,8 +81,6 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
 
             CurrentUser = currentUser;
 
-            System.Diagnostics.Debug.WriteLine($"ShellViewModel: CurrentUser = {CurrentUser?.Username ?? "null"}");
-
             if (CurrentUser == null)
             {
                 System.Diagnostics.Debug.WriteLine("ShellViewModel: CurrentUser == null, выход");
@@ -89,7 +94,12 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
 
             BuildMenu();
             FilterMenu();
-            CurrentView = new Views.Main.DashboardView();
+
+            Application.Current.Dispatcher.BeginInvoke(new System.Action(() =>
+            {
+                CurrentView = new Views.Main.DashboardView();
+            }), System.Windows.Threading.DispatcherPriority.Loaded);
+            OpenDashboard();
         }
 
         private void BuildMenu()
@@ -167,44 +177,8 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
 
                 dirMenu.Children.Add(new MenuItemViewModel
                 {
-                    Title = "Статусы показаний",
-                    Command = new RelayCommand(_ => OpenDirectory(DirectoryFactory.CreateReadingStatusViewModel(), "Статусы показаний"))
-                });
-
-                dirMenu.Children.Add(new MenuItemViewModel
-                {
-                    Title = "Типы объектов",
-                    Command = new RelayCommand(_ => OpenDirectory(DirectoryFactory.CreateObjectTypeViewModel(), "Типы объектов"))
-                });
-
-                dirMenu.Children.Add(new MenuItemViewModel
-                {
-                    Title = "Причины отклонения показаний",
-                    Command = new RelayCommand(_ => OpenDirectory(DirectoryFactory.CreateRejectionReasonViewModel(), "Причины отклонения"))
-                });
-
-                dirMenu.Children.Add(new MenuItemViewModel
-                {
-                    Title = "Статусы счётчиков",
-                    Command = new RelayCommand(_ => OpenDirectory(DirectoryFactory.CreateMeterStatusViewModel(), "Статусы счётчиков"))
-                });
-
-                dirMenu.Children.Add(new MenuItemViewModel
-                {
-                    Title = "Типы счётчиков",
-                    Command = new RelayCommand(_ => OpenDirectory(DirectoryFactory.CreateMeterTypeViewModel(), "Типы счётчиков"))
-                });
-
-                dirMenu.Children.Add(new MenuItemViewModel
-                {
-                    Title = "Источники энергии",
-                    Command = new RelayCommand(_ => OpenDirectory(DirectoryFactory.CreateEnergySourceViewModel(), "Источники энергии"))
-                });
-
-                dirMenu.Children.Add(new MenuItemViewModel
-                {
-                    Title = "Интервалы поверки",
-                    Command = new RelayCommand(_ => OpenDirectory(DirectoryFactory.CreateVerificationIntervalViewModel(), "Интервалы поверки"))
+                    Title = "📋 Все справочники",
+                    Command = new RelayCommand(_ => OpenDynamicDirectories())
                 });
 
                 MenuItems.Add(dirMenu);
@@ -359,10 +333,9 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
 
         private void OpenHierarchyAnalytics()
         {
-            // ✅ ПРАВИЛЬНО - создаем ViewModel и передаем ее во View
             var viewModel = new HierarchyAnalyticsViewModel();
             var view = new Views.Analytics.HierarchyAnalyticsView();
-            view.DataContext = viewModel;  // ← ЭТО ВАЖНО!
+            view.DataContext = viewModel;
             CurrentView = view;
         }
 
@@ -418,6 +391,19 @@ namespace EnergyMeteringSystem.App.ViewModels.Main
             }
 
             CurrentView = new Views.Directories.DirectoryListView { DataContext = viewModel };
+        }
+        private void OpenDynamicDirectories()
+        {
+            try
+            {
+                var view = ServiceProvider.GetRequiredService<Views.Directories.DynamicDirectoryView>();
+                CurrentView = view;
+            }
+            catch (System.Exception ex)
+            {
+                MessageBox.Show($"Ошибка открытия справочников: {ex.Message}", "Ошибка",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
     }
 }

@@ -1,13 +1,14 @@
-﻿using System;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Threading.Tasks;
-using EnergyMeteringSystem.App.Commands;
+﻿using EnergyMeteringSystem.App.Commands;
 using EnergyMeteringSystem.App.ViewModels.Base;
+using EnergyMeteringSystem.Core.Interfaces.Repositories;
 using EnergyMeteringSystem.Core.Models.DTO;
 using EnergyMeteringSystem.Data.Repositories;
 using LiveCharts;
 using LiveCharts.Wpf;
+using System;
+using System.Collections.ObjectModel;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace EnergyMeteringSystem.App.ViewModels.Readings
 {
@@ -45,7 +46,6 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
                 if (SetProperty(ref _selectedObject, value))
                 {
                     _ = LoadMetersAsync();
-                    _ = LoadHistoryAsync();
                 }
             }
         }
@@ -97,7 +97,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
             SeriesCollection = new SeriesCollection();
             YFormatter = value => value.ToString("N0");
 
-            _startDate = DateTime.Today.AddMonths(-6);
+            _startDate = DateTime.Today.AddMonths(-24);
             _endDate = DateTime.Today;
 
             RefreshCommand = new AsyncRelayCommand(async () => await LoadHistoryAsync());

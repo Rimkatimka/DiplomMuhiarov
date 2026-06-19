@@ -5,6 +5,8 @@ using System.Linq;
 using EnergyMeteringSystem.Data.Database;
 using System;
 using System.Threading;
+using System.Data.Entity.Infrastructure;
+using System.Data.SqlClient;
 
 namespace EnergyMeteringSystem.Data.Repositories
 {
@@ -17,8 +19,7 @@ namespace EnergyMeteringSystem.Data.Repositories
         {
             _context = new EnergyMeteringSystemEntities();
 
-            // Оптимизация производительности EF
-            _context.Configuration.AutoDetectChangesEnabled = false;
+            // AutoDetectChangesEnabled must stay true so EF detects property changes on updates.
             _context.Configuration.ProxyCreationEnabled = false;
             _context.Configuration.LazyLoadingEnabled = false;
             _context.Configuration.ValidateOnSaveEnabled = false;
@@ -30,15 +31,15 @@ namespace EnergyMeteringSystem.Data.Repositories
             return _context.Set<T>().AsNoTracking();
         }
 
-        // ⚠️ Этот метод избыточен - можно直接用 query.ToListAsync()
-        // Оставляю для совместимости, но с пометкой Obsolete
-        [Obsolete("Используйте query.ToListAsync() напрямую")]
+        // ?? ???? ????? ????????? - ???????? query.ToListAsync()
+        // ???????? ??? ?????????????, ?? ? ???????? Obsolete
+        [Obsolete("??????????? query.ToListAsync() ????????")]
         protected async Task<List<T>> QueryAsync<T>(IQueryable<T> query) where T : class
         {
             return await query.ToListAsync();
         }
 
-        // ✅ Оптимизированный метод пагинации с возвратом PaginatedList
+        // ? ???????????????? ????? ????????? ? ????????? PaginatedList
         protected async Task<PaginatedResult<T>> GetPaginatedResultAsync<T>(
             IQueryable<T> query,
             int page,
@@ -47,7 +48,7 @@ namespace EnergyMeteringSystem.Data.Repositories
         {
             if (page < 1) page = 1;
             if (pageSize < 1) pageSize = 10;
-            if (pageSize > 1000) pageSize = 1000; // Ограничение максимума
+            if (pageSize > 1000) pageSize = 1000; // ??????????? ?????????
 
             var totalCount = await query.CountAsync(cancellationToken);
 
@@ -59,8 +60,8 @@ namespace EnergyMeteringSystem.Data.Repositories
             return new PaginatedResult<T>(items, totalCount, page, pageSize);
         }
 
-        // ⚠️ Дубликат GetPagedAsync, объединяем
-        [Obsolete("Используйте GetPaginatedResultAsync")]
+        // ?? ???????? GetPagedAsync, ??????????
+        [Obsolete("??????????? GetPaginatedResultAsync")]
         protected async Task<List<T>> GetPagedAsync<T>(IQueryable<T> query, int page, int pageSize) where T : class
         {
             return await query
@@ -69,7 +70,7 @@ namespace EnergyMeteringSystem.Data.Repositories
                 .ToListAsync();
         }
 
-        // ✅ Оптимизированный метод получения предыдущих показаний
+        // ? ???????????????? ????? ????????? ?????????? ?????????
         protected async Task<Dictionary<int, MeterReading>> GetPreviousReadingsBatchAsync(
             List<int> meterIds,
             DateTime currentDate,
@@ -87,7 +88,7 @@ namespace EnergyMeteringSystem.Data.Repositories
             return previousReadings;
         }
 
-        // ✅ Универсальный метод для batch получения любых сущностей
+        // ? ????????????? ????? ??? batch ????????? ????? ?????????
         protected async Task<Dictionary<TKey, TEntity>> GetBatchAsync<TEntity, TKey>(
             IQueryable<TEntity> query,
             Func<TEntity, TKey> keySelector,
@@ -106,7 +107,7 @@ namespace EnergyMeteringSystem.Data.Repositories
         }
 
         /// <summary>
-        /// Параллельное выполнение нескольких запросов
+        /// ???????????? ?????????? ?????????? ????????
         /// </summary>
         protected async Task<TResult[]> ParallelQueriesAsync<TResult>(params Func<Task<TResult>>[] queries)
         {
@@ -117,20 +118,58 @@ namespace EnergyMeteringSystem.Data.Repositories
             return await Task.WhenAll(tasks);
         }
 
-        // ✅ Метод для массовой вставки (если нужно)
+        protected async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            _context.ChangeTracker.DetectChanges();
+            return await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        protected static string GetDbErrorMessage(Exception ex)
+        {
+            Exception current = ex;
+            while (current != null)
+            {
+                if (current is SqlException sqlEx)
+                    return sqlEx.Message;
+                current = current.InnerException;
+            }
+
+            return ex.Message;
+        }
+
+        protected static InvalidOperationException CreateDbSaveException(Exception ex, string action)
+        {
+            var message = GetDbErrorMessage(ex);
+            if (message.IndexOf("PRIMARY KEY", StringComparison.OrdinalIgnoreCase) >= 0
+                || message.IndexOf("duplicate key", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                message += Environment.NewLine + Environment.NewLine
+                    + "??????? IDENTITY ? ???? ??????? ?? ???????????? Id. ????????????? ?????????? ? ??? ?????? ??????????? ?????????????? ???????????.";
+            }
+
+            return new InvalidOperationException($"?? ??????? {action}: {message}", ex);
+        }
+
+        protected int SaveChanges()
+        {
+            _context.ChangeTracker.DetectChanges();
+            return _context.SaveChanges();
+        }
+
+        // ? ????? ??? ???????? ??????? (???? ?????)
         protected async Task BulkInsertAsync<T>(IEnumerable<T> entities) where T : class
         {
             _context.Set<T>().AddRange(entities);
-            await _context.SaveChangesAsync();
+            await SaveChangesAsync();
         }
 
-        // ✅ Метод для массового обновления через raw SQL (быстрее чем EF)
+        // ? ????? ??? ????????? ?????????? ????? raw SQL (??????? ??? EF)
         protected async Task<int> ExecuteSqlCommandAsync(string sql, params object[] parameters)
         {
             return await _context.Database.ExecuteSqlCommandAsync(sql, parameters);
         }
 
-        // ✅ Освобождение ресурсов
+        // ? ???????????? ????????
         public void Dispose()
         {
             Dispose(true);
@@ -145,7 +184,7 @@ namespace EnergyMeteringSystem.Data.Repositories
             }
             _disposed = true;
         }
-        // Добавь этот метод в BaseRepository
+        // ?????? ???? ????? ? BaseRepository
         public void ForceKillConnection()
         {
             try
@@ -153,23 +192,23 @@ namespace EnergyMeteringSystem.Data.Repositories
                 if (_context.Database.Connection.State == System.Data.ConnectionState.Open)
                 {
                     _context.Database.Connection.Close();
-                    System.Diagnostics.Debug.WriteLine("[ForceKillConnection] Соединение принудительно закрыто");
+                    System.Diagnostics.Debug.WriteLine("[ForceKillConnection] ?????????? ????????????? ???????");
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[ForceKillConnection] Ошибка: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[ForceKillConnection] ??????: {ex.Message}");
             }
         }
 
-        // Добавь финализатор для гарантированного закрытия
+        // ?????? ??????????? ??? ???????????????? ????????
         ~BaseRepository()
         {
             Dispose(false);
         }
     }
 
-    // Результат пагинации с информацией для UI
+    // ????????? ????????? ? ??????????? ??? UI
     public class PaginatedResult<T>
     {
         public List<T> Items { get; }

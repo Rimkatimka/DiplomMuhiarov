@@ -1,14 +1,39 @@
-﻿using EnergyMeteringSystem.App.Helpers;
-using EnergyMeteringSystem.App.Services;
-using EnergyMeteringSystem.Core.Helpers;
-using EnergyMeteringSystem.Data.Repositories;
-using EnergyMeteringSystem.Services.Export;
-using System;
+﻿using System;
 using System.Data.SqlClient;
+using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using EnergyMeteringSystem.App.Helpers;
+using EnergyMeteringSystem.App.ViewModels.Admin;
+using EnergyMeteringSystem.App.ViewModels.Analytics;
+using EnergyMeteringSystem.App.ViewModels.Auth;
+using EnergyMeteringSystem.App.ViewModels.Directories;
+using EnergyMeteringSystem.App.ViewModels.Dynamic;
+using EnergyMeteringSystem.App.ViewModels.Main;
+using EnergyMeteringSystem.App.ViewModels.Meters;
+using EnergyMeteringSystem.App.ViewModels.Objects;
+using EnergyMeteringSystem.App.ViewModels.Readings;
+using EnergyMeteringSystem.App.ViewModels.Reports;
+using EnergyMeteringSystem.App.Views.Admin;
+using EnergyMeteringSystem.App.Views.Analytics;
+using EnergyMeteringSystem.App.Views.Auth;
+using EnergyMeteringSystem.App.Views.Directories;
+using EnergyMeteringSystem.App.Views.Dynamic;
+using EnergyMeteringSystem.App.Views.Main;
+using EnergyMeteringSystem.App.Views.Meters;
+using EnergyMeteringSystem.App.Views.Objects;
+using EnergyMeteringSystem.App.Views.Readings;
+using EnergyMeteringSystem.App.Views.Reports;
+using EnergyMeteringSystem.Core.Helpers;
+using EnergyMeteringSystem.Core.Interfaces.Repositories;
+using EnergyMeteringSystem.Data.Repositories;
+using EnergyMeteringSystem.Services.Auth;
+using EnergyMeteringSystem.Services.DynamicForms.Extensions;
+using EnergyMeteringSystem.Services.DynamicForms.Services;
+using Microsoft.Extensions.DependencyInjection;
+
 
 namespace EnergyMeteringSystem.App
 {
@@ -17,93 +42,234 @@ namespace EnergyMeteringSystem.App
         private const string DatabaseName = "EnergyMeteringSystem";
         private const string LocalDbInstance = "(localdb)\\MSSQLLocalDB";
 
-        public App()
-        {
-            this.Exit += App_Exit;
-            this.SessionEnding += App_SessionEnding;
-        }
+        /// <summary>
+        /// DI контейнер для доступа к сервисам из любого места
+        /// </summary>
+        private IServiceProvider _serviceProvider;
 
-        private void App_SessionEnding(object sender, SessionEndingCancelEventArgs e)
-        {
-            CopyDatabaseBackToProject();
-        }
-
-        private void App_Exit(object sender, ExitEventArgs e)
-        {
-            CopyDatabaseBackToProject();
-        }
+        /// <summary>
+        /// Публичный доступ к DI контейнеру
+        /// </summary>
+        public IServiceProvider ServiceProvider => _serviceProvider;
 
         protected override void OnStartup(StartupEventArgs e)
         {
-            AuditLogger.OnLogAsync += async (log) =>
+            base.OnStartup(e);
+
+            // 1. Настройка Dependency Injection
+            ConfigureServices();
+
+            // 2. Настройка аудита
+            AuditLogger.OnLog += log =>
             {
-                try
+                _ = Task.Run(() =>
                 {
-                    await Task.Run(() =>
+                    try
                     {
-                        var repository = new AuditRepository();
-                        repository.Log(log);
-                    });
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"App: Ошибка сохранения аудита: {ex.Message}");
-                }
+                        using (var repository = new AuditRepository())
+                        {
+                            repository.Log(log);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"App: Ошибка сохранения аудита: {ex.Message}");
+                    }
+                });
             };
 
+            // 3. Подключение базы данных
             if (!AttachDatabaseIfNeeded())
             {
                 Shutdown();
                 return;
             }
 
-            base.OnStartup(e);
-
-            // ❌ УБИРАЕМ НЕНУЖНЫЕ СЕРВИСЫ ПРИ СТАРТЕ
-            // var exportDialogService = new ExportDialogService();
-            // var exportService = new ExportService(exportDialogService);
-
-            // ✅ ПОКАЗЫВАЕМ ОКНО ВХОДА
-            var loginView = new Views.Auth.LoginView();
+            // 4. Запуск окна входа через DI
+            var loginView = _serviceProvider.GetRequiredService<LoginView>();
             loginView.Show();
+            MainWindow = loginView;
         }
+
+        protected override void OnExit(ExitEventArgs e)
+        {
+            // Копируем базу обратно в проект
+            CopyDatabaseBackToProject();
+
+            // Освобождаем ресурсы DI
+            if (_serviceProvider is IDisposable disposable)
+            {
+                disposable.Dispose();
+            }
+
+            base.OnExit(e);
+        }
+
+        /// <summary>
+        /// Настройка Dependency Injection контейнера
+        /// </summary>
+        private void ConfigureServices()
+        {
+            var services = new ServiceCollection();
+
+            // ============================================================
+            // 1. СЕРВИСЫ ДИНАМИЧЕСКИХ ФОРМ
+            // ============================================================
+            services.AddDynamicForms();
+
+            // ============================================================
+            // 2. РЕПОЗИТОРИИ
+            // ============================================================
+            services.AddTransient<ViewModels.Directories.DynamicDirectoryListViewModel>();
+            services.AddTransient<Views.Directories.DynamicDirectoryView>();
+            services.AddScoped<AuditRepository>();
+            services.AddScoped<ConsumptionObjectRepository>();
+            services.AddScoped<UserRepository>();
+            services.AddScoped<MeterRepository>();
+            services.AddScoped<MeterReadingRepository>();
+            services.AddScoped<RegionRepository>();
+            services.AddScoped<CityRepository>();
+            services.AddScoped<StreetRepository>();
+            services.AddScoped<ObjectTypeRepository>();
+            services.AddScoped<MeterTypeRepository>();
+            services.AddScoped<MeterStatusRepository>();
+            services.AddScoped<ReadingStatusRepository>();
+            services.AddScoped<RejectionReasonRepository>();
+            services.AddScoped<EnergySourceRepository>();
+            services.AddScoped<VerificationIntervalRepository>();
+            services.AddScoped<DashboardRepository>();
+            services.AddScoped<AnalyticsRepository>();
+            services.AddScoped<HierarchyAnalyticsRepository>();
+            services.AddScoped<ReportRepository>();
+
+            // ============================================================
+            // 3. СЕРВИСЫ
+            // ============================================================
+            services.AddScoped<AuthService>();
+            //services.AddScoped<Services.Export.ExportService>();
+
+            // ============================================================
+            // 4. VIEWMODELS
+            // ============================================================
+
+            // Auth
+            services.AddTransient<LoginViewModel>();
+
+            // Main
+            services.AddTransient<ShellViewModel>();
+            services.AddTransient<DashboardViewModel>();
+
+            // Objects
+            services.AddTransient<ConsumptionObjectListViewModel>();
+            services.AddTransient<ConsumptionObjectEditViewModel>();
+
+            // Meters
+            services.AddTransient<MeterListViewModel>();
+            services.AddTransient<MeterEditViewModel>();
+
+            // Readings
+            services.AddTransient<MeterReadingInputViewModel>();
+            services.AddTransient<MeterReadingHistoryViewModel>();
+            services.AddTransient<MeterReadingVerificationViewModel>();
+
+            // Analytics
+            services.AddTransient<AnalyticsViewModel>();
+            services.AddTransient<HierarchyAnalyticsViewModel>();
+
+            // Reports
+            services.AddTransient<ReportViewModel>();
+
+            // Admin
+            services.AddTransient<UserManagementViewModel>();
+            services.AddTransient<AuditLogViewModel>();
+            services.AddTransient<BackupViewModel>();
+
+            // Directories (динамические справочники)
+            services.AddTransient<DynamicEditViewModel>();
+
+            // ============================================================
+            // 5. VIEWS
+            // ============================================================
+
+            // Auth
+            services.AddTransient<LoginView>();
+
+            // Main
+            services.AddTransient<ShellView>();
+            services.AddTransient<DashboardView>();
+
+            // Objects
+            services.AddTransient<ConsumptionObjectListView>();
+            services.AddTransient<ConsumptionObjectEditView>();
+
+            // Meters
+            services.AddTransient<MeterListView>();
+            services.AddTransient<MeterEditView>();
+
+            // Readings
+            services.AddTransient<MeterReadingInputView>();
+            services.AddTransient<MeterReadingHistoryView>();
+            services.AddTransient<MeterReadingVerificationView>();
+
+            // Analytics
+            services.AddTransient<AnalyticsView>();
+            services.AddTransient<HierarchyAnalyticsView>();
+
+            // Reports
+            services.AddTransient<ReportView>();
+
+            // Admin
+            services.AddTransient<UserManagementView>();
+            services.AddTransient<AuditLogView>();
+            services.AddTransient<BackupView>();
+
+            // Directories
+            services.AddTransient<DirectoryListView>();
+
+            // Dynamic Forms (универсальное окно редактора)
+            services.AddTransient<DynamicEditView>();
+
+            // ============================================================
+            // 6. ПОСТРОЕНИЕ КОНТЕЙНЕРА
+            // ============================================================
+
+            _serviceProvider = services.BuildServiceProvider();
+
+            // Проверка: все ли сервисы зарегистрированы корректно
+            try
+            {
+                var test = _serviceProvider.GetRequiredService<IMetadataService>();
+                Debug.WriteLine("DI: MetadataService зарегистрирован успешно");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"DI Ошибка при регистрации: {ex.Message}");
+            }
+        }
+
+        // ================================================================
+        // РАБОТА С БАЗОЙ ДАННЫХ
+        // ================================================================
 
         private bool AttachDatabaseIfNeeded()
         {
             try
             {
-                string workingMdfPath = DatabasePathHelper.GetWorkingDatabasePath();
+                string mdfPath = DatabasePathHelper.GetActiveDatabasePath();
+                string ldfPath = DatabasePathHelper.GetActiveDatabaseLogPath();
 
-                // Если рабочей базы нет - копируем из проекта данных
-                if (!File.Exists(workingMdfPath))
+                if (!File.Exists(mdfPath))
                 {
-                    string sourceMdf = DatabasePathHelper.GetSourceDatabasePath();
-                    if (File.Exists(sourceMdf))
-                    {
-                        string workingDir = DatabasePathHelper.GetWorkingDatabaseDirectory();
-                        if (!Directory.Exists(workingDir))
-                            Directory.CreateDirectory(workingDir);
-
-                        File.Copy(sourceMdf, workingMdfPath, true);
-
-                        string sourceLdf = DatabasePathHelper.GetSourceDatabaseLogPath();
-                        string workingLdfPath = DatabasePathHelper.GetWorkingDatabaseLogPath();
-                        if (File.Exists(sourceLdf))
-                            File.Copy(sourceLdf, workingLdfPath, true);
-                    }
-                    else
-                    {
-                        MessageBox.Show($"Файл базы данных не найден:\n{sourceMdf}", "Ошибка",
-                            MessageBoxButton.OK, MessageBoxImage.Error);
-                        return false;
-                    }
+                    MessageBox.Show(
+                        $"Файл базы данных не найден:\n{mdfPath}\n\nСоздайте базу, выполнив script.sql из корня проекта.",
+                        "Ошибка",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
+                    return false;
                 }
 
                 string masterConnString = $"Data Source={LocalDbInstance};Integrated Security=True;";
-
-                // ✅ УБИРАЕМ ОСТАНОВКУ/ЗАПУСК LocalDB (ЭТО ДОЛГО!)
-                // StopLocalDb();
-                // StartLocalDb();
+                StartLocalDb();
 
                 using (var connection = new SqlConnection(masterConnString))
                 {
@@ -115,20 +281,49 @@ namespace EnergyMeteringSystem.App
                         cmd.Parameters.AddWithValue("@dbName", DatabaseName);
                         int exists = (int)cmd.ExecuteScalar();
 
-                        if (exists == 0)
+                        if (exists > 0)
                         {
-                            string attachSql = $@"
-                                CREATE DATABASE [{DatabaseName}] ON 
-                                (FILENAME = N'{workingMdfPath}')
-                                FOR ATTACH;";
-
-                            using (var attachCmd = new SqlCommand(attachSql, connection))
+                            string detachSql = $@"
+                                USE master;
+                                ALTER DATABASE [{DatabaseName}] SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+                                EXEC sp_detach_db '{DatabaseName}';";
+                            try
                             {
-                                attachCmd.ExecuteNonQuery();
+                                using (var detachCmd = new SqlCommand(detachSql, connection))
+                                {
+                                    detachCmd.CommandTimeout = 30;
+                                    detachCmd.ExecuteNonQuery();
+                                }
+                            }
+                            catch
+                            {
+                                // База могла быть уже отсоединена
                             }
                         }
                     }
+
+                    Debug.WriteLine($"Attach database: {mdfPath}");
+
+                    string attachSql = $@"
+                        CREATE DATABASE [{DatabaseName}] ON 
+                        (FILENAME = N'{mdfPath}')";
+
+                    if (File.Exists(ldfPath))
+                    {
+                        attachSql += $@",
+                        (FILENAME = N'{ldfPath}')";
+                    }
+
+                    attachSql += " FOR ATTACH;";
+
+                    using (var attachCmd = new SqlCommand(attachSql, connection))
+                    {
+                        attachCmd.CommandTimeout = 60;
+                        attachCmd.ExecuteNonQuery();
+                    }
                 }
+
+                ReseedIdentityColumnsIfNeeded();
 
                 return true;
             }
@@ -145,31 +340,10 @@ namespace EnergyMeteringSystem.App
             try
             {
                 DetachDatabase();
-                Thread.Sleep(300); // ✅ УМЕНЬШАЕМ ПАУЗУ
-
-                string sourceMdf = DatabasePathHelper.GetWorkingDatabasePath();
-                string targetMdf = DatabasePathHelper.GetSourceDatabasePath();
-
-                if (File.Exists(sourceMdf))
-                {
-                    string targetDir = Path.GetDirectoryName(targetMdf);
-                    if (!Directory.Exists(targetDir))
-                        Directory.CreateDirectory(targetDir);
-
-                    File.Copy(sourceMdf, targetMdf, true);
-
-                    string sourceLdf = DatabasePathHelper.GetWorkingDatabaseLogPath();
-                    string targetLdf = DatabasePathHelper.GetSourceDatabaseLogPath();
-
-                    if (File.Exists(sourceLdf))
-                        File.Copy(sourceLdf, targetLdf, true);
-
-                    System.Diagnostics.Debug.WriteLine($"База сохранена: {targetMdf}");
-                }
             }
-            catch
+            catch (Exception ex)
             {
-                TryForceCopyViaLocalDbStop();
+                Debug.WriteLine($"Detach on exit: {ex.Message}");
             }
         }
 
@@ -208,68 +382,72 @@ namespace EnergyMeteringSystem.App
             }
         }
 
-        private void TryForceCopyViaLocalDbStop()
-        {
-            try
-            {
-                StopLocalDb();
-                Thread.Sleep(1000);
-
-                string sourceMdf = DatabasePathHelper.GetWorkingDatabasePath();
-                string targetMdf = DatabasePathHelper.GetSourceDatabasePath();
-
-                if (File.Exists(sourceMdf))
-                {
-                    string targetDir = Path.GetDirectoryName(targetMdf);
-                    if (!Directory.Exists(targetDir))
-                        Directory.CreateDirectory(targetDir);
-
-                    File.Copy(sourceMdf, targetMdf, true);
-
-                    string sourceLdf = DatabasePathHelper.GetWorkingDatabaseLogPath();
-                    string targetLdf = DatabasePathHelper.GetSourceDatabaseLogPath();
-
-                    if (File.Exists(sourceLdf))
-                        File.Copy(sourceLdf, targetLdf, true);
-                }
-
-                StartLocalDb();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Не удалось сохранить базу данных.\n\nОшибка: {ex.Message}",
-                    "Предупреждение", MessageBoxButton.OK, MessageBoxImage.Warning);
-            }
-        }
-
-        private void StopLocalDb()
-        {
-            try
-            {
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-                {
-                    FileName = "cmd.exe",
-                    Arguments = "/c sqllocaldb stop MSSQLLocalDB",
-                    CreateNoWindow = true,
-                    UseShellExecute = false
-                })?.WaitForExit(3000);
-            }
-            catch { }
-        }
-
         private void StartLocalDb()
         {
             try
             {
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                var startInfo = new ProcessStartInfo("sqllocaldb", "start MSSQLLocalDB")
                 {
-                    FileName = "cmd.exe",
-                    Arguments = "/c sqllocaldb start MSSQLLocalDB",
                     CreateNoWindow = true,
-                    UseShellExecute = false
-                })?.WaitForExit(3000);
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true
+                };
+
+                using (var process = Process.Start(startInfo))
+                {
+                    process?.WaitForExit(10000);
+                }
+
+                Thread.Sleep(300);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"StartLocalDb: {ex.Message}");
+            }
+        }
+
+        private void ReseedIdentityColumnsIfNeeded()
+        {
+            try
+            {
+                string connString = $"Data Source={LocalDbInstance};Initial Catalog={DatabaseName};Integrated Security=True;";
+                using (var connection = new SqlConnection(connString))
+                {
+                    connection.Open();
+                    using (var cmd = new SqlCommand(@"
+DECLARE @table SYSNAME, @maxId INT, @sql NVARCHAR(MAX);
+DECLARE cur CURSOR LOCAL FAST_FORWARD FOR
+    SELECT t.name
+    FROM sys.tables t
+    INNER JOIN sys.columns c ON c.object_id = t.object_id AND c.name = 'Id' AND c.is_identity = 1
+    WHERE t.schema_id = SCHEMA_ID('dbo');
+OPEN cur;
+FETCH NEXT FROM cur INTO @table;
+WHILE @@FETCH_STATUS = 0
+BEGIN
+    SET @sql = N'SELECT @m = ISNULL(MAX(Id), 0) FROM ' + QUOTENAME(@table);
+    EXEC sp_executesql @sql, N'@m INT OUTPUT', @m = @maxId OUTPUT;
+    IF @maxId > CAST(IDENT_CURRENT(@table) AS INT)
+    BEGIN
+        SET @sql = N'DBCC CHECKIDENT (''' + @table + ''', RESEED, ' + CAST(@maxId AS NVARCHAR(20)) + ')';
+        EXEC(@sql);
+        PRINT 'Reseeded ' + @table + ' to ' + CAST(@maxId AS NVARCHAR(20));
+    END
+    FETCH NEXT FROM cur INTO @table;
+END
+CLOSE cur;
+DEALLOCATE cur;", connection))
+                    {
+                        cmd.CommandTimeout = 60;
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"ReseedIdentityColumnsIfNeeded: {ex.Message}");
+            }
         }
     }
 }

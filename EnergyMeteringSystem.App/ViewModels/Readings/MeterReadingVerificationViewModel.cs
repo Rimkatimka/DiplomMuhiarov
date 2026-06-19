@@ -144,18 +144,14 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
                     return;
 
                 int successCount = 0;
-                var idsToRemove = new List<MeterReadingVerificationDto>();
 
                 foreach (var reading in readingsToVerify)
                 {
                     await _repository.UpdateStatusAsync(reading.Id, 2);
                     successCount++;
-                    idsToRemove.Add(reading);
-                }
 
-                foreach (var item in idsToRemove)
-                {
-                    Readings.Remove(item);
+                    if (IsBatchMode)
+                        Readings.Remove(reading);
                 }
 
                 if (!IsBatchMode && SelectedReading != null && successCount > 0)
@@ -169,7 +165,6 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
 
                 (VerifyCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
                 (RejectCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
-
             }, "Ошибка при верификации");
         }
 
@@ -227,19 +222,14 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
                     return;
 
                 int successCount = 0;
-                var idsToRemove = new List<MeterReadingVerificationDto>();
 
                 foreach (var reading in readingsToReject)
                 {
                     await _repository.UpdateStatusAsync(reading.Id, 3, SelectedReason.Id, RejectionComment);
                     successCount++;
-                    idsToRemove.Add(reading);
-                }
 
-                // ✅ УДАЛЯЕМ ИЗ КОЛЛЕКЦИИ
-                foreach (var item in idsToRemove)
-                {
-                    Readings.Remove(item);
+                    if (IsBatchMode)
+                        Readings.Remove(reading);
                 }
 
                 if (!IsBatchMode && SelectedReading != null && successCount > 0)
@@ -255,7 +245,6 @@ namespace EnergyMeteringSystem.App.ViewModels.Readings
 
                 (VerifyCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
                 (RejectCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
-
             }, "Ошибка при отклонении");
         }
 

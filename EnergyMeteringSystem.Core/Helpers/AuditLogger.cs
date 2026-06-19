@@ -1,27 +1,17 @@
 ﻿using EnergyMeteringSystem.Core.Models.DTO;
 using Newtonsoft.Json;
 using System;
-using System.Threading.Tasks;
 
 namespace EnergyMeteringSystem.Core.Helpers
 {
     public static class AuditLogger
     {
         // Событие для передачи логов
-        public static event Func<AuditLogDto, Task> OnLogAsync;
+        public static event Action<AuditLogDto> OnLog;
 
-        // ✅ СТАРЫЙ МЕТОД ДЛЯ СОВМЕСТИМОСТИ (вызывает асинхронный)
         public static void Log(string actionType, string tableName, int recordId,
                                object oldValues = null, object newValues = null,
                                int? userId = null)
-        {
-            _ = LogAsync(actionType, tableName, recordId, oldValues, newValues, userId);
-        }
-
-        // ✅ НОВЫЙ АСИНХРОННЫЙ МЕТОД
-        public static async Task LogAsync(string actionType, string tableName, int recordId,
-                                          object oldValues = null, object newValues = null,
-                                          int? userId = null)
         {
             try
             {
@@ -37,13 +27,10 @@ namespace EnergyMeteringSystem.Core.Helpers
                     Details = GetDetails(oldValues, newValues)
                 };
 
-                // ✅ АСИНХРОННЫЙ ВЫЗОВ СОБЫТИЯ
-                if (OnLogAsync != null)
-                {
-                    await OnLogAsync.Invoke(log);
-                }
+                // Вызываем событие
+                OnLog?.Invoke(log);
 
-                System.Diagnostics.Debug.WriteLine($"AuditLogger.Log: Успешно сохранен");
+                System.Diagnostics.Debug.WriteLine($"AuditLogger.Log: Успешно вызван OnLog");
             }
             catch (Exception ex)
             {
@@ -68,5 +55,6 @@ namespace EnergyMeteringSystem.Core.Helpers
             }
             return null;
         }
+
     }
 }
