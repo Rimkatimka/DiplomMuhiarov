@@ -73,10 +73,20 @@ namespace EnergyMeteringSystem.App.ViewModels.Base
                 if (SetProperty(ref _selectedItem, value))
                 {
                     System.Diagnostics.Debug.WriteLine($"ListViewModelBase.SelectedItem изменён");
-                    (EditCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
-                    (DeleteCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
+                    OnSelectedItemChanged();
                 }
             }
+        }
+
+        protected virtual void OnSelectedItemChanged()
+        {
+            RefreshSelectionCommands();
+        }
+
+        protected void RefreshSelectionCommands()
+        {
+            (EditCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
+            (DeleteCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
         }
 
         public int CurrentPage
@@ -140,18 +150,31 @@ namespace EnergyMeteringSystem.App.ViewModels.Base
             ItemsList = new List<TModel>();
             FilteredItemsList = new List<TModel>();
 
-            RefreshCommand = new AsyncRelayCommand(async () => await LoadDataAsync());
-            AddCommand = new AsyncRelayCommand(async () => await AddAsync());
-            EditCommand = new AsyncRelayCommand(async () => await EditAsync(), () => SelectedItem != null);
-            DeleteCommand = new AsyncRelayCommand(async () => await DeleteAsync(), () => SelectedItem != null);
+            RefreshCommand = new AsyncRelayCommand(async () => await LoadDataAsync(), () => !IsLoading);
+            AddCommand = new AsyncRelayCommand(async () => await AddAsync(), () => !IsLoading);
+            EditCommand = new AsyncRelayCommand(async () => await EditAsync(), () => !IsLoading && SelectedItem != null);
+            DeleteCommand = new AsyncRelayCommand(async () => await DeleteAsync(), () => !IsLoading && SelectedItem != null);
             NextPageCommand = new AsyncRelayCommand(async () => { if (HasNextPage) CurrentPage++; });
             PrevPageCommand = new AsyncRelayCommand(async () => { if (HasPreviousPage) CurrentPage--; });
             ClearSearchCommand = new RelayCommand(_ => SearchText = string.Empty);
 
             System.Diagnostics.Debug.WriteLine($"ListViewModelBase конструктор для {typeof(TModel).Name}");
 
+            PropertyChanged += (_, e) =>
+            {
+                if (e.PropertyName == nameof(IsLoading))
+                    RefreshAllCommandsCanExecute();
+            };
+
             // Асинхронная загрузка данных
             _ = LoadDataAsync();
+        }
+
+        protected virtual void RefreshAllCommandsCanExecute()
+        {
+            (RefreshCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
+            (AddCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
+            RefreshSelectionCommands();
         }
 
         protected abstract Task LoadDataAsync();

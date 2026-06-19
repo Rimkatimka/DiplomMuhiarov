@@ -50,8 +50,14 @@ namespace EnergyMeteringSystem.App.ViewModels.Base
             IsEditMode = item != null;
             Title = IsEditMode ? "Редактирование" : "Добавление";
 
-            SaveCommand = new AsyncRelayCommand(async () => await SaveAsync(), () => CanSave());
+            SaveCommand = new AsyncRelayCommand(async () => await SaveAsync(), () => !IsLoading);
             CancelCommand = new RelayCommand(_ => Cancel());
+
+            PropertyChanged += (_, e) =>
+            {
+                if (e.PropertyName == nameof(IsLoading))
+                    RaiseCanExecuteChanged();
+            };
 
             if (IsEditMode)
                 LoadItem(item);
@@ -59,19 +65,27 @@ namespace EnergyMeteringSystem.App.ViewModels.Base
 
         protected abstract void LoadItem(TModel item);
         protected abstract TModel GetDto();
-        protected abstract Task SaveToRepositoryAsync(TModel dto);
+        protected abstract Task<bool> SaveToRepositoryAsync(TModel dto);
         protected new abstract bool CanSave();
+
+        protected virtual string GetSaveValidationMessage() => "Заполните все обязательные поля корректно.";
 
         protected virtual async Task SaveAsync()
         {
-            if (!CanSave()) return;
+            if (!CanSave())
+            {
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                    MessageBox.Show(GetSaveValidationMessage(), "Невозможно сохранить",
+                        MessageBoxButton.OK, MessageBoxImage.Warning));
+                return;
+            }
 
             await ExecuteAsync(async () =>
             {
                 var dto = GetDto();
-                await SaveToRepositoryAsync(dto);
+                var saved = await SaveToRepositoryAsync(dto);
+                if (!saved) return;
 
-                // ✅ ПОКАЗЫВАЕМ СООБЩЕНИЕ ОБ УСПЕХЕ
                 await Application.Current.Dispatcher.InvokeAsync(() =>
                 {
                     string message = IsEditMode ? "Данные успешно обновлены!" : "Новая запись успешно создана!";
@@ -80,6 +94,12 @@ namespace EnergyMeteringSystem.App.ViewModels.Base
 
                 OnSaved?.Invoke(this, EventArgs.Empty);
             }, "Ошибка при сохранении");
+
+            if (HasError)
+            {
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                    MessageBox.Show(ErrorMessage, "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error));
+            }
         }
 
         protected virtual void Cancel()
@@ -97,13 +117,10 @@ namespace EnergyMeteringSystem.App.ViewModels.Base
 
         protected override bool SetProperty<T>(ref T storage, T value, [CallerMemberName] string propertyName = null)
         {
-            if (EqualityComparer<T>.Default.Equals(storage, value))
-                return false;
-
-            storage = value;
-            OnPropertyChanged(propertyName);
-            HasChanges = true;
-            return true;
+            var changed = base.SetProperty(ref storage, value, propertyName);
+            if (changed)
+                (SaveCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
+            return changed;
         }
 
         // ✅ МЕТОД ДЛЯ ПРИНУДИТЕЛЬНОГО ОБНОВЛЕНИЯ КНОПКИ

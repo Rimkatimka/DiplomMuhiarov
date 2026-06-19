@@ -5,6 +5,8 @@ using EnergyMeteringSystem.Data.Repositories;
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading.Tasks;
+using System.Windows;
 
 namespace EnergyMeteringSystem.App.ViewModels.Directories
 {
@@ -14,10 +16,10 @@ namespace EnergyMeteringSystem.App.ViewModels.Directories
         private readonly RegionRepository _regionRepository;
         private string _name;
         private RegionDto _selectedRegion;
-        private ObservableCollection<RegionDto> _regions;
-        private int _preselectedRegionId;
+        private readonly int _preselectedRegionId;
 
         public event EventHandler OnCitySaved;
+        public event EventHandler OnCancelled;
 
         public string Name
         {
@@ -31,61 +33,61 @@ namespace EnergyMeteringSystem.App.ViewModels.Directories
             set => SetProperty(ref _selectedRegion, value);
         }
 
-        public ObservableCollection<RegionDto> Regions
-        {
-            get => _regions;
-            set => SetProperty(ref _regions, value);
-        }
+        public ObservableCollection<RegionDto> Regions { get; } = new();
 
-        public RelayCommand SaveCommand { get; }
+        public AsyncRelayCommand SaveCommand { get; }
         public RelayCommand CancelCommand { get; }
 
         public CityEditViewModel(int preselectedRegionId = 0)
         {
             _cityRepository = new CityRepository();
             _regionRepository = new RegionRepository();
-            Regions = new ObservableCollection<RegionDto>();
             _preselectedRegionId = preselectedRegionId;
 
-            SaveCommand = new RelayCommand(_ => Save(), _ => CanSave());
-            CancelCommand = new RelayCommand(_ => Cancel());
+            SaveCommand = new AsyncRelayCommand(async () => await SaveAsync(), () => !IsLoading);
+            CancelCommand = new RelayCommand(_ => OnCancelled?.Invoke(this, EventArgs.Empty));
 
-            LoadRegions();
+            _ = LoadRegionsAsync();
         }
 
-        private void LoadRegions()
+        private async Task LoadRegionsAsync()
         {
-            var regions = _regionRepository.GetAll();
-            Regions.Clear();
-            foreach (var region in regions)
-                Regions.Add(region);
-
-            if (_preselectedRegionId > 0)
+            await ExecuteAsync(async () =>
             {
-                SelectedRegion = Regions.FirstOrDefault(r => r.Id == _preselectedRegionId);
+                var regions = await _regionRepository.GetAllAsync();
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    Regions.Clear();
+                    foreach (var region in regions)
+                        Regions.Add(region);
+
+                    if (_preselectedRegionId > 0)
+                        SelectedRegion = Regions.FirstOrDefault(r => r.Id == _preselectedRegionId);
+                });
+            }, "Ошибка загрузки регионов");
+        }
+
+        private async Task SaveAsync()
+        {
+            if (string.IsNullOrWhiteSpace(Name) || SelectedRegion == null)
+            {
+                MessageBox.Show("Введите название города и выберите регион", "Ошибка",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
             }
-        }
 
-        private bool CanSave()
-        {
-            return !string.IsNullOrWhiteSpace(Name) && SelectedRegion != null;
-        }
-
-        private void Save()
-        {
-            var dto = new CityDto
+            await ExecuteAsync(async () =>
             {
-                Name = Name,
-                RegionId = SelectedRegion.Id,
-                RegionName = SelectedRegion.Name
-            };
-            _cityRepository.Add(dto);
-            OnCitySaved?.Invoke(this, EventArgs.Empty);
-        }
+                var dto = new CityDto
+                {
+                    Name = Name.Trim(),
+                    RegionId = SelectedRegion.Id,
+                    RegionName = SelectedRegion.Name
+                };
 
-        private void Cancel()
-        {
-            OnCitySaved?.Invoke(this, EventArgs.Empty);
+                await _cityRepository.AddAsync(dto);
+                OnCitySaved?.Invoke(this, EventArgs.Empty);
+            }, "Ошибка при сохранении города");
         }
     }
 }

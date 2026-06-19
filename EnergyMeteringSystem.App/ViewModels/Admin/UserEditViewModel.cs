@@ -33,13 +33,21 @@ namespace EnergyMeteringSystem.App.ViewModels.Admin
         public string Username
         {
             get => _username;
-            set => SetProperty(ref _username, value);
+            set
+            {
+                if (SetProperty(ref _username, value))
+                    RaiseSaveCanExecuteChanged();
+            }
         }
 
         public string FullName
         {
             get => _fullName;
-            set => SetProperty(ref _fullName, value);
+            set
+            {
+                if (SetProperty(ref _fullName, value))
+                    RaiseSaveCanExecuteChanged();
+            }
         }
 
         public string Email
@@ -47,27 +55,42 @@ namespace EnergyMeteringSystem.App.ViewModels.Admin
             get => _email;
             set
             {
-                SetProperty(ref _email, value);
-                ValidateEmail();
+                if (SetProperty(ref _email, value))
+                {
+                    ValidateEmail();
+                    RaiseSaveCanExecuteChanged();
+                }
             }
         }
 
         public string NewPassword
         {
             get => _newPassword;
-            set => SetProperty(ref _newPassword, value);
+            set
+            {
+                if (SetProperty(ref _newPassword, value))
+                    RaiseSaveCanExecuteChanged();
+            }
         }
 
         public string ConfirmPassword
         {
             get => _confirmPassword;
-            set => SetProperty(ref _confirmPassword, value);
+            set
+            {
+                if (SetProperty(ref _confirmPassword, value))
+                    RaiseSaveCanExecuteChanged();
+            }
         }
 
         public UserRoleDto SelectedRole
         {
             get => _selectedRole;
-            set => SetProperty(ref _selectedRole, value);
+            set
+            {
+                if (SetProperty(ref _selectedRole, value))
+                    RaiseSaveCanExecuteChanged();
+            }
         }
 
         public string EmailError
@@ -96,12 +119,13 @@ namespace EnergyMeteringSystem.App.ViewModels.Admin
 
         public bool IsSelfEdit { get; set; }
         public bool IsAdmin { get; set; }
+        public bool ShowRolePicker => !IsSelfEdit;
 
         // Конструктор для добавления
         public UserEditViewModel(ObservableCollection<UserRoleDto> roles, UserDto currentUser = null)
             : base(new UserRepository(), null)
         {
-            _roles = roles;
+            _roles = roles ?? new ObservableCollection<UserRoleDto>();
             _currentUser = currentUser;
             IsSelfEdit = false;
             IsAdmin = currentUser?.IsAdmin ?? false;
@@ -111,14 +135,15 @@ namespace EnergyMeteringSystem.App.ViewModels.Admin
             Username = string.Empty;
             FullName = string.Empty;
             Email = string.Empty;
-            SelectedRole = roles.Count > 0 ? roles[0] : null;
+            SelectedRole = _roles.Count > 0 ? _roles[0] : null;
+            RaiseCanExecuteChanged();
         }
 
         // Конструктор для редактирования
         public UserEditViewModel(ObservableCollection<UserRoleDto> roles, UserDto existingUser, UserDto currentUser = null)
             : base(new UserRepository(), existingUser)
         {
-            _roles = roles;
+            _roles = roles ?? new ObservableCollection<UserRoleDto>();
             _currentUser = currentUser;
             IsSelfEdit = currentUser != null && existingUser != null && currentUser.Id == existingUser.Id;
             IsAdmin = currentUser?.IsAdmin ?? false;
@@ -126,6 +151,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Admin
             Title = IsSelfEdit ? "Редактирование профиля" : "Редактирование пользователя";
 
             SelectedRole = FindRole(existingUser.RoleId);
+            RaiseCanExecuteChanged();
         }
 
         protected override void LoadItem(UserDto item)
@@ -147,11 +173,12 @@ namespace EnergyMeteringSystem.App.ViewModels.Admin
             };
         }
 
-        protected override async Task SaveToRepositoryAsync(UserDto dto)
+        protected override async Task<bool> SaveToRepositoryAsync(UserDto dto)
         {
             if (IsEditMode)
             {
-                await _repository.UpdateAsync(dto);
+                var updated = await _repository.UpdateAsync(dto);
+                if (!updated) return false;
 
                 if (IsSelfEdit && !string.IsNullOrEmpty(NewPassword) && !string.IsNullOrEmpty(ConfirmPassword))
                 {
@@ -161,8 +188,14 @@ namespace EnergyMeteringSystem.App.ViewModels.Admin
             }
             else
             {
+                var existing = await _repository.GetByUsernameAsync(dto.Username);
+                if (existing != null)
+                    throw new InvalidOperationException($"Пользователь с логином «{dto.Username}» уже существует");
+
                 await _repository.AddAsync(dto);
             }
+
+            return true;
         }
 
         protected override bool CanSave()
@@ -171,8 +204,10 @@ namespace EnergyMeteringSystem.App.ViewModels.Admin
             if (string.IsNullOrWhiteSpace(FullName)) return false;
             if (string.IsNullOrWhiteSpace(Email)) return false;
 
-            string emailPattern = @"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$";
+            string emailPattern = @"^[^@\s]+@[^@\s]+\.[^@\s]+$";
             if (!Regex.IsMatch(Email, emailPattern)) return false;
+
+            if (!IsEditMode && SelectedRole == null) return false;
 
             if (IsSelfEdit)
             {
@@ -185,6 +220,22 @@ namespace EnergyMeteringSystem.App.ViewModels.Admin
             }
 
             return true;
+        }
+
+        protected override string GetSaveValidationMessage()
+        {
+            if (string.IsNullOrWhiteSpace(Username)) return "Введите логин";
+            if (string.IsNullOrWhiteSpace(FullName)) return "Введите ФИО";
+            if (string.IsNullOrWhiteSpace(Email)) return "Введите email";
+            if (!IsEditMode && SelectedRole == null) return "Выберите роль пользователя";
+            if (ShowEmailError) return EmailError;
+            if (HasPasswordError) return PasswordError;
+            return "Проверьте правильность введённых данных";
+        }
+
+        private void RaiseSaveCanExecuteChanged()
+        {
+            (SaveCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
         }
 
         private UserRoleDto FindRole(int id)

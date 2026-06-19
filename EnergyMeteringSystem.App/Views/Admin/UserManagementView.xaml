@@ -75,7 +75,6 @@
                     Padding="15,5" Margin="5"
                     Background="{StaticResource SuccessButtonBrush}" 
                     Foreground="White"
-                    IsEnabled="{Binding IsLoading, Converter={StaticResource InverseBooleanConverter}}"
                     Cursor="Hand"
                     FontWeight="SemiBold"/>
 
@@ -84,7 +83,6 @@
                     Padding="15,5" Margin="5"
                     Background="{DynamicResource ButtonBackgroundBrush}" 
                     Foreground="{DynamicResource ButtonForegroundBrush}"
-                    IsEnabled="{Binding IsLoading, Converter={StaticResource InverseBooleanConverter}}"
                     Cursor="Hand"
                     FontWeight="SemiBold"/>
 
@@ -93,7 +91,6 @@
                     Padding="15,5" Margin="5"
                     Background="#E65100" 
                     Foreground="White"
-                    IsEnabled="{Binding IsLoading, Converter={StaticResource InverseBooleanConverter}}"
                     Cursor="Hand"
                     FontWeight="SemiBold"/>
 
@@ -102,7 +99,6 @@
                     Padding="15,5" Margin="5"
                     Background="#757575" 
                     Foreground="White"
-                    IsEnabled="{Binding IsLoading, Converter={StaticResource InverseBooleanConverter}}"
                     Cursor="Hand"
                     FontWeight="SemiBold"/>
 
@@ -111,7 +107,6 @@
                     Padding="15,5" Margin="5"
                     Background="{StaticResource DangerButtonBrush}" 
                     Foreground="White"
-                    IsEnabled="{Binding IsLoading, Converter={StaticResource InverseBooleanConverter}}"
                     Cursor="Hand"
                     FontWeight="SemiBold"/>
         </StackPanel>

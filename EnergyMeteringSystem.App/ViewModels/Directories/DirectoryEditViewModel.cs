@@ -1,8 +1,7 @@
-﻿using System;
-using System.Threading.Tasks;
-using EnergyMeteringSystem.App.Commands;
+﻿using EnergyMeteringSystem.App.Commands;
 using EnergyMeteringSystem.App.ViewModels.Base;
 using EnergyMeteringSystem.Core.Models.DTO;
+using System.Threading.Tasks;
 
 namespace EnergyMeteringSystem.App.ViewModels.Directories
 {
@@ -27,7 +26,6 @@ namespace EnergyMeteringSystem.App.ViewModels.Directories
             set => SetProperty(ref _description, value);
         }
 
-        // Конструктор для добавления
         public DirectoryEditViewModel() : base(null, null)
         {
             Title = "Добавление записи";
@@ -35,7 +33,6 @@ namespace EnergyMeteringSystem.App.ViewModels.Directories
             Description = string.Empty;
         }
 
-        // Конструктор для редактирования
         public DirectoryEditViewModel(DirectoryDto existingItem)
             : base(null, existingItem)
         {
@@ -59,10 +56,9 @@ namespace EnergyMeteringSystem.App.ViewModels.Directories
             };
         }
 
-        protected override Task SaveToRepositoryAsync(DirectoryDto dto)
+        protected override Task<bool> SaveToRepositoryAsync(DirectoryDto dto)
         {
-            // Сохранение обрабатывается в DirectoryListViewModel через событие
-            return Task.CompletedTask;
+            return Task.FromResult(true);
         }
 
         protected override bool CanSave()
@@ -70,16 +66,12 @@ namespace EnergyMeteringSystem.App.ViewModels.Directories
             return !string.IsNullOrWhiteSpace(Name);
         }
 
-        // Переопределяем SaveAsync, чтобы использовать событие OnDirectorySaved
         protected override async Task SaveAsync()
         {
-            if (!CanSave()) return;
+            if (!CanSave())
+                return;
 
-            // Вызываем событие OnDirectorySaved (собственное событие)
-            OnDirectorySaved?.Invoke(this, EventArgs.Empty);
+            RaiseOnSaved();
         }
-
-        // Собственное событие
-        public event EventHandler OnDirectorySaved;
     }
 }

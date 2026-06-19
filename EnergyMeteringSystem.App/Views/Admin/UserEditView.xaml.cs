@@ -105,37 +105,8 @@ namespace EnergyMeteringSystem.App.Views.Admin
         {
             if (_viewModel == null) return;
 
-            string newPass = _viewModel.NewPassword;
-            string confirmPass = _viewModel.ConfirmPassword;
-
-            if (!string.IsNullOrEmpty(newPass) || !string.IsNullOrEmpty(confirmPass))
-            {
-                if (newPass != confirmPass)
-                {
-                    _viewModel.PasswordError = "Пароли не совпадают";
-                    _viewModel.HasPasswordError = true;
-                }
-                else if (string.IsNullOrEmpty(newPass))
-                {
-                    _viewModel.PasswordError = "Введите новый пароль";
-                    _viewModel.HasPasswordError = true;
-                }
-                else if (newPass.Length < 3)
-                {
-                    _viewModel.PasswordError = "Пароль должен содержать минимум 3 символа";
-                    _viewModel.HasPasswordError = true;
-                }
-                else
-                {
-                    _viewModel.PasswordError = "";
-                    _viewModel.HasPasswordError = false;
-                }
-            }
-            else
-            {
-                _viewModel.PasswordError = "";
-                _viewModel.HasPasswordError = false;
-            }
+            _viewModel.ValidatePasswords();
+            _viewModel.RaiseCanExecuteChanged();
         }
     }
 }

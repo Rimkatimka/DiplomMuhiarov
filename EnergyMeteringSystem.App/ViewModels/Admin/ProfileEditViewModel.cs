@@ -77,7 +77,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Admin
             return dto;
         }
 
-        protected override async Task SaveToRepositoryAsync(UserDto dto)
+        protected override async Task<bool> SaveToRepositoryAsync(UserDto dto)
         {
             await _repository.UpdateAsync(dto);
 
@@ -85,6 +85,8 @@ namespace EnergyMeteringSystem.App.ViewModels.Admin
             {
                 await _repository.ResetPasswordAsync(dto.Id, Core.Helpers.PasswordHelper.HashPassword(Password));
             }
+
+            return true;
         }
 
         protected override bool CanSave()

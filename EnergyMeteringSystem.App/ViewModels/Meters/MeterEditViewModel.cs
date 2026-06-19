@@ -521,13 +521,12 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
             return true;
         }
 
-        protected override async Task SaveToRepositoryAsync(MeterDto dto)
+        protected override async Task<bool> SaveToRepositoryAsync(MeterDto dto)
         {
             System.Diagnostics.Debug.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] SaveToRepositoryAsync НАЧАЛО");
 
             ValidateDates();
 
-            // ✅ ПРОВЕРКА С СООБЩЕНИЕМ ПРИ НАЖАТИИ
             var errors = new System.Text.StringBuilder();
 
             if (string.IsNullOrWhiteSpace(SerialNumber))
@@ -556,10 +555,9 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
                     "Ошибка валидации",
                     MessageBoxButton.OK,
                     MessageBoxImage.Warning);
-                return;
+                return false;
             }
 
-            // ✅ ПОДТВЕРЖДЕНИЕ СОХРАНЕНИЯ (для редактирования)
             if (IsEditMode)
             {
                 var confirmResult = MessageBox.Show(
@@ -569,7 +567,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
                     MessageBoxImage.Question);
 
                 if (confirmResult != MessageBoxResult.Yes)
-                    return;
+                    return false;
             }
 
             if (IsChangeObjectMode && SelectedNewObject != null)
@@ -588,15 +586,8 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
                     await _repository.AddAsync(dto);
 
                 System.Diagnostics.Debug.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] Сохранение УСПЕШНО");
-
-                // ✅ СООБЩЕНИЕ ОБ УСПЕХЕ
-                MessageBox.Show($"Счетчик \"{SerialNumber}\" успешно сохранен!",
-                    "Успех",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Information);
-
                 IsLoadingData = false;
-                RaiseOnSaved();
+                return true;
             }
             catch (Exception ex)
             {
@@ -604,6 +595,7 @@ namespace EnergyMeteringSystem.App.ViewModels.Meters
                 IsLoadingData = false;
                 MessageBox.Show($"Ошибка при сохранении: {ex.Message}", "Ошибка",
                     MessageBoxButton.OK, MessageBoxImage.Error);
+                return false;
             }
         }
 

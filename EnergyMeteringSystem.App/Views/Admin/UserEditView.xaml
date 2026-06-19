@@ -22,6 +22,7 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
@@ -68,7 +69,7 @@
           SelectedItem="{Binding SelectedRole}"
           DisplayMemberPath="Name"
           Margin="5" Padding="5"
-          Visibility="{Binding IsSelfEdit, Converter={StaticResource InverseBooleanConverter}}"
+          Visibility="{Binding ShowRolePicker, Converter={StaticResource BooleanToVisibilityConverter}}"
           IsEnabled="{Binding IsLoading, Converter={StaticResource InverseBooleanConverter}}"/>
 
                 <!-- TextBlock - когда пользователь редактирует себя (или админ себя) -->
@@ -110,8 +111,17 @@
                            Margin="5,2,5,5"
                            Visibility="{Binding HasPasswordError, Converter={StaticResource BooleanToVisibilityConverter}}"/>
 
+                <!-- Ошибка -->
+                <TextBlock Grid.Row="7" Grid.Column="1"
+                           Text="{Binding ErrorMessage}"
+                           Foreground="Red"
+                           FontSize="11"
+                           Margin="5,2,5,5"
+                           TextWrapping="Wrap"
+                           Visibility="{Binding HasError, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+
                 <!-- Кнопки -->
-                <StackPanel Grid.Row="8" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+                <StackPanel Grid.Row="9" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
                     <Button Content="Сохранить" 
                             Command="{Binding SaveCommand}"
                             Padding="20,8" Margin="5"

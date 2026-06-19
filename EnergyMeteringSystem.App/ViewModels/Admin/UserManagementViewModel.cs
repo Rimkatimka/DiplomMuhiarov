@@ -40,10 +40,10 @@ namespace EnergyMeteringSystem.App.ViewModels.Admin
 
         public UserManagementViewModel() : base(new UserRepository())
         {
-            BlockCommand = new AsyncRelayCommand(async () => await BlockUserAsync(), () => SelectedItem != null);
-            ResetPasswordCommand = new AsyncRelayCommand(async () => await ResetPasswordAsync(), () => SelectedItem != null);
+            BlockCommand = new AsyncRelayCommand(async () => await BlockUserAsync(), CanExecuteSelectionCommand);
+            ResetPasswordCommand = new AsyncRelayCommand(async () => await ResetPasswordAsync(), CanExecuteSelectionCommand);
 
-            EditCommand = null;
+            EditCommand = new AsyncRelayCommand(async () => await EditAsync(), CanExecuteSelectionCommand);
 
             _ = LoadRolesAsync();
             LoadCurrentUser();
@@ -55,6 +55,22 @@ namespace EnergyMeteringSystem.App.ViewModels.Admin
             {
                 CurrentUser = shell.CurrentUser;
             }
+        }
+
+        private bool CanExecuteSelectionCommand() => !IsLoading && SelectedItem != null;
+
+        protected override void OnSelectedItemChanged()
+        {
+            base.OnSelectedItemChanged();
+            (BlockCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
+            (ResetPasswordCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
+        }
+
+        protected override void RefreshAllCommandsCanExecute()
+        {
+            base.RefreshAllCommandsCanExecute();
+            (BlockCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
+            (ResetPasswordCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
         }
 
         private async Task LoadRolesAsync()
@@ -72,6 +88,14 @@ namespace EnergyMeteringSystem.App.ViewModels.Admin
         {
             await ExecuteAsync(async () =>
             {
+                if (Roles.Count == 0)
+                {
+                    var roles = await _repository.GetAllRolesAsync();
+                    Roles.Clear();
+                    foreach (var role in roles)
+                        Roles.Add(role);
+                }
+
                 var list = await _repository.GetAllAsync();
 
                 // ✅ ИСПРАВЛЕНО: используем ItemsList
@@ -85,6 +109,14 @@ namespace EnergyMeteringSystem.App.ViewModels.Admin
 
         protected override async Task AddAsync()
         {
+            if (Roles.Count == 0)
+            {
+                var roles = await _repository.GetAllRolesAsync();
+                Roles.Clear();
+                foreach (var role in roles)
+                    Roles.Add(role);
+            }
+
             var addViewModel = new UserEditViewModel(Roles, CurrentUser);
             var addView = new Views.Admin.UserEditView(addViewModel);
 
@@ -171,18 +203,25 @@ namespace EnergyMeteringSystem.App.ViewModels.Admin
             }
 
             bool newStatus = !SelectedItem.IsActive;
-            string action = newStatus ? "Разблокировать" : "Заблокировать";
+            string action = newStatus ? "разблокировать" : "заблокировать";
+            string successText = newStatus ? "разблокирован" : "заблокирован";
 
-            var result = await ShowConfirmationAsync($"{action} пользователя {SelectedItem.FullName}?", "Подтверждение");
+            var result = await ShowConfirmationAsync(
+                $"{char.ToUpper(action[0])}{action.Substring(1)} пользователя {SelectedItem.FullName}?",
+                "Подтверждение");
 
             if (result)
             {
+                var userId = SelectedItem.Id;
                 await ExecuteAsync(async () =>
                 {
-                    await _repository.SetActiveStatusAsync(SelectedItem.Id, newStatus);
+                    await _repository.SetActiveStatusAsync(userId, newStatus);
                     await LoadDataAsync();
-                    await ShowMessageAsync($"Пользователь {action}н", "Успех");
-                }, $"Ошибка при {action.ToLower()} пользователя");
+                    await ShowMessageAsync($"Пользователь {successText}", "Успех");
+                }, $"Ошибка при попытке {action} пользователя");
+
+                if (!string.IsNullOrEmpty(ErrorMessage))
+                    await ShowMessageAsync(ErrorMessage, "Ошибка");
             }
         }
 
@@ -196,12 +235,16 @@ namespace EnergyMeteringSystem.App.ViewModels.Admin
 
             if (result)
             {
+                var userId = SelectedItem.Id;
                 await ExecuteAsync(async () =>
                 {
                     string newHash = PasswordHelper.HashPassword("12345");
-                    await _repository.ResetPasswordAsync(SelectedItem.Id, newHash);
+                    await _repository.ResetPasswordAsync(userId, newHash);
                     await ShowMessageAsync("Пароль сброшен на 12345", "Успех");
                 }, "Ошибка при сбросе пароля");
+
+                if (!string.IsNullOrEmpty(ErrorMessage))
+                    await ShowMessageAsync(ErrorMessage, "Ошибка");
             }
         }
 

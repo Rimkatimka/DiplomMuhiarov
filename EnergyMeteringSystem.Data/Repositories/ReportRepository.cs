@@ -129,33 +129,62 @@ namespace EnergyMeteringSystem.Data.Repositories
         }
 
         // ✅ МЕТОД ДЛЯ ДИНАМИКИ ПО МЕСЯЦАМ
+        // EnergyMeteringSystem.Data/Repositories/ReportRepository.cs
+
         public async Task<List<MonthlyConsumptionDto>> GetMonthlyConsumptionAsync(int year, int? month = null)
         {
             try
             {
-                var query = _context.MeterReading
+                // ✅ Начинаем с декабря прошлого года для правильного расчета января
+                var startDate = new DateTime(year - 1, 12, 1);
+                var endDate = new DateTime(year, 12, 31, 23, 59, 59);
+
+                var readings = await _context.MeterReading
                     .Include(r => r.Meter)
-                    .Include(r => r.Meter.ConsumptionObject)
-                    .Where(r => r.ReadingDate.Year == year);
-
-                if (month.HasValue)
-                {
-                    query = query.Where(r => r.ReadingDate.Month == month.Value);
-                }
-
-                var readings = await query
-                    .GroupBy(r => new { r.ReadingDate.Year, r.ReadingDate.Month })
-                    .Select(g => new MonthlyConsumptionDto
-                    {
-                        Year = g.Key.Year,
-                        Month = g.Key.Month,
-                        TotalConsumption = g.Sum(r => r.Value)
-                    })
-                    .OrderBy(x => x.Year)
-                    .ThenBy(x => x.Month)
+                    .Where(r => r.ReadingDate >= startDate && r.ReadingDate <= endDate)
+                    .OrderBy(r => r.MeterId)
+                    .ThenBy(r => r.ReadingDate)
                     .ToListAsync();
 
-                return readings;
+                // Группируем по счетчикам и считаем потребление
+                var monthlyConsumption = new Dictionary<int, decimal>();
+
+                var groupedByMeter = readings.GroupBy(r => r.MeterId);
+
+                foreach (var meterGroup in groupedByMeter)
+                {
+                    var orderedReadings = meterGroup.OrderBy(r => r.ReadingDate).ToList();
+
+                    // Получаем начальное показание счетчика
+                    var meter = meterGroup.First().Meter;
+                    decimal previousValue = meter?.InitialReading ?? 0;
+
+                    foreach (var reading in orderedReadings)
+                    {
+                        decimal consumption = reading.Value - previousValue;
+                        if (consumption > 0 && reading.ReadingDate.Year == year)
+                        {
+                            int monthKey = reading.ReadingDate.Month;
+                            if (!monthlyConsumption.ContainsKey(monthKey))
+                                monthlyConsumption[monthKey] = 0;
+                            monthlyConsumption[monthKey] += consumption;
+                        }
+                        previousValue = reading.Value;
+                    }
+                }
+
+                var result = new List<MonthlyConsumptionDto>();
+                for (int m = 1; m <= 12; m++)
+                {
+                    result.Add(new MonthlyConsumptionDto
+                    {
+                        Year = year,
+                        Month = m,
+                        TotalConsumption = monthlyConsumption.ContainsKey(m) ? monthlyConsumption[m] : 0
+                    });
+                }
+
+                return result;
             }
             catch (Exception ex)
             {

@@ -129,7 +129,7 @@ namespace EnergyMeteringSystem.Data.Repositories
             };
 
             _context.User.Add(entity);
-            await _context.SaveChangesAsync();
+            await SaveChangesAsync();
 
             AuditLogger.Log("INSERT", "User", entity.Id, null, new { dto.Username, dto.FullName, dto.Email });
 
@@ -153,7 +153,7 @@ namespace EnergyMeteringSystem.Data.Repositories
             entity.Email = dto.Email;
             entity.RoleId = dto.RoleId;
 
-            await _context.SaveChangesAsync();
+            await SaveChangesAsync();
 
             AuditLogger.Log("UPDATE", "User", entity.Id, oldValues, newValues);
 
@@ -175,7 +175,7 @@ namespace EnergyMeteringSystem.Data.Repositories
 
             entity.IsActive = isActive;
 
-            await _context.SaveChangesAsync();
+            await SaveChangesAsync();
 
             AuditLogger.Log("UPDATE", "User", id, oldValues, newValues);
 
@@ -197,7 +197,7 @@ namespace EnergyMeteringSystem.Data.Repositories
 
             entity.PasswordHash = newPasswordHash;
 
-            await _context.SaveChangesAsync();
+            await SaveChangesAsync();
 
             AuditLogger.Log("UPDATE", "User", id, oldValues, newValues);
 
@@ -237,13 +237,13 @@ namespace EnergyMeteringSystem.Data.Repositories
 
             if (hasAuditLogs || hasMeterReadings)
             {
-                throw new InvalidOperationException("Нельзя удалить пользователя, у которого есть связанные данные");
+                throw new InvalidOperationException("������ ������� ������������, � �������� ���� ��������� ������");
             }
 
             var oldValues = new { entity.Username, entity.FullName };
 
             _context.User.Remove(entity);
-            await _context.SaveChangesAsync();
+            await SaveChangesAsync();
 
             AuditLogger.Log("DELETE", "User", id, oldValues, null);
 
